@@ -1,13 +1,13 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-# DeepSpeed Team
 """
+Copyright 2020 The Microsoft DeepSpeed Team
+Licensed under the MIT license.
+
 Functionality of swapping optimizer tensors to/from (NVMe) storage devices.
 """
 
 import os
 import argparse
+import re
 
 READ_SPEED = 'read_speed'
 WRITE_SPEED = 'write_speed'
@@ -20,7 +20,10 @@ METRIC_SEARCH = {READ_SPEED: 'E2E Read Speed', WRITE_SPEED: 'E2E Write Speed'}
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--log_dir', type=str, required=True, help='Folder of statistics logs')
+    parser.add_argument('--log_dir',
+                        type=str,
+                        required=True,
+                        help='Folder of statistics logs')
 
     parser.add_argument('--metric',
                         type=str,
@@ -123,7 +126,10 @@ def get_results(log_files, metric):
 
 
 def get_sorted_results(log_dir, metric):
-    log_files = [f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir, f))]
+    log_files = [
+        f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir,
+                                                                      f))
+    ]
 
     log_files_path = [os.path.join(log_dir, f) for f in log_files]
     results = get_results(log_files_path, metric)

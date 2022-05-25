@@ -1,10 +1,9 @@
-// Copyright (c) Microsoft Corporation.
-// SPDX-License-Identifier: Apache-2.0
-
-// DeepSpeed Team
 
 /*
-Functionality for swapping tensors to/from (NVMe) storage devices.
+Copyright 2020 The Microsoft DeepSpeed Team
+Licensed under the MIT license.
+
+Functionality for swapping optimizer tensors to/from (NVMe) storage devices.
 */
 
 #include <deepspeed_aio_common.h>

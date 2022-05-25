@@ -1,16 +1,16 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
+'''
+Copyright 2019 The Microsoft DeepSpeed Team
+'''
 
-# DeepSpeed Team
-
-import msgpack
+import pickle
 import typing
 
 import torch
-from deepspeed import comm as dist
+import torch.distributed as dist
 
-from deepspeed.utils.torch import required_torch_version
-from deepspeed.accelerator import get_accelerator
+# To query whether we have send/recv support
+from packaging.version import Version
+from deepspeed.git_version_info import torch_info
 
 _groups = None
 _grid = None
@@ -19,11 +19,13 @@ _async = []
 
 
 def can_send_recv() -> bool:
-    return required_torch_version(min_version=1.8)
+    torch_version = Version(torch_info['version'])
+    sendrecv_min = Version('1.8')
+    return torch_version >= sendrecv_min
 
 
 #initializes adjacent process groups
-#run this only after deepspeed.init_distributed() has been called
+#run this only after torch.distributed.init_process_group() has been called
 def init_process_groups(grid):
     global _groups, _grid
     _grid = grid
@@ -90,13 +92,13 @@ def wait():
         op.wait()
     _async = []
 
-    get_accelerator().synchronize()
+    torch.cuda.synchronize()
 
 
 def send_obj(msg: typing.Any, dest: int):
     """Send an arbitrary python object to ``dest``.
 
-    Note: ``msg`` must be serializable by msgpack.
+    Note: ``msg`` must be pickleable.
 
     WARN: This incurs a CPU -> GPU transfer and should be used sparingly
     for performance reasons.
@@ -106,12 +108,12 @@ def send_obj(msg: typing.Any, dest: int):
         dest (int): Destination rank.
     """
     # serialize the message
-    msg = msgpack.packb(msg)
+    msg = pickle.dumps(msg)
     # construct a tensor to send
-    msg = torch.ByteTensor(torch.ByteStorage.from_buffer(msg)).to(get_accelerator().device_name())
+    msg = torch.ByteTensor(torch.ByteStorage.from_buffer(msg)).cuda()
 
     # Send meta and message
-    length_tensor = torch.tensor([len(msg)], dtype=torch.long).to(get_accelerator().device_name())
+    length_tensor = torch.tensor([len(msg)], dtype=torch.long).cuda()
     dist.send(length_tensor, dst=dest)
     dist.send(msg, dst=dest)
 
@@ -126,19 +128,19 @@ def recv_obj(sender: int) -> typing.Any:
         sender (int): The rank sending the message.
     """
     # Get message meta
-    length = torch.tensor([0], dtype=torch.long).to(get_accelerator().device_name())
+    length = torch.tensor([0], dtype=torch.long).cuda()
     dist.recv(length, src=sender)
 
     # Receive and deserialize
-    msg = torch.empty(length.item(), dtype=torch.uint8).to(get_accelerator().device_name())
+    msg = torch.empty(length.item(), dtype=torch.uint8).cuda()
     dist.recv(msg, src=sender)
 
-    msg = msgpack.unpackb(msg.cpu().numpy().tobytes())
+    msg = pickle.loads(msg.cpu().numpy().tobytes())
 
     def _to(x):
         """Recursively move to the current device."""
         if torch.is_tensor(x):
-            return x.to(get_accelerator().device_name())
+            return x.cuda()
         if isinstance(x, (tuple, list)):
             ret = [_to(x_) for x_ in x]
             if isinstance(x, tuple):

@@ -20,7 +20,7 @@ Add these lines to your `.bashrc` or equivalent to ensure you have permissions t
 export GEM_HOME="$HOME/gems"
 export PATH="$HOME/gems/bin:$PATH"
 ```
-Don't forget to `source ~/.bashrc` afterward 😊.
+Don't forget to `source ~/.bashrc` afterwards 😊.
 
 
 Now we can install Jekyll and [Bundler](https://bundler.io/):
@@ -35,35 +35,15 @@ We now need to install the required Ruby packages for the website.
 
 > Could not locate Gemfile
 
-**NOTE**: This step frequently hangs when connected to a VPN (including MSVPN). Simply disconnect for the package installation.
+**NOTE**: this step frequently hangs when connected to a VPN (including MSVPN). Simply disconnect for the package installation.
 
 
 ```
 bundle install
 ```
 
-Depending on your environment, you may need to add `webrick` to avoid the following [error](https://talk.jekyllrb.com/t/load-error-cannot-load-such-file-webrick/5417/6):
-
-> gems/gems/jekyll-3.9.5/lib/jekyll/commands/serve/servlet.rb:3:in `require': cannot load such file -- webrick (LoadError)
-
-
-```
-bundle add webrick
-```
-
-
 You can now start a local webserver via:
 ```
 bundle exec jekyll serve
 ```
 The website should now be accessible at [http://localhost:4000](http://localhost:4000)
-
-
-## Update the Readthedocs.io API documentation
-Use the following steps to update the public API documentation.
-
-1. Make your documentation changes and push them to the rtd-staging branch. This will rebuild the docs in the staging branch.
-**NOTE**: It is acceptable to force push to this branch to overwrite previous changes.
-2. View the result of the result of the build [here](https://readthedocs.org/projects/deepspeed/builds/)
-3. Once the build is complete view the newly modified API documentation [here](https://deepspeed.readthedocs.io/en/rtd-staging/)
-4. Once you are satisfied with the changes create a new branch off of rtd-staging to push into master.

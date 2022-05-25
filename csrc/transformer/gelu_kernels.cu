@@ -1,8 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// SPDX-License-Identifier: Apache-2.0
-
-// DeepSpeed Team
-
 #include "custom_cuda_layers.h"
 
 inline __device__ float gelu(const float x)

@@ -1,8 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-# DeepSpeed Team
-
 #Linear Module to use with ZeRO Stage 3 to allow for parameter memory release
 #after the module execution during forward
 #Instead of saving variables using save_for_backward, we save variable ids
@@ -16,7 +11,6 @@
 #when implemented outside of torch.autograd.Function
 
 import math
-import functools
 
 import torch
 from torch import Tensor
@@ -24,24 +18,18 @@ from torch.nn.parameter import Parameter
 from torch.nn import init
 from torch.nn.modules.module import Module
 from deepspeed.runtime.utils import noop_decorator
-from deepspeed import comm as dist
-from deepspeed.accelerator import get_accelerator
+
+tensor_map = {}
 
 
 def print_rank_0(message, debug=False, force=False):
-    if dist.get_rank() == 0 and (debug or force):
+    if torch.distributed.get_rank() == 0 and (debug or force):
         print(message)
 
 
 try:
-    # Fix `torch.[device].amp.custom_fwd/bwd` FutureWarning in torch 2.4
-    if hasattr(torch, 'amp') and hasattr(torch.amp, 'custom_fwd') and hasattr(torch.amp, 'custom_bwd'):
-        autocast_custom_fwd = functools.partial(torch.amp.custom_fwd, device_type=get_accelerator().device_name())
-        autocast_custom_bwd = functools.partial(torch.amp.custom_bwd, device_type=get_accelerator().device_name())
-    else:
-        # original implementation
-        autocast_custom_fwd = get_accelerator().amp().custom_fwd
-        autocast_custom_bwd = get_accelerator().amp().custom_bwd
+    autocast_custom_fwd = torch.cuda.amp.custom_fwd
+    autocast_custom_bwd = torch.cuda.amp.custom_bwd
 except (ImportError, AttributeError) as exp:
     autocast_custom_fwd = noop_decorator
     autocast_custom_bwd = noop_decorator
@@ -54,8 +42,16 @@ class LinearFunctionForZeroStage3(torch.autograd.Function):
     @autocast_custom_fwd
     # bias is an optional argument
     def forward(ctx, input, weight, bias=None):
+        #print("In ZeRO Linear Function")
 
-        ctx.save_for_backward(input, weight, bias)
+        weight_id = id(weight)
+        bias_id = id(bias)
+
+        #ctx.save_for_backward(input, weight, bias)
+        ctx.save_for_backward(input, torch.tensor(weight_id), torch.tensor(bias_id))
+
+        tensor_map[weight_id] = weight
+        tensor_map[bias_id] = bias
 
         if input.dim() == 2 and bias is not None:
             # fused op is marginally faster
@@ -77,7 +73,11 @@ class LinearFunctionForZeroStage3(torch.autograd.Function):
         # None. Thanks to the fact that additional trailing Nones are
         # ignored, the return statement is simple even when the function has
         # optional inputs.
-        input, weight, bias = ctx.saved_tensors
+        #input, weight, bias = ctx.saved_tensors
+
+        input, weight_id, bias_id = ctx.saved_tensors
+        weight = tensor_map[weight_id.item()]
+        bias = tensor_map[bias_id.item()]
 
         grad_input = grad_weight = grad_bias = None
 
@@ -95,27 +95,19 @@ class LinearFunctionForZeroStage3(torch.autograd.Function):
             dim = grad_output.dim()
             if dim > 2:
                 grad_weight = grad_output.reshape(-1,
-                                                  grad_output.shape[-1]).t().matmul(input.reshape(-1, input.shape[-1]))
+                                                  grad_output.shape[-1]).t().matmul(
+                                                      input.reshape(-1,
+                                                                    input.shape[-1]))
             else:
                 grad_weight = grad_output.t().matmul(input)
             #print(f"Computed grad weight grad_weight {grad_weight.shape}")
         if bias is not None and ctx.needs_input_grad[2]:
             #print("Computing grad bias")
-            if dim > 2:
-                grad_bias = grad_output.sum([i for i in range(dim - 1)])
-            else:
-                grad_bias = grad_output.sum(0)
+            grad_bias = grad_output.sum(0)
             #print("Done computing grad bias")
             #print("needs bias")
         #print(f"backward shaped grad_input {grad_input.shape}, grad_weight {grad_weight.shape}, grad_bias {grad_bias.shape if grad_bias is not None else None}")
         return grad_input, grad_weight, grad_bias
-
-
-def zero3_linear_wrap(input, weight, bias=None):
-    if bias is None:
-        return LinearFunctionForZeroStage3.apply(input, weight)
-    else:
-        return LinearFunctionForZeroStage3.apply(input, weight, bias)
 
 
 class LinearModuleForZeroStage3(Module):
@@ -181,5 +173,7 @@ class LinearModuleForZeroStage3(Module):
         return LinearFunctionForZeroStage3.apply(input, self.weight, self.bias)
 
     def extra_repr(self) -> str:
-        return 'in_features={}, out_features={}, bias={}'.format(self.in_features, self.out_features, self.bias
-                                                                 is not None)
+        return 'in_features={}, out_features={}, bias={}'.format(
+            self.in_features,
+            self.out_features,
+            self.bias is not None)

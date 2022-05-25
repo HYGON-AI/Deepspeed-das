@@ -1,8 +1,7 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-# DeepSpeed Team
-
+"""
+Copyright 2020 The Microsoft DeepSpeed Team
+"""
+import os
 from .builder import TorchCPUOpBuilder
 
 
@@ -17,11 +16,29 @@ class CPUAdagradBuilder(TorchCPUOpBuilder):
         return f'deepspeed.ops.adagrad.{self.NAME}_op'
 
     def sources(self):
-        return ['csrc/adagrad/cpu_adagrad.cpp']
-
-    def libraries_args(self):
-        args = super().libraries_args()
-        return args
+        return ['csrc/adagrad/cpu_adagrad.cpp', 'csrc/common/custom_cuda_kernel.cu']
 
     def include_paths(self):
-        return ['csrc/includes']
+        import torch
+        if not self.is_rocm_pytorch():
+            CUDA_INCLUDE = [os.path.join(torch.utils.cpp_extension.CUDA_HOME, "include")]
+        else:
+            CUDA_INCLUDE = [
+                os.path.join(torch.utils.cpp_extension.ROCM_HOME,
+                             "include"),
+                os.path.join(torch.utils.cpp_extension.ROCM_HOME,
+                             "include",
+                             "rocrand"),
+                os.path.join(torch.utils.cpp_extension.ROCM_HOME,
+                             "include",
+                             "hiprand"),
+            ]
+        return ['csrc/includes'] + CUDA_INCLUDE
+
+   ##aiss add
+    def cxx_args(self):
+
+        return [
+            '-lrocblas',
+            '-lhipblas',
+            '-D__HIP_DEVICE_COMPILE__',]

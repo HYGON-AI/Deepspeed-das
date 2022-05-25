@@ -1,18 +1,17 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-# DeepSpeed Team
 """
-AIO
+"Copyright 2020 The Microsoft DeepSpeed Team.
+Licensed under the MIT license.
 """
+#########################################
+# AIO
+#########################################
 AIO_FORMAT = '''
 "aio": {
   "block_size": 1048576,
   "queue_depth": 8,
   "thread_count": 1,
   "single_submit": false,
-  "overlap_events": true,
-  "use_gds": false
+  "overlap_events": true
 }
 '''
 AIO = "aio"
@@ -26,5 +25,3 @@ AIO_SINGLE_SUBMIT = "single_submit"
 AIO_SINGLE_SUBMIT_DEFAULT = False
 AIO_OVERLAP_EVENTS = "overlap_events"
 AIO_OVERLAP_EVENTS_DEFAULT = True
-AIO_USE_GDS = "use_gds"
-AIO_USE_GDS_DEFAULT = False

@@ -2,7 +2,7 @@
 title: "Progressive Layer Dropping"
 excerpt: ""
 date: 2020-10-29 00:00:00
-tags: training English
+tags: training
 toc: false
 ---
 

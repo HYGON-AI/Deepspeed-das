@@ -1,17 +1,25 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
+'''
+Copyright 2020 The Microsoft DeepSpeed Team
+'''
 
-# DeepSpeed Team
-
+import math
 import torch
-from deepspeed.ops.op_builder import CPUAdagradBuilder
+import time
+from pathlib import Path
+from ..op_builder import CPUAdagradBuilder
 from deepspeed.utils.logging import should_log_le
 
 
 class DeepSpeedCPUAdagrad(torch.optim.Optimizer):
     optimizer_id = 0
 
-    def __init__(self, model_params, lr=1e-2, eps=1e-10, weight_decay=0, amsgrad=False, fp32_optimizer_states=True):
+    def __init__(self,
+                 model_params,
+                 lr=1e-2,
+                 eps=1e-10,
+                 weight_decay=0,
+                 amsgrad=False,
+                 fp32_optimizer_states=True):
 
         default_args = dict(lr=lr, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
         super(DeepSpeedCPUAdagrad, self).__init__(model_params, default_args)
@@ -21,7 +29,11 @@ class DeepSpeedCPUAdagrad(torch.optim.Optimizer):
         self.fp32_optimizer_states = fp32_optimizer_states
         self.ds_opt_adagrad = CPUAdagradBuilder().load()
 
-        self.ds_opt_adagrad.create_adagrad(self.opt_id, lr, eps, weight_decay, should_log_le("info"))
+        self.ds_opt_adagrad.create_adagrad(self.opt_id,
+                                           lr,
+                                           eps,
+                                           weight_decay,
+                                           should_log_le("info"))
 
     def __del__(self):
         # need to destroy the C++ object explicitly to avoid a memory leak when deepspeed.initialize
@@ -34,7 +46,7 @@ class DeepSpeedCPUAdagrad(torch.optim.Optimizer):
             group.setdefault('amsgrad', False)
 
     @torch.no_grad()
-    def step(self, closure=None):
+    def step(self, closure=None, fp16_param_groups=None):
         """Update the model parameters.
 
         .. note::
@@ -46,6 +58,8 @@ class DeepSpeedCPUAdagrad(torch.optim.Optimizer):
         Args:
             closure (callable, optional): closure to compute the loss.
                 Defaults to ``None``.
+            fp16_param_groups: FP16 GPU parameters to update. Performing the
+                copy here reduces communication time. Defaults to ``None``.
 
         Returns:
             loss: if ``closure`` is provided. Otherwise ``None``.
@@ -79,7 +93,9 @@ class DeepSpeedCPUAdagrad(torch.optim.Optimizer):
 
                     #memory_format=torch.preserve_format)
                     # gradient variances
-                    state['exp_avg_sq'] = torch.zeros_like(p.data, dtype=state_dtype, device='cpu')
+                    state['exp_avg_sq'] = torch.zeros_like(p.data,
+                                                           dtype=state_dtype,
+                                                           device='cpu')
                     #memory_format=torch.preserve_format)
 
                 state['step'] += 1
@@ -87,12 +103,39 @@ class DeepSpeedCPUAdagrad(torch.optim.Optimizer):
                 if p.grad.is_sparse == True:
                     sparse_param = p.sparse_mask(p.grad)
                     sparse_exp_avg_sq = state['exp_avg_sq'].sparse_mask(p.grad)
-                    self.ds_opt_adagrad.adagrad_update(self.opt_id, state['step'], group['lr'], group['eps'],
-                                                       group['weight_decay'], sparse_param.values(), p.grad.values(),
+                    self.ds_opt_adagrad.adagrad_update(self.opt_id,
+                                                       state['step'],
+                                                       group['lr'],
+                                                       group['eps'],
+                                                       group['weight_decay'],
+                                                       sparse_param.values(),
+                                                       p.grad.values(),
                                                        sparse_exp_avg_sq.values())
                     p[sparse_param.indices()] = sparse_param.values()
-                    state['exp_avg_sq'][sparse_exp_avg_sq.indices()] = sparse_exp_avg_sq.values()
+                    state['exp_avg_sq'][
+                        sparse_exp_avg_sq.indices()] = sparse_exp_avg_sq.values()
+                    if fp16_param_groups is not None:
+                        fp16_param_groups[group_id][param_id][
+                            sparse_param.indices()] = sparse_param.values()
                 else:
-                    self.ds_opt_adagrad.adagrad_update(self.opt_id, state['step'], group['lr'], group['eps'],
-                                                       group['weight_decay'], p.data, p.grad.data, state['exp_avg_sq'])
+                    if fp16_param_groups is not None:
+                        self.ds_opt_adagrad.adagrad_update_copy(
+                            self.opt_id,
+                            state['step'],
+                            group['lr'],
+                            group['eps'],
+                            group['weight_decay'],
+                            p.data,
+                            p.grad.data,
+                            state['exp_avg_sq'],
+                            fp16_param_groups[group_id][param_id].data)
+                    else:
+                        self.ds_opt_adagrad.adagrad_update(self.opt_id,
+                                                           state['step'],
+                                                           group['lr'],
+                                                           group['eps'],
+                                                           group['weight_decay'],
+                                                           p.data,
+                                                           p.grad.data,
+                                                           state['exp_avg_sq'])
         return loss

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -e
 err_report() {
@@ -121,7 +121,7 @@ rm_if_exist() {
     if [ -f $1 ]; then
         rm $VERBOSE $1
     elif [ -d $1 ]; then
-        rm -rf $VERBOSE $1
+        rm -r $VERBOSE $1
     fi
 }
 

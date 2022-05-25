@@ -1,8 +1,4 @@
-// Copyright (c) Microsoft Corporation.
-// SPDX-License-Identifier: Apache-2.0
-
-// DeepSpeed Team
-
+/* Copyright 2019 The Microsoft DeepSpeed Team */
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <stdio.h>
@@ -11,13 +7,13 @@
 #include "ATen/TensorUtils.h"
 #include "ATen/cuda/CUDAContext.h"
 #include "ATen/cuda/detail/IndexUtils.cuh"
-// #include "ATen/Type.h"
+//#include "ATen/Type.h"
 #include "ATen/AccumulateType.h"
 
 #include <iostream>
 
-// #include <helper_functions.h>
-#if defined(__HIP_PLATFORM_AMD__) && HIP_VERSION > 305
+//#include <helper_functions.h>
+#if defined(__HIP_PLATFORM_HCC__) && HIP_VERSION > 305
 #include <hip/hip_cooperative_groups.h>
 #else
 #include <cooperative_groups.h>
@@ -109,7 +105,7 @@ __device__ void reduce_block_in_shared_memory(T* s_a, T* s_b, T* g_a, T* g_b)
 
     cg::sync(cta);
 
-#if (__CUDA_ARCH__ >= 300) || (defined(__HIP_PLATFORM_AMD__) && HIP_VERSION >= 502)
+#if (__CUDA_ARCH__ >= 300)
     if (tid < 32) {
         cg::coalesced_group active = cg::coalesced_threads();
 

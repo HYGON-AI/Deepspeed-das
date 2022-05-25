@@ -1,9 +1,7 @@
-// Copyright (c) Microsoft Corporation.
-// SPDX-License-Identifier: Apache-2.0
-
-// DeepSpeed Team
-
 /*
+Copyright 2020 The Microsoft DeepSpeed Team
+Licensed under the MIT license.
+
 Functionality for swapping optimizer tensors to/from (NVMe) storage devices.
 */
 
@@ -35,4 +33,4 @@ int regular_read(const char* filename, std::vector<char>& buffer);
 bool validate_aio_operation(const bool read_op,
                             const char* filename,
                             void* aio_buffer,
-                            const int64_t num_bytes);
+                            const long long int num_bytes);

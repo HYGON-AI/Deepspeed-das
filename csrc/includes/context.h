@@ -1,8 +1,3 @@
-// Copyright (c) Microsoft Corporation.
-// SPDX-License-Identifier: Apache-2.0
-
-// DeepSpeed Team
-
 #pragma once
 
 #include <ATen/cuda/CUDAContext.h>
@@ -44,32 +39,28 @@ inline int DS_GET_BLOCKS(const int N)
         1);
 }
 
-class TrainingContext {
+class Context {
 public:
-    TrainingContext() : _workspace(nullptr), _seed(42), _curr_offset(0)
+    Context() : _workspace(nullptr), _seed(42), _curr_offset(0)
     {
         curandCreateGenerator(&_gen, CURAND_RNG_PSEUDO_DEFAULT);
         curandSetPseudoRandomGeneratorSeed(_gen, 123);
-        cublasStatus_t stat = cublasCreate(&_cublasHandle);
-        if (stat != CUBLAS_STATUS_SUCCESS) {
-            // It would be nice to use cublasGetStatusName and
-            // cublasGetStatusString, but they were only added in CUDA 11.4.2.
-            auto message = std::string("Failed to create cublas handle: cublasStatus_t was ") +
-                           std::to_string(stat);
+        if (cublasCreate(&_cublasHandle) != CUBLAS_STATUS_SUCCESS) {
+            auto message = std::string("Fail to create cublas handle.");
             std::cerr << message << std::endl;
             throw std::runtime_error(message);
         }
     }
 
-    virtual ~TrainingContext()
+    virtual ~Context()
     {
         cublasDestroy(_cublasHandle);
         cudaFree(_workspace);
     }
 
-    static TrainingContext& Instance()
+    static Context& Instance()
     {
-        static TrainingContext _ctx;
+        static Context _ctx;
         return _ctx;
     }
 

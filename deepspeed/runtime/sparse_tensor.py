@@ -1,8 +1,6 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-# DeepSpeed Team
 """
+Copyright 2020 The Microsoft DeepSpeed Team
+
 Implementation of a compressed sparse tensor. Similar in
 functionality to TensorFlow's IndexedSlices implementation.
 """
@@ -12,10 +10,8 @@ import torch
 
 class SparseTensor(object):
     """ Compressed Sparse Tensor """
-
     def __init__(self, dense_tensor=None):
         self.orig_dense_tensor = dense_tensor
-        self.dtype = self.orig_dense_tensor.dtype
         self.is_sparse = dense_tensor.is_sparse
         if dense_tensor is not None:
             if dense_tensor.is_sparse:
@@ -33,7 +29,9 @@ class SparseTensor(object):
             self.dense_size = None
 
     def to_coo_tensor(self):
-        return torch.sparse_coo_tensor(self.indices.unsqueeze(0), self.values, self.dense_size)
+        return torch.sparse_coo_tensor(self.indices.unsqueeze(0),
+                                       self.values,
+                                       self.dense_size)
 
     @staticmethod
     def type():
@@ -42,7 +40,10 @@ class SparseTensor(object):
     def to_dense(self):
         it = self.indices.unsqueeze(1)
         full_indices = torch.cat([it for _ in range(self.dense_size[1])], dim=1)
-        return self.values.new_zeros(self.dense_size).scatter_add_(0, full_indices, self.values)
+        return self.values.new_zeros(self.dense_size).scatter_add_(
+            0,
+            full_indices,
+            self.values)
 
     def sparse_size(self):
         index_size = list(self.indices.size())

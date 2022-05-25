@@ -1,14 +1,11 @@
-// Copyright (c) Microsoft Corporation.
-// SPDX-License-Identifier: Apache-2.0
-
-// DeepSpeed Team
-
 /*
+Copyright 2020 The Microsoft DeepSpeed Team
+Licensed under the MIT license.
+
 Functionality for swapping optimizer tensors to/from (NVMe) storage devices.
 */
 
 #include <cmath>
-#include <iostream>
 
 #include "deepspeed_aio_utils.h"
 
@@ -18,8 +15,8 @@ const int c_block_size = 128 * 1024;
 const int c_io_queue_depth = 8;
 
 io_xfer_ctxt::io_xfer_ctxt(const int fd,
-                           const int64_t file_offset,
-                           const int64_t num_bytes,
+                           const long long int file_offset,
+                           const long long int num_bytes,
                            const void* buffer)
     : _fd(fd), _base_offset(file_offset), _mem_buffer(buffer), _num_bytes(num_bytes)
 {
@@ -36,7 +33,7 @@ io_prep_context::io_prep_context(const bool read_op,
 void io_prep_context::prep_iocbs(const int n_iocbs,
                                  const size_t num_bytes,
                                  const void* start_buffer,
-                                 const int64_t start_offset)
+                                 const long long int start_offset)
 {
     assert(static_cast<size_t>(n_iocbs) <= _iocbs->size());
     for (auto i = 0; i < n_iocbs; ++i) {
@@ -64,24 +61,24 @@ io_prep_generator::io_prep_generator(const bool read_op,
       _next_iocb_index(0)
 {
     _num_io_blocks =
-        static_cast<int64_t>(ceil(static_cast<double>(xfer_ctxt->_num_bytes) / block_size));
+        static_cast<long long int>(ceil(static_cast<double>(xfer_ctxt->_num_bytes) / block_size));
     _remaining_io_blocks = _num_io_blocks;
 }
 
 int io_prep_generator::prep_iocbs(const int n_iocbs, std::vector<struct iocb*>* iocbs)
 {
     if ((_remaining_bytes) == 0 || (_remaining_io_blocks == 0)) {
-        assert(static_cast<int64_t>(_remaining_bytes) == _remaining_io_blocks);
+        assert(static_cast<long long int>(_remaining_bytes) == _remaining_io_blocks);
         return 0;
     }
 
     assert(static_cast<size_t>(n_iocbs) <= iocbs->size());
 
-    auto actual_n_iocbs = min(static_cast<int64_t>(n_iocbs), _remaining_io_blocks);
+    auto actual_n_iocbs = min(static_cast<long long int>(n_iocbs), _remaining_io_blocks);
     for (auto i = 0; i < actual_n_iocbs; ++i, ++_next_iocb_index) {
         const auto xfer_offset = _xfer_ctxt->_base_offset + (_next_iocb_index * _block_size);
         const auto xfer_buffer = (char*)_xfer_ctxt->_mem_buffer + xfer_offset;
-        const auto num_bytes = min(static_cast<int64_t>(_block_size), _remaining_bytes);
+        const auto num_bytes = min(static_cast<long long int>(_block_size), _remaining_bytes);
 
         if (_read_op) {
             io_prep_pread(iocbs->at(i), _xfer_ctxt->_fd, xfer_buffer, num_bytes, xfer_offset);
@@ -95,7 +92,7 @@ int io_prep_generator::prep_iocbs(const int n_iocbs, std::vector<struct iocb*>* 
     return actual_n_iocbs;
 }
 
-int get_file_size(const char* filename, int64_t& size)
+int get_file_size(const char* filename, long long int& size)
 {
     struct stat st;
     if (stat(filename, &st) == -1) { return -1; }
@@ -103,7 +100,7 @@ int get_file_size(const char* filename, int64_t& size)
     return 0;
 }
 
-void* ds_page_aligned_alloc(const int64_t size, const bool lock)
+void* ds_page_aligned_alloc(const size_t size, const bool lock)
 {
     void* ptr;
     int retval;
@@ -116,8 +113,8 @@ void* ds_page_aligned_alloc(const int64_t size, const bool lock)
     auto mlock_ret = mlock(ptr, size);
     if (mlock_ret != 0) {
         auto mlock_error = errno;
-        std::cerr << "mlock failed to allocate " << size << " bytes with error no " << mlock_error
-                  << " msg " << strerror(mlock_error) << std::endl;
+        printf("mlock failed with %d %s\n", mlock_error, strerror(mlock_error));
+
         free(ptr);
         return nullptr;
     }

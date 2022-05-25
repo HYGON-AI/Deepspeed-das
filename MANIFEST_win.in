@@ -6,4 +6,3 @@ recursive-include deepspeed *.tr
 recursive-exclude deepspeed/ops/csrc *.cpp *.h *.cu *.cuh *.cc
 prune csrc
 prune op_builder
-prune accelerator

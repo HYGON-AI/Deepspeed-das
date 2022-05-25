@@ -1,23 +1,15 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-# DeepSpeed Team
-
-from deepspeed.accelerator import get_accelerator
-
-enable_nvtx = True
+import torch
 
 
 def instrument_w_nvtx(func):
     """decorator that causes an NVTX range to be recorded for the duration of the
     function call."""
+    if hasattr(torch.cuda.nvtx, "range"):
 
-    def wrapped_fn(*args, **kwargs):
-        if enable_nvtx:
-            get_accelerator().range_push(func.__qualname__)
-        ret_val = func(*args, **kwargs)
-        if enable_nvtx:
-            get_accelerator().range_pop()
-        return ret_val
+        def wrapped_fn(*args, **kwargs):
+            with torch.cuda.nvtx.range(func.__qualname__):
+                return func(*args, **kwargs)
 
-    return wrapped_fn
+        return wrapped_fn
+    else:
+        return func

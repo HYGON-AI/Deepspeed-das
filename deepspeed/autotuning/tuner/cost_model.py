@@ -1,7 +1,4 @@
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-# DeepSpeed Team
+import numpy as np
 
 from .utils import *
 
@@ -12,7 +9,6 @@ except ImportError:
 
 
 class XGBoostCostModel():
-
     def __init__(self, loss_type, num_threads=None, log_interval=25, upper_model=None):
 
         assert xgb is not None, "missing requirements, please install deepspeed w. 'autotuning_ml' extra."
