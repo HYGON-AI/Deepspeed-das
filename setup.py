@@ -219,7 +219,10 @@ elif os.path.isfile('build.txt'):
         version_str += fd.read().strip()
 else:
     # None of the above, probably installing from source
+#aiss add 
+    version_str += f'+dtk22.04'
     version_str += f'+{git_hash}'
+    print("version_str: ",version_str)
 
 torch_version = ".".join([TORCH_MAJOR, TORCH_MINOR])
 # Set cuda_version to 0.0 if cpu-only
