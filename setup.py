@@ -219,8 +219,6 @@ elif os.path.isfile('build.txt'):
         version_str += fd.read().strip()
 else:
     # None of the above, probably installing from source
-#aiss add 
-    version_str += f'+dtk22.04'
     version_str += f'+{git_hash}'
     print("version_str: ",version_str)
 
