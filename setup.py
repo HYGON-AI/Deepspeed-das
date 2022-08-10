@@ -178,7 +178,12 @@ if command_exists('git') and 'DS_BUILD_STRING' not in os.environ:
         git_hash = result.decode('utf-8').strip()
         result = subprocess.check_output(git_branch_cmd, shell=True)
         git_branch = result.decode('utf-8').strip()
-        git_hash +="dtk22.04"
+        ##aiss 20220810
+        if os.getenv('DS_BUILD_VERSION'):
+            version_dtk = os.getenv('DS_BUILD_VERSION', "")
+            git_hash += "." + version_dtk
+
+        #git_hash +="dtk22.04"
     except subprocess.CalledProcessError:
         git_hash = "unknown"
         git_branch = "unknown"

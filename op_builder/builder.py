@@ -190,7 +190,10 @@ class OpBuilder(ABC):
         if OpBuilder.is_rocm_pytorch():
             from torch.utils.cpp_extension import ROCM_HOME
             #with open('/opt/rocm/.info/version-dev', 'r') as file:
-            with open('/opt/dtk-22.04/.info/version-dev', 'r') as file:
+        #aiss 20220810
+            ds_build_version = os.getenv('ROCM_PATH', "")
+           
+            with open('{0}/.info/version-dev'.format(ds_build_version), 'r') as file:
                 ROCM_VERSION_DEV_RAW = file.read()
             ROCM_MAJOR = ROCM_VERSION_DEV_RAW.split('.')[0]
             ROCM_MINOR = ROCM_VERSION_DEV_RAW.split('.')[1]
