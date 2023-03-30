@@ -1,11 +1,10 @@
-import atexit
+'''Copyright The Microsoft DeepSpeed Team'''
+
 import sys
 
 from deepspeed.autotuning.constants import *
 from deepspeed.autotuning.utils import write_experiments
 from deepspeed.utils import logger
-
-import json
 
 
 class BaseTuner:

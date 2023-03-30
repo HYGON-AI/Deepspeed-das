@@ -1,10 +1,12 @@
+'''Copyright The Microsoft DeepSpeed Team'''
+
 import torch
 import deepspeed
 import subprocess
 import argparse
-from .ops.op_builder import ALL_OPS
+from .ops.op_builder.all_ops import ALL_OPS
 from .git_version_info import installed_ops, torch_info
-from .ops import __compatible_ops__ as compatible_ops
+from deepspeed.accelerator import get_accelerator
 
 GREEN = '\033[92m'
 RED = '\033[91m'
@@ -54,7 +56,7 @@ def op_report(verbose=True):
 
 def ninja_installed():
     try:
-        import ninja
+        import ninja  # noqa: F401
     except ImportError:
         return False
     return True
@@ -80,31 +82,33 @@ def nvcc_version():
 def debug_report():
     max_dots = 33
 
-    hip_version = None
-    if hasattr(torch.version, 'hip'):
-        hip_version = torch.version.hip
-
     report = [
         ("torch install path",
          torch.__path__),
         ("torch version",
          torch.__version__),
-        ("torch cuda version",
-         torch.version.cuda),
-        ("torch hip version",
-         hip_version),
-        ("nvcc version",
-         (None if hip_version else nvcc_version())),
         ("deepspeed install path",
          deepspeed.__path__),
         ("deepspeed info",
          f"{deepspeed.__version__}, {deepspeed.__git_hash__}, {deepspeed.__git_branch__}"
-         ),
-        ("deepspeed wheel compiled w.",
-         f"torch {torch_info['version']}, " +
-         (f"hip {torch_info['hip_version']}"
-          if hip_version else f"cuda {torch_info['cuda_version']}")),
+         )
     ]
+    if get_accelerator().device_name() == 'cuda':
+        hip_version = getattr(torch.version, "hip", None)
+        report.extend([("torch cuda version",
+                        torch.version.cuda),
+                       ("torch hip version",
+                        hip_version),
+                       ("nvcc version",
+                        (None if hip_version else nvcc_version())),
+                       ("deepspeed wheel compiled w.",
+                        f"torch {torch_info['version']}, " +
+                        (f"hip {torch_info['hip_version']}"
+                         if hip_version else f"cuda {torch_info['cuda_version']}"))])
+    else:
+        report.extend([("deepspeed wheel compiled w.",
+                        f"torch {torch_info['version']} ")])
+
     print("DeepSpeed general environment info:")
     for name, value in report:
         print(name, "." * (max_dots - len(name)), value)

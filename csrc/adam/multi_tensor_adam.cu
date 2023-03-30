@@ -12,7 +12,11 @@
 
 #include <assert.h>
 
+#ifdef __HIPCC__
+#include "multi_tensor_apply_hip.cuh"
+#else
 #include "multi_tensor_apply.cuh"
+#endif
 #include "type_shim.h"
 
 #define BLOCK_SIZE 512

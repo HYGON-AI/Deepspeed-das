@@ -1,13 +1,14 @@
+'''Copyright The Microsoft DeepSpeed Team'''
+
 # DeepSpeed note, code taken & adapted from commit 9aa94789f13ada713af36cfd8cca2fc9a7f6b79a
 # https://github.com/ptillet/torch-blocksparse/blob/master/torch_blocksparse/matmul.py
 import importlib
-import warnings
 import torch
-import math
 
 import triton
 import triton.language as tl
 import triton._C.libtriton as libtriton
+from deepspeed.accelerator import get_accelerator
 
 
 @triton.jit
@@ -339,8 +340,8 @@ class _sparse_matmul(torch.autograd.Function):
         a_inner, b_inner = a.shape[a_dim], b.shape[b_dim]
         if a_inner != b_inner:
             raise ValueError(
-                f"Size of tensor A along the {_dim_to_name(a_dim)} dim ({a_inner}) must match size "
-                f"of tensor B along the {_dim_to_name(b_dim)} dim ({b_inner})")
+                f"Size of tensor A along the {a_dim} dim ({a_inner}) must match size "
+                f"of tensor B along the {b_dim} dim ({b_inner})")
         if a_inner % 16 != 0:
             raise ValueError('Reduction size for SDD must be a multiple of 16')
 
@@ -950,7 +951,7 @@ class MatMul:
             raise ValueError(
                 f"Inputs must be on the same device; got {a.device} for tensor A "
                 f"and {b.device} for tensor B")
-        if not a.is_cuda:
+        if not get_accelerator().on_accelerator(a):
             raise ValueError("Only GPU devices are supported for now")
 
         # When autocast is enabled, torch.matmul autocasts to float16, so we do the same here

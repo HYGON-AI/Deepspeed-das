@@ -26,7 +26,8 @@ class AsyncIOBuilder(OpBuilder):
             'csrc/aio/py_lib/deepspeed_aio_thread.cpp',
             'csrc/aio/common/deepspeed_aio_utils.cpp',
             'csrc/aio/common/deepspeed_aio_common.cpp',
-            'csrc/aio/common/deepspeed_aio_types.cpp'
+            'csrc/aio/common/deepspeed_aio_types.cpp',
+            'csrc/aio/py_lib/deepspeed_pin_tensor.cpp'
         ]
 
     def include_paths(self):
@@ -51,7 +52,9 @@ class AsyncIOBuilder(OpBuilder):
         ]
 
     def extra_ldflags(self):
-        return ['-laio']
+        #aiss
+        #return ['-laio']
+        return ['-laio', '-liomp5']
 
     def check_for_libaio_pkg(self):
         libs = dict(

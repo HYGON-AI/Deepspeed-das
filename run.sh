@@ -1,0 +1,4 @@
+#!/bin/bash
+source `pwd`/env.sh
+export DS_BUILD_VERSION=dtk22.10.1
+DS_BUILD_RANDOM_LTD=0 DS_BUILD_QUANTIZER=0 DS_BUILD_TRANSFORMER_INFERENCE=0 DS_BUILD_OPS=1 verbose=1 CXX=hipcc CC=hipcc python3 setup.py install bdist_wheel

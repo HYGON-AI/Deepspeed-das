@@ -8,7 +8,7 @@ from .builder import TorchCPUOpBuilder
 class CPUAdamBuilder(TorchCPUOpBuilder):
     BUILD_VAR = "DS_BUILD_CPU_ADAM"
     NAME = "cpu_adam"
-
+     
     def __init__(self):
         super().__init__(name=self.NAME)
 
@@ -16,19 +16,25 @@ class CPUAdamBuilder(TorchCPUOpBuilder):
         return f'deepspeed.ops.adam.{self.NAME}_op'
 
     def sources(self):
+        if self.build_for_cpu:
+            return ['csrc/adam/cpu_adam.cpp']
+   
         return ['csrc/adam/cpu_adam.cpp', 'csrc/common/custom_cuda_kernel.cu']
 
     def libraries_args(self):
         args = super().libraries_args()
-        #args += ['curand']
-    #aiss debug 0506########
-        args += ['hiprand']
-        args += ['rocrand']
+        if self.build_for_cpu:
+            return args
+
+        if not self.is_rocm_pytorch():
+            args += ['curand']
         return args
 
     def include_paths(self):
         import torch
-        if not self.is_rocm_pytorch():
+        if self.build_for_cpu:
+            CUDA_INCLUDE = []
+        elif not self.is_rocm_pytorch():
             CUDA_INCLUDE = [os.path.join(torch.utils.cpp_extension.CUDA_HOME, "include")]
         else:
             CUDA_INCLUDE = [
@@ -42,12 +48,3 @@ class CPUAdamBuilder(TorchCPUOpBuilder):
                              "hiprand"),
             ]
         return ['csrc/includes'] + CUDA_INCLUDE
-
-   ##aiss add
-    def cxx_args(self):
-
-        return [
-            '-lrocblas',
-            '-lhipblas',
-            '-D__HIP_DEVICE_COMPILE__',
-        ]

@@ -7,6 +7,7 @@ per rank for training.
 """
 
 import os
+import re
 import sys
 import json
 import base64
@@ -14,18 +15,21 @@ import argparse
 import subprocess
 import collections
 from copy import deepcopy
+import signal
+import time
 
-import torch.cuda
-
-from .multinode_runner import PDSHRunner, OpenMPIRunner, MVAPICHRunner
-from .constants import PDSH_LAUNCHER, OPENMPI_LAUNCHER, MVAPICH_LAUNCHER
+from .multinode_runner import PDSHRunner, OpenMPIRunner, MVAPICHRunner, SlurmRunner, MPICHRunner
+from .constants import PDSH_LAUNCHER, OPENMPI_LAUNCHER, MVAPICH_LAUNCHER, SLURM_LAUNCHER, MPICH_LAUNCHER
 from ..constants import TORCH_DISTRIBUTED_DEFAULT_PORT
+from ..nebula.constants import NEBULA_EXPORT_ENVS
 from ..utils import logger
 
 from ..autotuning import Autotuner
+from deepspeed.accelerator import get_accelerator
 
 DLTS_HOSTFILE = "/job/hostfile"
-EXPORT_ENVS = ["NCCL", "PYTHON", "MV2", "UCX"]
+EXPORT_ENVS = ['MLFLOW', 'NCCL', 'PYTHON', 'MV2', 'UCX']
+EXPORT_ENVS += NEBULA_EXPORT_ENVS
 DEEPSPEED_ENVIRONMENT_NAME = ".deepspeed_env"
 DEEPSPEED_ENVIRONMENT_PATHS = [os.path.expanduser("~"), '.']
 PDSH_MAX_FAN_OUT = 1024
@@ -75,6 +79,18 @@ def parse_args(args=None):
                         help="Total number of worker nodes to run on, this will use "
                         "the top N hosts from the given hostfile.")
 
+    parser.add_argument("--min_elastic_nodes",
+                        type=int,
+                        default=-1,
+                        help="Minimum number of nodes to run elastic training on. "
+                        "Default is 1 when elastic training is enabled")
+
+    parser.add_argument("--max_elastic_nodes",
+                        type=int,
+                        default=-1,
+                        help="Maximum number of nodes to run elastic training on. "
+                        "Default is num_nodes when elastic training is enabled")
+
     parser.add_argument("--num_gpus",
                         type=int,
                         default=-1,
@@ -93,11 +109,12 @@ def parse_args(args=None):
                         help="(optional) IP address of node 0, will be "
                         "inferred via 'hostname -I' if not specified.")
 
-    parser.add_argument("--launcher",
-                        default=PDSH_LAUNCHER,
-                        type=str,
-                        help="(optional) choose launcher backend for multi-node "
-                        "training. Options currently include PDSH, OpenMPI, MVAPICH.")
+    parser.add_argument(
+        "--launcher",
+        default=PDSH_LAUNCHER,
+        type=str,
+        help="(optional) choose launcher backend for multi-node "
+        "training. Options currently include PDSH, OpenMPI, MVAPICH, SLURM, MPICH.")
 
     parser.add_argument("--launcher_args",
                         default="",
@@ -121,6 +138,10 @@ def parse_args(args=None):
                         help="Do not pass local_rank as an argument when calling "
                         "the user's training script.")
 
+    parser.add_argument("--no_ssh_check",
+                        action="store_true",
+                        help="Do not perform ssh check in multi-node launcher model")
+
     parser.add_argument("--force_multi",
                         action="store_true",
                         help="Force multi-node launcher mode, helps in cases where user "
@@ -134,6 +155,12 @@ def parse_args(args=None):
         "Useful when launching deepspeed processes programmatically.")
 
     parser.add_argument(
+        "--enable_each_rank_log",
+        default="None",
+        type=str,
+        help="redirect the stdout and stderr from each rank into different log files")
+
+    parser.add_argument(
         "--autotuning",
         default="",
         choices=["tune",
@@ -141,6 +168,10 @@ def parse_args(args=None):
         type=str,
         help="Run DeepSpeed autotuner to discover optimal configuration parameters "
         "before running job.")
+
+    parser.add_argument("--elastic_training",
+                        action="store_true",
+                        help="Enable elastic training support in DeepSpeed.")
 
     parser.add_argument("user_script",
                         type=str,
@@ -158,25 +189,45 @@ def fetch_hostfile(hostfile_path):
 
     # e.g., worker-0 slots=16
     with open(hostfile_path, 'r') as fd:
-        resource_pool = collections.OrderedDict()
-        for line in fd.readlines():
-            line = line.strip()
-            if line == '':
-                # skip empty lines
-                continue
-            try:
-                hostname, slots = line.split()
-                _, slot_count = slots.split("=")
-                slot_count = int(slot_count)
-            except ValueError as err:
-                logger.error("Hostfile is not formatted correctly, unable to "
-                             "proceed with training.")
-                raise err
-            if hostname in resource_pool:
-                logger.error("Hostfile contains duplicate hosts, unable to "
-                             "proceed with training.")
-                raise ValueError(f"host {hostname} is already defined")
-            resource_pool[hostname] = slot_count
+        hostfile_text = fd.readlines()
+
+    return _parse_hostfile(hostfile_text)
+
+
+def _parse_hostfile(hostfile_lines):
+    # Regex matches one or more non-whitespace characters (\S+) at the start of
+    # the line, followed by one or more whitespace characters (\s+), followed
+    # by the string "slots=", followed by one or more digits (\d+).
+    pattern = r'^(\S+)\s+slots=(\d+)'
+
+    resource_pool = collections.OrderedDict()
+
+    for line in hostfile_lines:
+        line = line.strip()
+        match = re.search(pattern, line)
+        if line.startswith("#") or line == "":
+            # hostfile comment or empty line, ignore
+            continue
+        elif match:
+            host = match.group(1)
+            num_slots = int(match.group(2))
+            if host in resource_pool:
+                logger.error(f"Bad hostfile text: {hostfile_lines}")
+                raise ValueError(
+                    f"Hostfile contains multiple entries for {host}, unable to proceed with launching"
+                )
+            resource_pool[host] = num_slots
+        else:
+            logger.error(f"Bad hostfile text: {hostfile_lines}")
+            raise ValueError(
+                "Hostfile contains a bad entry: {line}, unable to proceed with launching"
+            )
+
+    if len(resource_pool) == 0:
+        logger.error(f"Bad hostfile text: {hostfile_lines}")
+        raise ValueError(
+            "Hostfile is empty or not formatted correctly, unable to proceed with launching."
+        )
 
     return resource_pool
 
@@ -305,13 +356,32 @@ def run_autotuning(args, active_resources):
     tuner.print_tuning_results()
 
     logger.info("[End] Running autotuning")
+    tuner.write_optimal_config()
 
     if args.autotuning == "run":
         tuner.run_after_tuning()
 
 
+def parse_num_nodes(str_num_nodes: str, elastic_training: bool):
+    node_list = str_num_nodes.split(":")
+
+    if len(node_list) == 1:
+        min_nodes, max_nodes = int(node_list[0]), -1
+    elif len(node_list) == 2 and elastic_training:
+        min_nodes, max_nodes = int(node_list[0]), int(node_list[1])
+    elif len(node_list) == 2 and not elastic_training:
+        raise RuntimeError("MIN:MAX format is only supported in elastic training")
+    else:
+        raise RuntimeError("num_nodes {} is not in MIN:MAX format".format(str_num_nodes))
+
+    return min_nodes, max_nodes
+
+
 def main(args=None):
     args = parse_args(args)
+
+    if args.elastic_training:
+        assert args.master_addr != "", "Master Addr is required when elastic training is enabled"
 
     resource_pool = fetch_hostfile(args.hostfile)
 
@@ -336,7 +406,7 @@ def main(args=None):
     multi_node_exec = True
     if not resource_pool:
         resource_pool = {}
-        device_count = torch.cuda.device_count()
+        device_count = get_accelerator().device_count()
         if device_count == 0:
             raise RuntimeError("Unable to proceed, no GPU resources available")
         resource_pool['localhost'] = device_count
@@ -352,7 +422,7 @@ def main(args=None):
     env = os.environ.copy()
 
     # validate that passwordless-ssh is workly properly with this hostfile
-    if multi_node_exec:
+    if multi_node_exec and not args.no_ssh_check:
         first_host = list(active_resources.keys())[0]
         try:
             subprocess.check_call(
@@ -369,8 +439,18 @@ def main(args=None):
         assert multi_node_exec
         first_host = list(active_resources.keys())[0]
         hostname_cmd = [f"ssh {first_host} hostname -I"]
-        result = subprocess.check_output(hostname_cmd, shell=True)
+        try:
+            result = subprocess.check_output(hostname_cmd, shell=True)
+        except subprocess.CalledProcessError as err:
+            logger.error(
+                "Unable to detect suitable master address via `hostname -I`, please manually specify one via --master_addr"
+            )
+            raise err
         args.master_addr = result.decode('utf-8').split()[0]
+        if not args.master_addr:
+            raise RuntimeError(
+                f"Unable to detect suitable master address via `hostname -I`, please manually specify one via --master_addr"
+            )
         logger.info(f"Using IP address of {args.master_addr} for node {first_host}")
 
     if args.autotuning != "":
@@ -390,6 +470,9 @@ def main(args=None):
         for hostname in active_resources.keys():
             updated_active_resources[hostname] = list(range(args.num_gpus))
         active_resources = updated_active_resources
+
+    if args.elastic_training:
+        assert not args.no_local_rank, "--no_local_rank argument is not supported in Elastic training"
 
     # encode world info as base64 to make it easier to pass via command line
     world_info_base64 = encode_world_info(active_resources)
@@ -414,6 +497,13 @@ def main(args=None):
             deepspeed_launch.append("--no_local_rank")
         if args.save_pid:
             deepspeed_launch += ["--save_pid", f"{os.getpid()}"]
+        if args.enable_each_rank_log:
+            deepspeed_launch.append(
+                f"--enable_each_rank_log={args.enable_each_rank_log}")
+        if args.elastic_training:
+            deepspeed_launch.append("--enable_elastic_training")
+            deepspeed_launch.append(f"--max_elastic_nodes={args.max_elastic_nodes}")
+            deepspeed_launch.append(f"--min_elastic_nodes={args.min_elastic_nodes}")
         cmd = deepspeed_launch + [args.user_script] + args.user_args
     else:
         args.launcher = args.launcher.lower()
@@ -421,8 +511,12 @@ def main(args=None):
             runner = PDSHRunner(args, world_info_base64)
         elif args.launcher == OPENMPI_LAUNCHER:
             runner = OpenMPIRunner(args, world_info_base64, resource_pool)
+        elif args.launcher == MPICH_LAUNCHER:
+            runner = MPICHRunner(args, world_info_base64, resource_pool)
         elif args.launcher == MVAPICH_LAUNCHER:
             runner = MVAPICHRunner(args, world_info_base64, resource_pool)
+        elif args.launcher == SLURM_LAUNCHER:
+            runner = SlurmRunner(args, world_info_base64, resource_pool)
         else:
             raise NotImplementedError(f"Unknown launcher {args.launcher}")
 
@@ -448,10 +542,25 @@ def main(args=None):
                         key, val = var.split('=', maxsplit=1)
                         runner.add_export(key, val)
 
-        cmd = runner.get_cmd(env, active_resources)
+        if args.launcher == PDSH_LAUNCHER:
+            cmd, kill_cmd = runner.get_cmd(env, active_resources)
+        else:
+            cmd = runner.get_cmd(env, active_resources)
 
     logger.info(f"cmd = {' '.join(cmd)}")
     result = subprocess.Popen(cmd, env=env)
+
+    def sigkill_handler(signum, frame):
+        result.send_signal(signal.SIGINT)
+        time.sleep(0.1)
+        result.send_signal(signal.SIGTERM)
+        result_kill = subprocess.Popen(kill_cmd, env=env)
+        result_kill.wait()
+        time.sleep(1)
+        sys.exit(1)
+
+    if args.launcher == PDSH_LAUNCHER:
+        signal.signal(signal.SIGINT, sigkill_handler)
 
     result.wait()
 

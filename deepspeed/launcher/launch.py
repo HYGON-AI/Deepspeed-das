@@ -1,6 +1,6 @@
 # Copyright 2020 The Microsoft DeepSpeed Team
 """
-DeepSpeed launcher, this is similar to torch.distributed.launch but supports
+DeepSpeed launcher, this is similar to torch's distributed.launch but supports
 additional features such as arbitrary gpu exclusion.
 
 deepspeed.launcher.launch is intended to be run on a single worker node and
@@ -15,11 +15,15 @@ import json
 import base64
 import time
 import signal
+import psutil
 from collections import defaultdict
+from typing import Dict
 from argparse import ArgumentParser, REMAINDER
-
 from ..constants import TORCH_DISTRIBUTED_DEFAULT_PORT
+from ..nebula.constants import DLTS_POD_ENV_PATH
 from ..utils import logger
+from ..elasticity import is_torch_elastic_compatible
+from .constants import ELASTIC_TRAINING_ID_DEFAULT
 
 PID_FILE_BASEPATH = "/tmp"
 
@@ -64,6 +68,20 @@ def parse_args():
                         help="Skip prepending the training script with "
                         "'python' - just execute it directly.")
 
+    parser.add_argument("--enable_elastic_training",
+                        action="store_true",
+                        help="Enable elastic training support.")
+
+    parser.add_argument("--min_elastic_nodes",
+                        type=int,
+                        default=-1,
+                        help="Min number of nodes in elastic training.")
+
+    parser.add_argument("--max_elastic_nodes",
+                        type=int,
+                        default=-1,
+                        help="Max number of nodes in elastic training.")
+
     parser.add_argument("--no_local_rank",
                         action="store_true",
                         help="Do not pass local_rank as an argument when calling "
@@ -73,6 +91,12 @@ def parse_args():
                         type=int,
                         default=0,
                         help="main launching process pid, for internal pid tracking")
+
+    parser.add_argument(
+        "--enable_each_rank_log",
+        default="None",
+        type=str,
+        help="redirect the stdout and stderr from each rank into different log files")
 
     # positional
     parser.add_argument("training_script",
@@ -85,6 +109,21 @@ def parse_args():
     # rest from the training program
     parser.add_argument('training_script_args', nargs=REMAINDER)
     return parser.parse_args()
+
+
+# Adapted from https://psutil.readthedocs.io/en/latest/#kill-process-tree
+def terminate_process_tree(pid):
+    process = psutil.Process(pid)
+    children = process.children(recursive=True)
+    children.append(process)
+    for child in children:
+        try:
+            child.terminate()
+        except psutil.NoSuchProcess:
+            pass
+    gone, alive = psutil.wait_procs(children, timeout=30)
+    for p in alive:
+        p.kill()
 
 
 def main():
@@ -143,15 +182,93 @@ def main():
         with open(pid_file, 'w') as fd:
             fd.write(f"{launcher_pid}")
 
+    if not is_torch_elastic_compatible():
+        if args.enable_elastic_training:
+            logger.info(f"Disabling elastic training support as \
+                    PyTorch version should be greater than 1.11.x")
+            args.enable_elastic_training = False
+
+    if os.path.exists(DLTS_POD_ENV_PATH):
+        with open(DLTS_POD_ENV_PATH) as file:
+            lines = file.readlines()
+            lines = [line.rstrip() for line in lines]
+            for line in lines:
+                if line.startswith('export FC_TASKROLE_NAME') or line.startswith(
+                        'export FC_TASK_INDEX'):
+                    key_val = line.split()[1]
+                    key, val = key_val.split('=')
+                    current_env[key] = val
+
     processes = []
     cmd = []
-    for local_rank in range(0, num_local_procs):
-        # each process's rank
-        dist_rank = global_rank_mapping[local_node][local_rank]
-        current_env["RANK"] = str(dist_rank)
-        current_env["LOCAL_RANK"] = str(local_rank)
 
-        # spawn the processes
+    if not args.enable_elastic_training:
+        if args.enable_each_rank_log != "None":
+            # prepare the log path and the file name prefix
+            if os.path.isfile(args.enable_each_rank_log):
+                raise ValueError(
+                    f"{args.enable_each_rank_log} should not be a file, it should be a directory."
+                )
+            if not os.path.exists(args.enable_each_rank_log):
+                try:
+                    os.makedirs(args.enable_each_rank_log)
+                except Exception as e:
+                    print(e)
+                    raise ValueError(
+                        f"unable to create directory {args.enable_each_rank_log} for each rank log."
+                    )
+            log_name_prefix = time.strftime("%Y%m%d%H%M%S", time.localtime())
+
+        for local_rank in range(0, num_local_procs):
+            # each process's rank
+            dist_rank = global_rank_mapping[local_node][local_rank]
+            current_env["RANK"] = str(dist_rank)
+            current_env["LOCAL_RANK"] = str(local_rank)
+
+            # spawn the processes
+            cmd = []
+            if not args.no_python:
+                cmd = [sys.executable, "-u"]
+                if args.module:
+                    cmd.append("-m")
+            else:
+                if args.module:
+                    raise ValueError("Don't use both the '--no_python' flag"
+                                     " and the '--module' flag at the same time.")
+            cmd.append(args.training_script)
+            # A user may not want to pass local_rank as a keyword arg so we make this optional.
+            if not args.no_local_rank:
+                cmd.append(f"--local_rank={local_rank}")
+            cmd += args.training_script_args
+
+            if args.enable_each_rank_log != "None":
+                log_file = os.path.join(args.enable_each_rank_log,
+                                        f"{log_name_prefix}_rank{dist_rank}.log")
+                log_fd = open(log_file, 'w')
+                process = subprocess.Popen(cmd,
+                                           env=current_env,
+                                           stdout=log_fd,
+                                           stderr=log_fd)
+            else:
+                process = subprocess.Popen(cmd, env=current_env)
+
+            processes.append(process)
+    else:
+        from ..elasticity import DSElasticAgent
+        from torch.distributed.elastic.rendezvous import RendezvousParameters
+        from torch.distributed.elastic.agent.server.api import WorkerSpec
+        import torch.distributed.elastic.rendezvous.registry as rdzv_registry
+        from torch.distributed.elastic.multiprocessing import Std
+
+        if args.min_elastic_nodes == -1:
+            args.min_elastic_nodes = 1
+        if args.max_elastic_nodes == -1:
+            args.max_elastic_nodes = args.nnodes
+        assert args.max_elastic_nodes > 0 and  args.min_elastic_nodes > 0 , "Max and Min nodes should be positive"
+
+        current_env["NCCL_ASYNC_ERROR_HANDLING"] = str(1)
+
+        # Get config and arguments
         cmd = []
         if not args.no_python:
             cmd = [sys.executable, "-u"]
@@ -162,13 +279,36 @@ def main():
                 raise ValueError("Don't use both the '--no_python' flag"
                                  " and the '--module' flag at the same time.")
         cmd.append(args.training_script)
-        # A user may not want to pass local_rank as a keyword arg so we make this optional.
-        if not args.no_local_rank:
-            cmd.append(f"--local_rank={local_rank}")
         cmd += args.training_script_args
+        cmd_args = cmd[1:]
 
-        process = subprocess.Popen(cmd, env=current_env)
-        processes.append(process)
+        rdzv_configs: Dict[str, str] = {'timeout': 100}
+        run_id = os.environ.get("ELASTIC_RUN_ID", ELASTIC_TRAINING_ID_DEFAULT)
+
+        # Creating config for rendezvous class
+        rdzv_parameters = RendezvousParameters(backend='c10d',
+                                               endpoint=args.master_addr + ":" +
+                                               str(args.master_port),
+                                               run_id=run_id,
+                                               min_nodes=args.min_elastic_nodes,
+                                               max_nodes=args.max_elastic_nodes,
+                                               **rdzv_configs)
+
+        spec = WorkerSpec(
+            role='trainer',
+            local_world_size=num_local_procs,
+            entrypoint=cmd[0],
+            args=cmd[1:],
+            rdzv_handler=rdzv_registry.get_rendezvous_handler(rdzv_parameters),
+            max_restarts=100,
+            monitor_interval=5,
+            redirects=Std.from_str("0"),
+            tee=Std.from_str("0"),
+            master_addr=None,
+            master_port=None,
+        )
+        agent = DSElasticAgent(spec, current_env)
+        agent.run()
 
     sig_names = {2: "SIGINT", 15: "SIGTERM"}
     last_return_code = None
@@ -177,7 +317,7 @@ def main():
         for process in processes:
             logger.info(f"Killing subprocess {process.pid}")
             try:
-                process.kill()
+                terminate_process_tree(process.pid)
             except Exception:
                 pass
         if last_return_code is not None:

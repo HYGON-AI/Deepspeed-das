@@ -1,8 +1,8 @@
+'''Copyright The Microsoft DeepSpeed Team'''
+
 import logging
 import sys
 import os
-
-import torch.distributed as dist
 
 log_levels = {
     "debug": logging.DEBUG,
@@ -46,7 +46,15 @@ class LoggerFactory:
 logger = LoggerFactory.create_logger(name="DeepSpeed", level=logging.INFO)
 
 
+def print_configuration(args, name):
+    logger.info("{}:".format(name))
+    for arg in sorted(vars(args)):
+        dots = "." * (29 - len(arg))
+        logger.info("  {} {} {}".format(arg, dots, getattr(args, arg)))
+
+
 def log_dist(message, ranks=None, level=logging.INFO):
+    from deepspeed import comm as dist
     """Log message when one of following condition meets
 
     + not dist.is_initialized()
@@ -70,6 +78,7 @@ def log_dist(message, ranks=None, level=logging.INFO):
 
 
 def print_json_dist(message, ranks=None, path=None):
+    from deepspeed import comm as dist
     """Print message when one of following condition meets
 
     + not dist.is_initialized()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+'''Copyright The Microsoft DeepSpeed Team'''
 
 # This script extracts fp32 consolidated weights from a zero 2 and 3 DeepSpeed checkpoints. It gets
 # copied into the top level checkpoint dir, so the user can easily do the conversion at any point in
@@ -17,11 +18,9 @@ from collections import OrderedDict
 
 # while this script doesn't use deepspeed to recover data, since the checkpoints are pickled with
 # DeepSpeed data structures it has to be available in the current python environment.
-import deepspeed
 from deepspeed.utils import logger
 from deepspeed.checkpoint.constants import (DS_VERSION,
                                             OPTIMIZER_STATE_DICT,
-                                            PARAM_SHAPES,
                                             SINGLE_PARTITION_OF_FP32_GROUPS,
                                             FP32_FLAT_GROUPS,
                                             ZERO_STAGE,

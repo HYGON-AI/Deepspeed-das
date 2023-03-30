@@ -1,23 +1,20 @@
+'''Copyright The Microsoft DeepSpeed Team'''
+
 import copy
-from re import I
 
 from numpy import BUFSIZE
-from deepspeed.env_report import SUCCESS
-from enum import Flag
 import json
-import os
 import subprocess
 import sys
 import threading
 import time
-from pathlib import Path
-from typing import List
+import base64
 
+import os
 import hjson
 from tqdm import tqdm
 
 from ..utils import logger
-from .constants import *
 from .constants import AUTOTUNING, AUTOTUNING_METRIC_PATH
 from .utils import get_val_by_key, search_error, was_interruptted
 """
@@ -25,9 +22,7 @@ thread-0: loop over experiment queue dispatching experiments if they become avai
 thread-N: start each experiment in its own thread
 """
 
-import torch.distributed as dist
-
-from datetime import datetime
+from deepspeed import comm as dist
 
 TIMEOUT = 5
 
@@ -188,7 +183,6 @@ class ResourceManager:
                 logger.debug(f'Put exp_id = {exp["exp_id"]} back into the queue')
                 self.experiment_check(pbar)
             else:
-
                 desc = ""
                 for reservation in reservations:
                     reservation.slots.sort()
@@ -344,19 +338,27 @@ def run_experiment(exp: dict, reservations, user_script, user_args):
     exp["job_id"] = get_job_id()
     exp_dir = exp["result_dir"]
     os.makedirs(exp_dir, exist_ok=True)
-
-    exp["ds_config_path"] = os.path.join(exp_dir, "ds_config.json")
+    ds_config_path = os.path.join(exp_dir, "ds_config.json")
+    exp["ds_config_path"] = ds_config_path
 
     ds_config = copy.deepcopy(exp["ds_config"])
+    ds_config_json = json.dumps(ds_config).encode('utf-8')
+
+    exp["ds_config_base64"] = base64.urlsafe_b64encode(ds_config_json).decode('utf-8')
 
     with open(exp["ds_config_path"], "w", buffering=BUFSIZE) as fd:
         json.dump(ds_config, fd)
         fd.flush()
         os.fsync(fd)
+        path = exp["ds_config_path"]
+        logger.info(f"Scheduler wrote ds_config to {path}, {os.path.abspath(path)}")
+
     with open(os.path.join(exp_dir, "exp.json"), "w", buffering=BUFSIZE) as fd:
         json.dump(exp, fd)
         fd.flush()
         os.fsync(fd)
+        path = os.path.join(exp_dir, "exp.json")
+        logger.info(f"Scheduler wrote exp to {path}, {os.path.abspath(path)}")
 
     # remove "--deepspeed_config ds_config.json" from user_args
     if user_args:
@@ -365,9 +367,10 @@ def run_experiment(exp: dict, reservations, user_script, user_args):
         # "--deepspeed_config" is omitted in HF
         elif "--deepspeed" in user_args:
             idx = user_args.index("--deepspeed")
-        assert idx < len(user_args) and ".json" in user_args[idx +
-                                                             1], "there is no ds_config file specified after --deepspeed_config or --deepspeed"
-        user_args[idx + 1] = exp["ds_config_path"]
+        assert idx < len(user_args), "there is no ds_config file specified after --deepspeed_config or --deepspeed"
+        # user_args[idx + 1] = exp["ds_config_path"]
+        # pass base64 serialized ds_config to launcher
+        user_args[idx + 1] = exp["ds_config_base64"]
 
     exp["user_script"] = user_script
     exp["user_args"] = user_args
@@ -382,7 +385,9 @@ def run_experiment(exp: dict, reservations, user_script, user_args):
         fd.flush()
         os.fsync(fd)
 
-    logger.info(f"Launching exp_id = {exp['exp_id']}, exp_name = {exp['name']}")
+    logger.info(
+        f"Launching exp_id = {exp['exp_id']}, exp_name = {exp['name']}, with resource = {include_str}, and ds_config = {os.path.abspath(ds_config_path)}"
+    )
 
     with open(os.path.join(exp_dir, "stdout.log"), "wb") as out, open(
         os.path.join(exp_dir, "stderr.log"), "wb"
@@ -396,7 +401,9 @@ def run_experiment(exp: dict, reservations, user_script, user_args):
 
     clean_up(exp, reservations)
 
-    logger.info(f"Done running exp_id = {exp['exp_id']}, exp_name = {exp['name']}")
+    logger.info(
+        f"Done running exp_id = {exp['exp_id']}, exp_name = {exp['name']}, with resource = {include_str}"
+    )
 
 
 PDSH_MAX_FAN_OUT = 1024

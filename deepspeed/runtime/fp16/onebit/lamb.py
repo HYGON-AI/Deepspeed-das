@@ -4,8 +4,9 @@ Copyright 2021 The Microsoft DeepSpeed Team
 import types
 import torch
 import numpy as np
-import torch.distributed as dist
+from deepspeed import comm as dist
 from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
+from deepspeed.accelerator import get_accelerator
 
 
 class OnebitLamb(torch.optim.Optimizer):
@@ -46,9 +47,9 @@ class OnebitLamb(torch.optim.Optimizer):
             coefficient during compression stage (default: 0.5)
         factor_threshold (float, optional): threshold of how much the scaling factor can
             fluctuate between steps (default: 0.1)
-    .. _Large Batch Optimization for Deep Learning\: Training BERT in 76 minutes:
+    .. _Large Batch Optimization for Deep Learning\\: Training BERT in 76 minutes:
         https://arxiv.org/abs/1904.00962
-    .. _Adam\: A Method for Stochastic Optimization:
+    .. _Adam\\: A Method for Stochastic Optimization:
         https://arxiv.org/abs/1412.6980
     .. _On the Convergence of Adam and Beyond:
         https://openreview.net/forum?id=ryQu7f-RZ
@@ -283,7 +284,7 @@ class OnebitLamb(torch.optim.Optimizer):
                 p.data = q.data
 
         if self.initialize and len(self.worker_errors) == 0:
-            torch.cuda.empty_cache()
+            get_accelerator().empty_cache()
             for i in range(len(self.exp_avg_flat)):
                 self.worker_errors.append(
                     torch.zeros(self.corrected_tensor_sizes[i],
@@ -291,21 +292,21 @@ class OnebitLamb(torch.optim.Optimizer):
                 self.server_errors.append(
                     torch.zeros(self.server_chunk_sizes[i],
                                 device=self.exp_avg_flat[i].device))
-            torch.cuda.empty_cache()
+            get_accelerator().empty_cache()
 
         if self.lamb_freeze_key:
             if self.size > 1:
                 for i in range(len(self.exp_avg_flat)):
                     if not self.initialize:
-                        torch.cuda.empty_cache()
+                        get_accelerator().empty_cache()
                         self.worker_errors.append(
                             torch.zeros(self.corrected_tensor_sizes[i],
                                         device=self.exp_avg_flat[i].device))
                         self.server_errors.append(
                             torch.zeros(self.server_chunk_sizes[i],
                                         device=self.exp_avg_flat[i].device))
-                        torch.cuda.empty_cache()
-                        if torch.distributed.get_rank() == 0:
+                        get_accelerator().empty_cache()
+                        if dist.get_rank() == 0:
                             print("Cupy Buffers Initialized Successfully.")
 
                         self.comm_backend_handle.compressed_allreduce(
@@ -314,7 +315,7 @@ class OnebitLamb(torch.optim.Optimizer):
                             self.server_errors[0],
                             self.deepspeed.local_rank)
 
-                        if torch.distributed.get_rank() == 0:
+                        if dist.get_rank() == 0:
                             print('Pop out errors', flush=True)
                         del self.worker_errors[:]
                         del self.server_errors[:]
@@ -389,9 +390,7 @@ class OnebitLamb(torch.optim.Optimizer):
         if not self.initialize:
             self.lamb_freeze_key = False
             self.initialize = True
-            print(
-                f"Finished the initialization step at rank {torch.distributed.get_rank()}"
-            )
+            print(f"Finished the initialization step at rank {dist.get_rank()}")
             return loss
 
         if self.lamb_freeze_key is False:
@@ -427,7 +426,7 @@ class OnebitLamb(torch.optim.Optimizer):
         del self.corrected_tensor_sizes[:]
         del self.server_chunk_sizes[:]
         if self.state[self.param_groups[0]['params'][0]]['step'] < self.freeze_step:
-            if torch.distributed.get_rank() == 0:
+            if dist.get_rank() == 0:
                 print("Checkpoint loaded and OnebitLamb warmup stage starts/continues.")
             if self.lamb_freeze_key is True:
                 self.lamb_freeze_key = False
@@ -442,7 +441,7 @@ class OnebitLamb(torch.optim.Optimizer):
                     if 'scaling_coeff' in self.state[p]:
                         self.state[p].pop('scaling_coeff')
         else:
-            if torch.distributed.get_rank() == 0:
+            if dist.get_rank() == 0:
                 print(
                     "Checkpoint loaded and OnebitLamb compression stage starts/continues."
                 )

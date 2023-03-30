@@ -113,7 +113,6 @@ BertTransformerLayer<T>::BertTransformerLayer(unsigned layer_id,
                                                         _seq_length,
                                                         _hidden_size / _heads,
                                                         //(T(1.0) / T(sqrt(_hidden_size / _heads))),
-                                                        //aiss debug 0506
                                                         (T(1.0 / (sqrt(_hidden_size / _heads)))),
                                                         T(0.0),
                                                         CUBLAS_OP_T,

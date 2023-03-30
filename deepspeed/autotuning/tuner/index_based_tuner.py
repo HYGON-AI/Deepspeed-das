@@ -1,6 +1,6 @@
-import random
+'''Copyright The Microsoft DeepSpeed Team'''
 
-from deepspeed.utils import logger
+import random
 
 from .base_tuner import BaseTuner
 

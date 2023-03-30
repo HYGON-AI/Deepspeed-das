@@ -1,3 +1,4 @@
+'''Copyright The Microsoft DeepSpeed Team'''
 """
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
@@ -7,7 +8,9 @@ from typing import Union
 
 import torch
 import json
+import hjson
 import copy
+import base64
 
 from .constants import *
 from .fp16.loss_scaler import (
@@ -21,9 +24,12 @@ from .config_utils import (
     dict_raise_error_on_duplicate_keys,
     ScientificNotationEncoder,
 )
-from .zero.config import DeepSpeedZeroConfig
-from .zero.constants import *
+from .zero.config import get_zero_config, ZeroStageEnum
 from .activation_checkpointing.config import DeepSpeedActivationCheckpointingConfig
+from ..comm.config import DeepSpeedCommsConfig
+from ..monitor.config import get_monitor_config
+
+from deepspeed import comm as dist
 
 from ..git_version_info import version as __version__
 from ..utils import logger
@@ -38,12 +44,22 @@ from ..elasticity.constants import (
     ELASTICITY,
     IGNORE_NON_ELASTIC_BATCH_INFO,
     IGNORE_NON_ELASTIC_BATCH_INFO_DEFAULT,
+    MODEL_PARLLEL_SIZE,
+    MODEL_PARLLEL_SIZE_DEFAULT,
+    NUM_GPUS_PER_NODE,
+    NUM_GPUS_PER_NODE_DEFAULT,
 )
 
 from ..profiling.config import DeepSpeedFlopsProfilerConfig
 from ..autotuning.config import DeepSpeedAutotuningConfig
+from ..nebula.config import DeepSpeedNebulaConfig
 
+from ..compression.config import get_compression_config, get_quantize_enabled
+from ..compression.constants import *
 from .swap_tensor.aio_config import get_aio_config
+
+from .data_pipeline.config import get_data_efficiency_enabled, get_data_efficiency_config, get_curriculum_enabled_legacy, get_curriculum_params_legacy
+from .data_pipeline.constants import *
 
 TENSOR_CORE_ALIGN_SIZE = 8
 
@@ -74,24 +90,6 @@ ADAM_W_MODE_DEFAULT = True
 
 class DeepSpeedConfigError(Exception):
     pass
-
-
-def get_curriculum_enabled(param_dict):
-    if CURRICULUM_LEARNING in param_dict.keys():
-        return get_scalar_param(param_dict[CURRICULUM_LEARNING],
-                                CURRICULUM_ENABLED,
-                                CURRICULUM_ENABLED_DEFAULT)
-    else:
-        return False
-
-
-def get_curriculum_params(param_dict):
-    if CURRICULUM_LEARNING in param_dict.keys():
-        curriculum_params = copy.copy(param_dict[CURRICULUM_LEARNING])
-        curriculum_params.pop(CURRICULUM_ENABLED)
-        return curriculum_params
-    else:
-        return False
 
 
 def get_pld_enabled(param_dict):
@@ -151,6 +149,11 @@ def get_fp16_master_weights_and_grads_enabled(param_dict):
                                 FP16_MASTER_WEIGHTS_AND_GRADS_DEFAULT)
     else:
         return False
+
+
+def get_fp16_auto_cast(param_dict):
+    if get_fp16_enabled(param_dict):
+        return get_scalar_param(param_dict[FP16], FP16_AUTO_CAST, FP16_AUTO_CAST_DEFAULT)
 
 
 def get_loss_scale(param_dict):
@@ -220,18 +223,6 @@ def get_sparse_gradients_enabled(param_dict):
     return get_scalar_param(param_dict, SPARSE_GRADIENTS, SPARSE_GRADIENTS_DEFAULT)
 
 
-def get_zero_optimization(param_dict):
-    return get_scalar_param(param_dict, ZERO_OPTIMIZATION, ZERO_OPTIMIZATION_DEFAULT)
-
-
-def get_zero_reduce_scatter(param_dict):
-    return get_scalar_param(
-        param_dict,
-        ZERO_OPTIMIZATION_REDUCE_SCATTER,
-        ZERO_OPTIMIZATION_REDUCE_SCATTER_DEFAULT,
-    )
-
-
 def get_communication_data_type(param_dict):
     val = get_scalar_param(param_dict,
                            COMMUNICATION_DATA_TYPE,
@@ -259,73 +250,6 @@ def get_gradient_predivide_factor(param_dict):
     return get_scalar_param(param_dict,
                             GRADIENT_PREDIVIDE_FACTOR,
                             GRADIENT_PREDIVIDE_FACTOR_DEFAULT)
-
-
-def get_quantize_enabled(param_dict):
-    if QUANTIZE_TRAINING in param_dict.keys():
-        return get_scalar_param(
-            param_dict[QUANTIZE_TRAINING],
-            QUANTIZE_TRAINING_ENABLED,
-            QUANTIZE_TRAINING_ENABLED_DEFAULT,
-        )
-    else:
-        return False
-
-
-def get_quantize_training(param_dict):
-    if QUANTIZE_TRAINING in param_dict.keys():
-        return (
-            (param_dict[QUANTIZE_TRAINING][QUANTIZE_BITS][TARGET_BITS]),
-            (param_dict[QUANTIZE_TRAINING][QUANTIZE_BITS][START_BITS]
-             if START_BITS in param_dict[QUANTIZE_TRAINING][QUANTIZE_BITS].keys() else
-             QUANTIZE_START_BITS_DEFAULT),
-            (param_dict[QUANTIZE_TRAINING][QUANTIZE_SCHEDULE][QUANTIZE_PERIOD]
-             if QUANTIZE_SCHEDULE in param_dict[QUANTIZE_TRAINING].keys() else
-             QUANTIZE_PERIOD_DEFAULT),
-            (param_dict[QUANTIZE_TRAINING][QUANTIZE_SCHEDULE][SCHEDULE_OFFSET]
-             if QUANTIZE_SCHEDULE in param_dict[QUANTIZE_TRAINING].keys() and
-             SCHEDULE_OFFSET in param_dict[QUANTIZE_TRAINING][QUANTIZE_SCHEDULE].keys()
-             else QUANTIZE_OFFSET_DEFAULT),
-            (param_dict[QUANTIZE_TRAINING][QUANTIZE_GROUPS] if QUANTIZE_GROUPS
-             in param_dict[QUANTIZE_TRAINING].keys() else QUANTIZE_GROUPS_DEFAULT),
-            (param_dict[QUANTIZE_TRAINING][FP16_MIXED_QUANTIZE]
-             [FP16_MIXED_QUANTIZE_ENABLED]
-             if FP16_MIXED_QUANTIZE in param_dict[QUANTIZE_TRAINING].keys()
-             and FP16_MIXED_QUANTIZE_ENABLED
-             in param_dict[QUANTIZE_TRAINING][FP16_MIXED_QUANTIZE].keys() else
-             FP16_MIXED_QUANTIZE_ENABLED_DEFAULT),
-            (param_dict[QUANTIZE_TRAINING][FP16_MIXED_QUANTIZE][QUANTIZE_CHANGE_RATIO]
-             if FP16_MIXED_QUANTIZE in param_dict[QUANTIZE_TRAINING].keys()
-             and QUANTIZE_CHANGE_RATIO
-             in param_dict[QUANTIZE_TRAINING][FP16_MIXED_QUANTIZE].keys() else
-             QUANTIZE_CHANGE_RATIO_DEFAULT),
-            (1 if QUANTIZE_ALGO in param_dict[QUANTIZE_TRAINING]
-             and QUANTIZE_TYPE in param_dict[QUANTIZE_TRAINING][QUANTIZE_ALGO].keys()
-             and param_dict[QUANTIZE_TRAINING][QUANTIZE_ALGO][QUANTIZE_TYPE]
-             == QUANTIZE_ASYMMETRIC else QUANTIZE_TYPE_DEFAULT),
-            (1 if QUANTIZE_ALGO in param_dict[QUANTIZE_TRAINING] and QUANTIZE_ROUNDING
-             in param_dict[QUANTIZE_TRAINING][QUANTIZE_ALGO].keys()
-             and param_dict[QUANTIZE_TRAINING][QUANTIZE_ALGO][QUANTIZE_ROUNDING]
-             == STOCHASTIC_ROUNDING else QUANTIZE_ROUNDING_DEFAULT),
-            (param_dict[QUANTIZE_TRAINING][QUANTIZE_VERBOSE] if QUANTIZE_VERBOSE
-             in param_dict[QUANTIZE_TRAINING].keys() else QUANTIZE_VERBOSE_DEFAULT),
-            (param_dict[QUANTIZE_TRAINING][QUANTIZER_KERNEL] if QUANTIZER_KERNEL
-             in param_dict[QUANTIZE_TRAINING].keys() else QUANTIZER_KERNEL_DEFAULT),
-        )
-    else:
-        return (
-            QUANTIZE_TARGET_BITS_DEFAULT,
-            QUANTIZE_START_BITS_DEFAULT,
-            QUANTIZE_PERIOD_DEFAULT,
-            QUANTIZE_OFFSET_DEFAULT,
-            QUANTIZE_GROUPS_DEFAULT,
-            FP16_MIXED_QUANTIZE_ENABLED_DEFAULT,
-            QUANTIZE_CHANGE_RATIO_DEFAULT,
-            QUANTIZE_TYPE_DEFAULT,
-            QUANTIZE_ROUNDING_DEFAULT,
-            QUANTIZE_VERBOSE_DEFAULT,
-            QUANTIZER_KERNEL_DEFAULT,
-        )
 
 
 def get_steps_per_print(param_dict):
@@ -615,18 +539,10 @@ def get_memory_breakdown(param_dict):
     return get_scalar_param(param_dict, MEMORY_BREAKDOWN, MEMORY_BREAKDOWN_DEFAULT)
 
 
-def get_tensorboard_enabled(param_dict):
-    if TENSORBOARD in param_dict.keys():
-        return get_scalar_param(param_dict[TENSORBOARD],
-                                TENSORBOARD_ENABLED,
-                                TENSORBOARD_ENABLED_DEFAULT)
-    else:
-        return False
-
-
 def get_eigenvalue_config(param_dict):
     if get_quantize_enabled(param_dict):
         param_dict = param_dict[QUANTIZE_TRAINING]
+        assert not get_eigenvalue_enabled(param_dict), "Eigenvalue based MoQ is temporarily disabled"
         return (
             get_eigenvalue_enabled(param_dict),
             get_eigenvalue_verbose(param_dict),
@@ -724,28 +640,12 @@ def get_eigenvalue_layer_num(param_dict):
         return EIGENVALUE_LAYER_NUM_DEFAULT
 
 
-def get_tensorboard_output_path(param_dict):
-    if get_tensorboard_enabled(param_dict):
-        return get_scalar_param(
-            param_dict[TENSORBOARD],
-            TENSORBOARD_OUTPUT_PATH,
-            TENSORBOARD_OUTPUT_PATH_DEFAULT,
-        )
-    else:
-        return TENSORBOARD_OUTPUT_PATH_DEFAULT
-
-
-def get_tensorboard_job_name(param_dict):
-    if get_tensorboard_enabled(param_dict):
-        return get_scalar_param(param_dict[TENSORBOARD],
-                                TENSORBOARD_JOB_NAME,
-                                TENSORBOARD_JOB_NAME_DEFAULT)
-    else:
-        return TENSORBOARD_JOB_NAME_DEFAULT
-
-
 def get_checkpoint_params(param_dict):
     return param_dict.get(CHECKPOINT, {})
+
+
+def get_data_types_params(param_dict):
+    return param_dict.get(DATA_TYPES, {})
 
 
 def get_checkpoint_tag_validation_mode(checkpoint_params):
@@ -759,6 +659,19 @@ def get_checkpoint_tag_validation_mode(checkpoint_params):
             "Checkpoint config contains invalid tag_validation "
             f"value of {tag_validation_mode}, expecting one of {CHECKPOINT_TAG_VALIDATION_MODES}"
         )
+
+
+def get_checkpoint_parallel_write_pipeline(checkpoint_params):
+    par_write_params = checkpoint_params.get(CHECKPOINT_PARALLEL_WRITE, {})
+    par_write_pipeline = par_write_params.get(
+        CHECKPOINT_PARALLEL_WRITE_PIPELINE_STAGE,
+        CHECKPOINT_PARALLEL_WRITE_PIPELINE_STAGE_DEFAULT)
+    if par_write_pipeline in [True, False]:
+        return par_write_pipeline
+    else:
+        raise DeepSpeedConfigError(
+            "checkpoint::parallel_write::pipeline_stage "
+            f"value of '{par_write_pipeline}' is invalid, expecting: true or false")
 
 
 def get_dataloader_drop_last(param_dict):
@@ -794,18 +707,22 @@ class DeepSpeedConfig(object):
         if isinstance(config, dict):
             self._param_dict = config
         elif os.path.exists(config):
-            self._param_dict = json.load(
+            self._param_dict = hjson.load(
                 open(config,
                      "r"),
                 object_pairs_hook=dict_raise_error_on_duplicate_keys)
         else:
-            raise ValueError(
-                f"Expected a string path to an existing deepspeed config, or a dictionary. Received: {config}"
-            )
+            try:
+                config_decoded = base64.urlsafe_b64decode(config).decode('utf-8')
+                self._param_dict = hjson.loads(config_decoded)
+            except (UnicodeDecodeError, AttributeError):
+                raise ValueError(
+                    f"Expected a string path to an existing deepspeed config, or a dictionary or a valid base64. Received: {config}"
+                )
         try:
-            self.global_rank = torch.distributed.get_rank()
+            self.global_rank = dist.get_rank()
             if mpu is None:
-                self.world_size = torch.distributed.get_world_size()
+                self.world_size = dist.get_world_size()
             else:
                 self.world_size = mpu.get_data_parallel_world_size()
         except:
@@ -826,6 +743,21 @@ class DeepSpeedConfig(object):
 
             # Ensure the resource scheduler saw the same elastic config we are using at runtime
             ensure_immutable_elastic_config(runtime_elastic_config_dict=elastic_dict)
+
+            self.elastic_model_parallel_size = elastic_dict.get(
+                MODEL_PARLLEL_SIZE,
+                MODEL_PARLLEL_SIZE_DEFAULT)
+            if self.elastic_model_parallel_size < 1:
+                raise ElasticityConfigError(
+                    "Model-Parallel size cannot be less than 1, "
+                    f"given model-parallel size: {self.elastic_model_parallel_size}")
+
+            self.num_gpus_per_node = elastic_dict.get(NUM_GPUS_PER_NODE,
+                                                      NUM_GPUS_PER_NODE_DEFAULT)
+            if self.num_gpus_per_node < 1:
+                raise ElasticityConfigError(
+                    "NUmber of GPUs per node cannot be less than 1, "
+                    f"given number of GPUs per node: {self.num_gpus_per_node}")
 
             ignore_non_elastic_batch_info = elastic_dict.get(
                 IGNORE_NON_ELASTIC_BATCH_INFO,
@@ -871,7 +803,8 @@ class DeepSpeedConfig(object):
             self._param_dict[TRAIN_MICRO_BATCH_SIZE_PER_GPU] = micro_batch_size
             self._param_dict[GRADIENT_ACCUMULATION_STEPS] = gradient_accu_steps
 
-        self._initialize_params(self._param_dict)
+        # Pass a copy so that user json is unmodified, e.g. for logging
+        self._initialize_params(copy.copy(self._param_dict))
         self._configure_train_batch_size()
         self._do_sanity_check()
 
@@ -890,15 +823,19 @@ class DeepSpeedConfig(object):
         self.gradient_predivide_factor = get_gradient_predivide_factor(param_dict)
         self.sparse_gradients_enabled = get_sparse_gradients_enabled(param_dict)
 
-        self.zero_config = DeepSpeedZeroConfig(param_dict)
+        self.zero_config = get_zero_config(param_dict)
         self.zero_optimization_stage = self.zero_config.stage
         self.zero_enabled = self.zero_optimization_stage > 0
 
         self.activation_checkpointing_config = DeepSpeedActivationCheckpointingConfig(
             param_dict)
 
+        self.comms_config = DeepSpeedCommsConfig(param_dict)
+        self.monitor_config = get_monitor_config(param_dict)
+
         self.gradient_clipping = get_gradient_clipping(param_dict)
         self.fp16_enabled = get_fp16_enabled(param_dict)
+        self.fp16_auto_cast = get_fp16_auto_cast(param_dict)
         self.bfloat16_enabled = get_bfloat16_enabled(param_dict)
         assert not (self.fp16_enabled and self.bfloat16_enabled), 'bfloat16 and fp16 modes cannot be simultaneously enabled'
         self.fp16_master_weights_and_gradients = get_fp16_master_weights_and_grads_enabled(
@@ -909,20 +846,7 @@ class DeepSpeedConfig(object):
         self.initial_dynamic_scale = get_initial_dynamic_scale(param_dict)
         self.dynamic_loss_scale_args = get_dynamic_loss_scale_args(param_dict)
 
-        self.quantize_training_enabled = get_quantize_enabled(param_dict)
-        (
-            self.quantize_target_bits,
-            self.quantize_start_bits,
-            self.quantize_period,
-            self.quantize_offset,
-            self.quantize_groups,
-            self.fp16_mixed_quantize,
-            self.quantize_change_rate,
-            self.quantize_type,
-            self.quantize_rounding,
-            self.quantize_verbose,
-            self.use_quantizer_kernel,
-        ) = get_quantize_training(param_dict)
+        self.compression_config = get_compression_config(param_dict)
 
         self.optimizer_name = get_optimizer_name(param_dict)
         if (self.optimizer_name is not None
@@ -943,9 +867,6 @@ class DeepSpeedConfig(object):
                                      | self.flops_profiler_config.enabled)
         self.memory_breakdown = get_memory_breakdown(param_dict)
         self.autotuning_config = DeepSpeedAutotuningConfig(param_dict)
-        self.tensorboard_enabled = get_tensorboard_enabled(param_dict)
-        self.tensorboard_output_path = get_tensorboard_output_path(param_dict)
-        self.tensorboard_job_name = get_tensorboard_job_name(param_dict)
 
         (
             self.eigenvalue_enabled,
@@ -964,18 +885,37 @@ class DeepSpeedConfig(object):
         self.pld_enabled = get_pld_enabled(param_dict)
         self.pld_params = get_pld_params(param_dict)
 
-        self.curriculum_enabled = get_curriculum_enabled(param_dict)
-        self.curriculum_params = get_curriculum_params(param_dict)
+        self.curriculum_enabled_legacy = get_curriculum_enabled_legacy(param_dict)
+        self.curriculum_params_legacy = get_curriculum_params_legacy(param_dict)
+
+        self.data_efficiency_enabled = get_data_efficiency_enabled(param_dict)
+        self.data_efficiency_config = get_data_efficiency_config(param_dict)
 
         checkpoint_params = get_checkpoint_params(param_dict)
         validation_mode = get_checkpoint_tag_validation_mode(checkpoint_params)
         self.checkpoint_tag_validation_enabled = (validation_mode !=
                                                   ValidationMode.IGNORE)
         self.checkpoint_tag_validation_fail = validation_mode == ValidationMode.FAIL
+        self.load_universal_checkpoint = checkpoint_params.get(
+            LOAD_UNIVERSAL_CHECKPOINT,
+            LOAD_UNIVERSAL_CHECKPOINT_DEFAULT)
+
+        self.use_node_local_storage = checkpoint_params.get(
+            USE_NODE_LOCAL_STORAGE_CHECKPOINT,
+            USE_NODE_LOCAL_STORAGE_CHECKPOINT_DEFAULT)
+
+        data_types_params = get_data_types_params(param_dict)
+        self.grad_accum_dtype = data_types_params.get(GRAD_ACCUM_DTYPE,
+                                                      GRAD_ACCUM_DTYPE_DEFAULT)
+
+        par_write_pipe = get_checkpoint_parallel_write_pipeline(checkpoint_params)
+        self.checkpoint_parallel_write_pipeline = par_write_pipe
 
         self.aio_config = get_aio_config(param_dict)
 
         self.dataloader_drop_last = get_dataloader_drop_last(param_dict)
+
+        self.nebula_config = DeepSpeedNebulaConfig(param_dict)
 
     def _batch_assertion(self):
 
@@ -1055,13 +995,7 @@ class DeepSpeedConfig(object):
 
         self._do_warning_check()
 
-    def print(self, name):
-        logger.info("{}:".format(name))
-        for arg in sorted(vars(self)):
-            if arg != "_param_dict":
-                dots = "." * (29 - len(arg))
-                logger.info("  {} {} {}".format(arg, dots, getattr(self, arg)))
-
+    def print_user_config(self):
         logger.info("  json = {}".format(
             json.dumps(
                 self._param_dict,
@@ -1071,6 +1005,15 @@ class DeepSpeedConfig(object):
                 separators=(",",
                             ":"),
             )))
+
+    def print(self, name):
+        logger.info("{}:".format(name))
+        for arg in sorted(vars(self)):
+            if arg != "_param_dict":
+                dots = "." * (29 - len(arg))
+                logger.info("  {} {} {}".format(arg, dots, getattr(self, arg)))
+
+        self.print_user_config()
 
     def _do_error_check(self):
         assert (
@@ -1083,13 +1026,13 @@ class DeepSpeedConfig(object):
 
         if self.zero_enabled:
             assert (
-                self.zero_optimization_stage <= MAX_STAGE_ZERO_OPTIMIZATION
+                self.zero_optimization_stage <= ZeroStageEnum.max_stage
             ), "DeepSpeedConfig: Maximum supported ZeRO stage is {}".format(
-                MAX_STAGE_ZERO_OPTIMIZATION
+                ZeroStageEnum.max_stage
             )
 
         if self.fp16_master_weights_and_gradients:
-            assert self.zero_enabled and self.zero_optimization_stage == ZERO_OPTIMIZATION_GRADIENTS, "Fp16_master_weights_and_grads is only supported with ZeRO Stage 2 for now."
+            assert self.zero_enabled and self.zero_optimization_stage == ZeroStageEnum.gradients, "Fp16_master_weights_and_grads is only supported with ZeRO Stage 2 for now."
 
     def _do_warning_check(self):
         fp16_enabled = self.fp16_enabled

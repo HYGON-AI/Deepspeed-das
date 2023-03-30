@@ -3,12 +3,9 @@ Copyright 2020 The Microsoft DeepSpeed Team
 '''
 import types
 import torch
-import importlib
 import numpy as np
-import time
-import torch.distributed as dist
-
-from deepspeed.utils.logging import logger
+from deepspeed.accelerator import get_accelerator
+from deepspeed import comm as dist
 
 
 class ZeroOneAdam(torch.optim.Optimizer):
@@ -47,7 +44,7 @@ class ZeroOneAdam(torch.optim.Optimizer):
         cuda_aware (boolean, required): Set True if the underlying MPI implementation
             supports CUDA-Aware communication. (default: False)
         comm_backend_name (string, optional): Set to 'mpi' if needed. (default: 'nccl')
-    .. _Adam\: A Method for Stochastic Optimization:
+    .. _Adam\\: A Method for Stochastic Optimization:
         https://arxiv.org/abs/1412.6980
     .. _On the Convergence of Adam and Beyond:
         https://openreview.net/forum?id=ryQu7f-RZ
@@ -189,16 +186,16 @@ class ZeroOneAdam(torch.optim.Optimizer):
                                                             (self.size * self.divider)))
                     state['server_chunk_size'] = state[
                         'corrected_tensor_size'] // self.size
-                    torch.cuda.empty_cache()
+                    get_accelerator().empty_cache()
                     state['worker_error'] = torch.zeros(state['corrected_tensor_size'],
                                                         device=p.device)
                     state['server_error'] = torch.zeros(state['server_chunk_size'],
                                                         device=p.device)
                     # Accumulation of momentum, i.e., the u variable in the 0/1 Adam paper
                     state['momentum_accumulator'] = torch.zeros_like(p.data)
-                    torch.cuda.empty_cache()
+                    get_accelerator().empty_cache()
                     # self.freeze_key = True
-                    if not self.initialize and torch.distributed.get_rank() == 0:
+                    if not self.initialize and dist.get_rank() == 0:
                         print("Cupy Buffers Initialized Successfully.")
 
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
@@ -313,9 +310,7 @@ class ZeroOneAdam(torch.optim.Optimizer):
 
         if not self.initialize:
             self.initialize = True
-            print(
-                f"Finished the initialization step at rank {torch.distributed.get_rank()}"
-            )
+            print(f"Finished the initialization step at rank {dist.get_rank()}")
             return loss
 
         if self.state[self.param_groups[0]['params'][0]]['step'] > self.var_freeze_step:

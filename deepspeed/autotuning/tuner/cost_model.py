@@ -1,4 +1,4 @@
-import numpy as np
+'''Copyright The Microsoft DeepSpeed Team'''
 
 from .utils import *
 

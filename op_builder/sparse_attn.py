@@ -1,7 +1,6 @@
 """
 Copyright 2020 The Microsoft DeepSpeed Team
 """
-import warnings
 from .builder import OpBuilder
 
 try:
@@ -32,11 +31,12 @@ class SparseAttnBuilder(OpBuilder):
         #command_status = list(map(self.command_exists, required_commands))
         #deps_compatible = all(command_status)
 
-#####aiss debug 0506##############
         if self.is_rocm_pytorch():
-        #    self.warning(f'{self.NAME} is not compatible with ROCM')
-        #    return False
+        #aiss debug
+            #self.warning(f'{self.NAME} is not compatible with ROCM')
+            #return False
             return True
+
         try:
             import torch
         except ImportError:

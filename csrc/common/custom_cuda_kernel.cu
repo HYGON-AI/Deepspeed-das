@@ -1,5 +1,11 @@
+/*
+Copyright The Microsoft DeepSpeed Team
+*/
+#ifdef __HIPCC__
+#include "custom_hip_layers.h"
+#else
 #include "custom_cuda_layers.h"
-
+#endif
 __global__ void param_update_kernel(const float* input, __half* output, int size)
 {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
