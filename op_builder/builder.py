@@ -662,45 +662,36 @@ class CUDAOpBuilder(OpBuilder):
 
     def hipify_extension(self):
         if self.is_rocm_pytorch():
-            #from public.home.aishsh.code.hipify_torch.hipify import hipify_python
             from torch.utils.hipify import hipify_python
-            #hipify_python.hipify(
-            #    project_directory=os.getcwd(),
-            #    output_directory=os.getcwd(),
-            #    header_include_dirs=self.include_paths(),
-            #    includes=[os.path.join(os.getcwd(),
-            #                           '*')] + [os.path.abspath(s) for s in self.sources()],
-            #    extra_files=[os.path.abspath(s) for s in self.sources()],
-            #    show_detailed=True,
-            #    is_pytorch_extension=True,
-            #    hipify_extra_files_only=True,
-            #)
-
+            #torch1.13
+        import torch
+        if (torch_version.startswith('torch1.13')):
+            hipify_python.hipify(
+                project_directory=os.getcwd(),
+                output_directory=os.getcwd(),
+                header_include_dirs=self.include_paths(),
+                includes=[os.path.join(os.getcwd(),
+                                       '*')] + [os.path.abspath(s) for s in self.sources()],
+                extra_files=[os.path.abspath(s) for s in self.sources()],
+                show_detailed=True,
+                is_pytorch_extension=True,
+                hipify_extra_files_only=True,
+            )
+        else:
+            #torch1.10
             hipify_python.hipify(
                 project_directory=os.getcwd(),
                 output_directory=os.getcwd(),
                 #header_include_dirs=self.include_paths(),
+                #includes=[os.path.join(os.getcwd(),
+                #                       '*')],
                 includes=[os.path.join(os.getcwd(),
-                                       '*')],
+                                       '*')] + [os.path.abspath(s) for s in self.sources()],
                 extra_files=[os.path.abspath(s) for s in self.sources()],
                 show_progress=True,
                 is_pytorch_extension=True,
                 #hipify_extra_files_only=True,
             )
-#def hipify(
-#    extensions: Iterable = (".cu", ".cuh", ".c", ".cc", ".cpp", ".h", ".in", ".hpp"),
-#    includes: Iterable = (),
-#    extra_files: Iterable = (),
-#    out_of_place_only: bool = False,
-#    ignores: Iterable = (),
-#    show_progress: bool = True,
-#    hip_clang_launch: bool = False,
-#    is_pytorch_extension: bool = False,
-#    clean_ctx: GeneratedFileCleaner = None
-#)
-
-
-
 
 
     def cxx_args(self):
