@@ -147,7 +147,6 @@ install_ops = dict.fromkeys(ALL_OPS.keys(), False)
 for op_name, builder in ALL_OPS.items():
     op_compatible = builder.is_compatible()
     compatible_ops[op_name] = op_compatible
-    #aiss
     print("op_name: ", op_name)
     print("op_enabled: ", op_enabled(op_name))
     print("op_compatible: ", op_compatible)
