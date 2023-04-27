@@ -665,7 +665,10 @@ class CUDAOpBuilder(OpBuilder):
             from torch.utils.hipify import hipify_python
             #torch1.13
         import torch
-        if (torch_version.startswith('torch1.13')):
+        torch_version = torch.__version__
+        print("torch version: ", torch.__version__)
+        if (torch_version.startswith('1.13')):
+            print("compile with torch1.13!")
             hipify_python.hipify(
                 project_directory=os.getcwd(),
                 output_directory=os.getcwd(),
@@ -679,6 +682,7 @@ class CUDAOpBuilder(OpBuilder):
             )
         else:
             #torch1.10
+            print("compile with torch1.10")
             hipify_python.hipify(
                 project_directory=os.getcwd(),
                 output_directory=os.getcwd(),
