@@ -41,15 +41,17 @@ ls -l
 python3 -m pip install --upgrade pip setuptools
 pip3 install wheel -i https://pypi.tuna.tsinghua.edu.cn/simple
 pip3 install ninja -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
 
-
-
-# 下载DTK并配置环境变量
+下载DTK并配置环境变量:
+```bash
 # DTK tar包下载目录：光合社区/资源工具/DCU Toolkit/DTK23.04(https://cancon.hpccube.com:65024/1/main/DTK-23.04)，根据系统选择对应DTK的tar包，并解压至/opt目录。
-# 如果使用的是dtk23.04前的版本，可以参考以下方式修改torch中的hipify文件(http://10.0.50.24/dcutoolkit/deeplearing/pytorch/-/commit/badafea7f4a06111d8d8b5b36859bc89f3cda305)
+# 如果使用的是dtk23.04前的版本，可以参考以图片下方式修改torch中的hipify文件
 export ROCM_PATH=/opt/dtk-23.04
 source /opt/dtk-23.04/env.sh
 ```
+![logo](hipify_20230511113250.png)
+
 
 编译deepspeed
 
