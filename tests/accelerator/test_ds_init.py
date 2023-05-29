@@ -1,4 +1,8 @@
-'''Copyright The Microsoft DeepSpeed Team'''
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# DeepSpeed Team
+
 import os
 import torch
 import deepspeed
@@ -6,6 +10,7 @@ from deepspeed.accelerator import get_accelerator
 
 
 class OneLayerNet(torch.nn.Module):
+
     def __init__(self, D_in, D_out):
         """
         In the constructor we instantiate two nn.Linear modules and assign them as
@@ -38,10 +43,6 @@ def test_literal_device():
     string = get_accelerator().device_name()  #'xpu' or 'cuda'
     string0 = get_accelerator().device_name(0)  #'xpu:0' or 'cuda:0'
     string1 = get_accelerator().device_name(1)  #'xpu:1' or 'cuda:1'
-    #aiss
-    print(string0)
-    print(string1)
-    
     assert string == 'xpu' or string == 'cuda'
     assert string0 == 'xpu:0' or string0 == 'cuda:0'
     assert string1 == 'xpu:1' or string1 == 'cuda:1'

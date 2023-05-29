@@ -1,4 +1,7 @@
-'''Copyright The Microsoft DeepSpeed Team'''
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# DeepSpeed Team
 
 import torch
 from deepspeed.ops.adagrad import DeepSpeedCPUAdagrad
@@ -28,8 +31,7 @@ def _main():
     param = [torch.nn.Parameter(torch.ones(size, device=device)) for size in group_size]
     torch_time = _test_perf(param, torch.optim.Adagrad)
     ds_time = _test_perf(param, DeepSpeedCPUAdagrad)
-    #print(f"Step time: {torch_time=} {ds_time=}")
-    print("Step time: {torch_time=%s} {ds_time=%s}" %(torch_time, ds_time))
+    print(f"Step time: {torch_time=} {ds_time=}")
 
 
 _main()

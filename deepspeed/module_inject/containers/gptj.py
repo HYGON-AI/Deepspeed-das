@@ -1,4 +1,7 @@
-'''Copyright The Microsoft DeepSpeed Team'''
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# DeepSpeed Team
 
 from .base import *
 from .features.meta_tensor import MetaTensorContainer
@@ -10,8 +13,11 @@ from ..policy import transformer_param_names
 from ..policy import maybe_copy
 from ..policy import maybe_copy_qkv
 
+from ..policy import maybe_get_lora
+
 
 class DS_GPTJContainer(MetaTensorContainer, BaseTransformerContainer):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -36,36 +42,20 @@ class DS_GPTJContainer(MetaTensorContainer, BaseTransformerContainer):
             'ln_1.weight', \
             'ln_1.bias'
         )
-        maybe_copy_qkv(
-            module.attention,
-            sd,
-            weight_quantizer,
-            mp_replace,
-            'attn_qkvw',
-            [prefix + param_names[0],
-             prefix + param_names[1],
-             prefix + param_names[2]],
-            split_qkv=self.policy.split_qkv)
-        for i in range(3, 4):
-            maybe_copy(module.attention,
+        maybe_copy_qkv(module.attention,
                        sd,
                        weight_quantizer,
                        mp_replace,
-                       transformer_param_names[i - 1],
+                       'attn_qkvw', [prefix + param_names[0], prefix + param_names[1], prefix + param_names[2]],
+                       split_qkv=self.policy.split_qkv)
+        for i in range(3, 4):
+            maybe_copy(module.attention, sd, weight_quantizer, mp_replace, transformer_param_names[i - 1],
                        prefix + param_names[i])
         for i in range(4, 8):
-            maybe_copy(module.mlp,
-                       sd,
-                       weight_quantizer,
-                       mp_replace,
-                       transformer_param_names[i],
+            maybe_copy(module.mlp, sd, weight_quantizer, mp_replace, transformer_param_names[i],
                        prefix + param_names[i])
         for i in range(8, 10):
-            maybe_copy(module,
-                       sd,
-                       weight_quantizer,
-                       mp_replace,
-                       transformer_param_names[i + 2],
+            maybe_copy(module, sd, weight_quantizer, mp_replace, transformer_param_names[i + 2],
                        prefix + param_names[i])
 
 
@@ -82,15 +72,24 @@ class HFGPTJLayerPolicy(TransformerPolicy):
             HFGPTJLayerPolicy._orig_layer_class = None
 
     def get_hidden_heads(self):
-        return self.client_module.attn.q_proj.weight.shape[1], \
-                self.client_module.attn.num_attention_heads
+        return self.client_module.attn.embed_dim, \
+                self.client_module.attn.num_attention_heads, \
+                self.client_module.ln_1.eps
 
-    def attention(self):
+    def get_q_k_v(self):
+        return self.client_module.attn.q_proj.weight, \
+               None, \
+               self.client_module.attn.k_proj.weight, \
+               None, \
+               self.client_module.attn.v_proj.weight, \
+               None
+
+    def attention(self, enable_training=False):
         qw = self.client_module.attn.q_proj.weight
         kw = self.client_module.attn.k_proj.weight
         vw = self.client_module.attn.v_proj.weight
 
-        qkvw = Parameter(torch.cat((qw, kw, vw), dim=0), requires_grad=False)
+        qkvw = Parameter(torch.cat((qw, kw, vw), dim=0), requires_grad=enable_training)
 
         return qkvw, \
                None, \
@@ -108,3 +107,16 @@ class HFGPTJLayerPolicy(TransformerPolicy):
                None, \
                self.client_module.ln_1.weight, \
                self.client_module.ln_1.bias
+
+    def get_lora_params(self):
+        all_lora_params = []
+        for p in [
+            self.client_module.mlp.fc_in, \
+            self.client_module.mlp.fc_out, \
+            self.client_module.attn.q_proj, \
+            self.client_module.attn.k_proj, \
+            self.client_module.attn.v_proj, \
+            self.client_module.attn.out_proj, \
+            ]:
+            all_lora_params.append(maybe_get_lora(p))
+        return all_lora_params
