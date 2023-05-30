@@ -1,6 +1,11 @@
-/* Copyright 2020 The Microsoft DeepSpeed Team
-   Copyright NVIDIA/apex
-   This file is adapted from fused adam in NVIDIA/apex, commit a109f85
+// Copyright (c) Microsoft Corporation.
+// SPDX-License-Identifier: Apache-2.0
+
+// DeepSpeed Team
+
+/*
+Copyright NVIDIA/apex
+This file is adapted from fused adam in NVIDIA/apex, commit a109f85
 */
 
 #include <ATen/ATen.h>
@@ -12,11 +17,7 @@
 
 #include <assert.h>
 
-#ifdef __HIPCC__
-#include "multi_tensor_apply_hip.cuh"
-#else
 #include "multi_tensor_apply.cuh"
-#endif
 #include "type_shim.h"
 
 #define BLOCK_SIZE 512

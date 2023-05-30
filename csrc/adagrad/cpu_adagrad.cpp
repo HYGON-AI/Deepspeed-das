@@ -1,9 +1,9 @@
-#ifdef __HIPCC__
-#include "cpu_adagrad_hip.h"
-#else
-#include "cpu_adagrad.h"
-#endif
+// Copyright (c) Microsoft Corporation.
+// SPDX-License-Identifier: Apache-2.0
 
+// DeepSpeed Team
+
+#include "cpu_adagrad.h"
 #include <torch/extension.h>
 #include <iostream>
 #include <memory>
@@ -178,7 +178,7 @@ int ds_adagrad_step(int optimizer_id,
         std::static_pointer_cast<Adagrad_Optimizer>(s_optimizers[optimizer_id]);
     opt->IncrementStep(step);
     opt->update_state(lr, epsilon, weight_decay);
-    opt->Step_8(params_ptr, grads_ptr, exp_avg_sq_ptr, params_c.size(0));
+    opt->Step_8(params_ptr, grads_ptr, exp_avg_sq_ptr, params_c.numel());
 
 #if defined(__ENABLE_CUDA__)
     opt->SynchronizeStreams();
@@ -214,7 +214,7 @@ int ds_adagrad_step_plus_copy(int optimizer_id,
     opt->Step_8(params_ptr,
                 grads_ptr,
                 exp_avg_sq_ptr,
-                params_c.size(0),
+                params_c.numel(),
                 gpu_params_ptr,
                 (params.options().dtype() == at::kHalf));
 
