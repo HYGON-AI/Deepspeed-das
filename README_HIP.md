@@ -35,7 +35,8 @@ yum -y install openssl openssl-devel
                        
 yum install -y libaio-devel
 yum install -y libaio
-ls -l
+
+# 配置libiomp5.so库，可以复用系统下现用的so库或者自主安装，指定该动态库的位置。例如export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
 
 # 若python内未包含相关项，需基于上面安装的三方包重新源码编译python，再配置python环境
 python3 -m pip install --upgrade pip setuptools
