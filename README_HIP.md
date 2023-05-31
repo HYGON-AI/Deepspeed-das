@@ -72,6 +72,17 @@ pip3 install ./dist/deepspeed*
 ```
 
 ## Note
-+ 若使用 pip install 下载安装过慢，可添加源：-i https://pypi.tuna.tsinghua.edu.cn/simple/
-+ DS_BUILD_STRING为编译的版本号设置，例如版本号为.dtk22.10.1.torch1.10, dtkxxx为基于编译的dtk版本号，torchxxx为编译依赖的torch版本号等。
-+ deepspeed共设置两种版本号查询方式，__version__和__dcu_version__，分别标识主版本号（与官网版本一致）和基于dcu适配的内部版本号。
++ 若使用 pip install 下载安装过慢，可添加国内源：-i https://pypi.tuna.tsinghua.edu.cn/simple/
++ deepspeed共设置两种版本号查询方式__version__ 和__dcu_version__，分别标识主版本号（与官网版本一致）和基于dcu适配的内部版本号。例如：
+```bash
+#编译后的whl包
+[root@26388537c721 deepspeed-v0.9.2-release]# ls dist/
+deepspeed-0.9.2+8cfd4af.dtk22.10.1.torch1.10-cp37-cp37m-linux_x86_64.whl
+deepspeed-0.9.2+8cfd4af.dtk22.10.1.torch1.10-py3.7-linux-x86_64.egg
+#查询deepspeed主版本号
+[root@26388537c721 deepspeed-v0.9.2-release]# python3 -c "import deepspeed as ds; print(ds.__version__)"
+0.9.2
+#查询deepspeed基于dcu的内部版本号
+[root@26388537c721 deepspeed-v0.9.2-release]# python3 -c "import deepspeed as ds; print(ds.__dcu_version__)"
+0.9.2+8cfd4af.dtk22.10.1.torch1.10
+```
