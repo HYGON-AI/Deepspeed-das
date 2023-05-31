@@ -15,6 +15,7 @@ except ModuleNotFoundError:
         version = "0.0.0"
     git_hash = '[none]'
     git_branch = '[none]'
+    dcu_version = '[none]'
 
     from .ops.op_builder.all_ops import ALL_OPS
     installed_ops = dict.fromkeys(ALL_OPS.keys(), False)

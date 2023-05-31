@@ -179,7 +179,8 @@ print(f'Install Ops={install_ops}')
 # Write out version/git info.
 git_hash_cmd = "git rev-parse --short HEAD"
 git_branch_cmd = "git rev-parse --abbrev-ref HEAD"
-if command_exists('git') and 'DS_BUILD_STRING' not in os.environ:
+#if command_exists('git') and 'DS_BUILD_STRING' not in os.environ:
+if command_exists('git'):
     try:
         result = subprocess.check_output(git_hash_cmd, shell=True)
         git_hash = result.decode('utf-8').strip()
@@ -216,7 +217,7 @@ if sys.platform == "win32":
 
 # Parse the DeepSpeed version string from version.txt.
 version_str = open('version.txt', 'r').read().strip()
-
+dcu_version_str = version_str
 # Build specifiers like .devX can be added at install time. Otherwise, add the git hash.
 # Example: DS_BUILD_STRING=".dev20201022" python setup.py sdist bdist_wheel.
 
@@ -225,14 +226,16 @@ if 'DS_BUILD_STRING' in os.environ:
     # Build string env specified, probably building for distribution.
     with open('build.txt', 'w') as fd:
         fd.write(os.environ.get('DS_BUILD_STRING'))
-    version_str += os.environ.get('DS_BUILD_STRING')
+    dcu_version_str += f'+{git_hash}'+ os.environ.get('DS_BUILD_STRING')
 elif os.path.isfile('build.txt'):
     # build.txt exists, probably installing from distribution.
     with open('build.txt', 'r') as fd:
-        version_str += fd.read().strip()
+        dcu_version_str += fd.read().strip()
+    #aiss 
+        dcu_version_str += f'+{git_hash}'
 else:
     # None of the above, probably installing from source.
-    version_str += f'+{git_hash}'
+    dcu_version_str += f'+{git_hash}'
 
 torch_version = ".".join([TORCH_MAJOR, TORCH_MINOR])
 bf16_support = False
@@ -261,9 +264,10 @@ torch_info = {
     "hip_version": hip_version
 }
 
-print(f"version={version_str}, git_hash={git_hash}, git_branch={git_branch}")
+print(f"version={version_str}, dcu_version={dcu_version_str}, git_hash={git_hash}, git_branch={git_branch}")
 with open('deepspeed/git_version_info_installed.py', 'w') as fd:
     fd.write(f"version='{version_str}'\n")
+    fd.write(f"dcu_version='{dcu_version_str}'\n")
     fd.write(f"git_hash='{git_hash}'\n")
     fd.write(f"git_branch='{git_branch}'\n")
     fd.write(f"installed_ops={install_ops}\n")
