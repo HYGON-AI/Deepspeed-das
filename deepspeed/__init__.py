@@ -36,7 +36,7 @@ from .runtime import DeepSpeedOptimizer, ZeROOptimizer
 
 from .pipe import PipelineModule
 
-from .git_version_info import version, git_hash, git_branch
+from .git_version_info import version, dcu_version, git_hash, git_branch
 
 
 def _parse_version(version_str):
@@ -47,6 +47,8 @@ def _parse_version(version_str):
 
 # Export version information
 __version__ = version
+#aiss
+__dcu_version__ = dcu_version
 __version_major__, __version_minor__, __version_patch__ = _parse_version(__version__)
 __git_hash__ = git_hash
 __git_branch__ = git_branch

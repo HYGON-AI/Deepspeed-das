@@ -114,6 +114,7 @@ if torch_available and not torch.cuda.is_available():
     print("[WARNING] Torch did not find cuda available, if cross-compiling or running with cpu only "
           "you can ignore this message. Adding compute capability for Pascal, Volta, and Turing "
           "(compute capabilities 6.0, 6.1, 6.2)")
+          
     if os.environ.get("TORCH_CUDA_ARCH_LIST", None) is None:
         os.environ["TORCH_CUDA_ARCH_LIST"] = get_default_compute_capabilities()
 
@@ -179,16 +180,13 @@ print(f'Install Ops={install_ops}')
 # Write out version/git info.
 git_hash_cmd = "git rev-parse --short HEAD"
 git_branch_cmd = "git rev-parse --abbrev-ref HEAD"
-if command_exists('git') and 'DS_BUILD_STRING' not in os.environ:
+#if command_exists('git') and 'DS_BUILD_STRING' not in os.environ:
+if command_exists('git'):
     try:
         result = subprocess.check_output(git_hash_cmd, shell=True)
         git_hash = result.decode('utf-8').strip()
         result = subprocess.check_output(git_branch_cmd, shell=True)
         git_branch = result.decode('utf-8').strip()
-        #add dtk version
-        if os.getenv('DS_BUILD_VERSION'):
-            version_dtk = os.getenv('DS_BUILD_VERSION', "")
-            git_hash += "." + version_dtk
 
     except subprocess.CalledProcessError:
         git_hash = "unknown"
@@ -216,24 +214,22 @@ if sys.platform == "win32":
 
 # Parse the DeepSpeed version string from version.txt.
 version_str = open('version.txt', 'r').read().strip()
+dcu_version_str = version_str
+abi_version = subprocess.getoutput("echo '#include <string>' | gcc -x c++ -E -dM - | fgrep _GLIBCXX_USE_CXX11_ABI >tmp.txt")
+abi_version = 'abi' + subprocess.getoutput("awk '{print $3}' tmp.txt")
+# print(abi_version)
 
-# Build specifiers like .devX can be added at install time. Otherwise, add the git hash.
-# Example: DS_BUILD_STRING=".dev20201022" python setup.py sdist bdist_wheel.
+dtk_version_path = subprocess.getoutput("echo $DTKROOT")
 
-# Building wheel for distribution, update version file.
-if 'DS_BUILD_STRING' in os.environ:
-    # Build string env specified, probably building for distribution.
-    with open('build.txt', 'w') as fd:
-        fd.write(os.environ.get('DS_BUILD_STRING'))
-    version_str += os.environ.get('DS_BUILD_STRING')
-elif os.path.isfile('build.txt'):
-    # build.txt exists, probably installing from distribution.
-    with open('build.txt', 'r') as fd:
-        version_str += fd.read().strip()
-else:
-    # None of the above, probably installing from source.
-    version_str += f'+{git_hash}'
+with open("{0}/.info/rocm_version".format(dtk_version_path), 'r') as fd:
+    dtk_version_str = fd.read().split('.')[:2]
+    dtk_version_str ='dtk' +  "".join(dtk_version_str)
 
+torch_version = "torch"+ subprocess.getoutput("python3 -c \"import torch;print(torch.__version__)\"")
+# print(torch_version)
+
+dcu_version_str += f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
+print("dcu_version_str=", dcu_version_str)
 torch_version = ".".join([TORCH_MAJOR, TORCH_MINOR])
 bf16_support = False
 # Set cuda_version to 0.0 if cpu-only.
@@ -261,9 +257,10 @@ torch_info = {
     "hip_version": hip_version
 }
 
-print(f"version={version_str}, git_hash={git_hash}, git_branch={git_branch}")
+print(f"version={version_str}, dcu_version={dcu_version_str}, git_hash={git_hash}, git_branch={git_branch}")
 with open('deepspeed/git_version_info_installed.py', 'w') as fd:
     fd.write(f"version='{version_str}'\n")
+    fd.write(f"dcu_version='{dcu_version_str}'\n")
     fd.write(f"git_hash='{git_hash}'\n")
     fd.write(f"git_branch='{git_branch}'\n")
     fd.write(f"installed_ops={install_ops}\n")
@@ -282,7 +279,7 @@ with open(os.path.join(thisdir, 'README.md'), encoding='utf-8') as fin:
 start_time = time.time()
 
 setup(name='deepspeed',
-      version=version_str,
+      version=dcu_version_str,
       description='DeepSpeed library',
       long_description=readme_text,
       long_description_content_type='text/markdown',
