@@ -681,7 +681,8 @@ class CUDAOpBuilder(OpBuilder):
                 '-U__HIP_NO_HALF2_OPERATORS__',
                 '-DROCM_VERSION_MAJOR=%s' % ROCM_MAJOR,
                 '-DROCM_VERSION_MINOR=%s' % ROCM_MINOR,
-                '--gpu-max-threads-per-block=1024'
+                '--gpu-max-threads-per-block=1024',
+                '-mllvm -amdgpu-enable-flat-scratch=false'
             ]
         else:
             cuda_major, _ = installed_cuda_version()
