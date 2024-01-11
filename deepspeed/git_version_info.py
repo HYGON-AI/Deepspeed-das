@@ -5,7 +5,7 @@
 
 try:
     #  This is populated by setup.py
-    from .git_version_info_installed import *  # noqa: F401
+    from .git_version_info_installed import *  # noqa: F401 # type: ignore
 except ModuleNotFoundError:
     import os
     if os.path.isfile('version.txt'):
@@ -16,7 +16,7 @@ except ModuleNotFoundError:
     git_hash = '[none]'
     git_branch = '[none]'
     dcu_version = '[none]'
-
+    
     from .ops.op_builder.all_ops import ALL_OPS
     installed_ops = dict.fromkeys(ALL_OPS.keys(), False)
     compatible_ops = dict.fromkeys(ALL_OPS.keys(), False)

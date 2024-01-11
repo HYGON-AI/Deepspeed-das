@@ -44,7 +44,7 @@ unsigned get_workspace_size(unsigned maxBatchSize,
 }
 
 // NOTE: AT_ASSERT has become AT_CHECK on master after 0.4.
-#define CHECK_CUDA(x) AT_ASSERTM(x.type().is_cuda(), #x " must be a CUDA tensor")
+#define CHECK_CUDA(x) AT_ASSERTM(x.is_cuda(), #x " must be a CUDA tensor")
 #define CHECK_CONTIGUOUS(x) AT_ASSERTM(x.is_contiguous(), #x " must be contiguous")
 #define CHECK_INPUT(x) \
     CHECK_CUDA(x);     \
@@ -117,11 +117,15 @@ BertTransformerLayer<T>::BertTransformerLayer(unsigned layer_id,
                                                         _seq_length,
                                                         _seq_length,
                                                         _hidden_size / _heads,
-                                                        //(T(1.0) / T(sqrt(_hidden_size / _heads))),
                                                         (T(1.0 / (sqrt(_hidden_size / _heads)))),
                                                         T(0.0),
+#ifdef __HIP_PLATFORM_HCC__                                                        
+                                                        rocblas_operation_transpose,
+                                                        rocblas_operation_none,
+#else 
                                                         CUBLAS_OP_T,
                                                         CUBLAS_OP_N,
+#endif                                                                                                               
                                                         gemm_algos[3])),
       _attn_context(typename StridedBatchGemm<T>::Config(_batch_size * _heads,
                                                          _hidden_size / _heads,
@@ -129,8 +133,13 @@ BertTransformerLayer<T>::BertTransformerLayer(unsigned layer_id,
                                                          _seq_length,
                                                          T(1.0),
                                                          T(0.0),
+#ifdef __HIP_PLATFORM_HCC__  
+                                                         rocblas_operation_none,
+                                                         rocblas_operation_none, 
+#else                                                                                                                
                                                          CUBLAS_OP_N,
                                                          CUBLAS_OP_N,
+#endif                                                        
                                                          gemm_algos[4]))
 {
     assert(_hidden_size % _heads == 0);
@@ -146,7 +155,7 @@ BertTransformerLayer<T>::~BertTransformerLayer()
 template <typename T>
 void BertTransformerLayer<T>::Initialize()
 {
-#ifndef __HIP_PLATFORM_HCC__
+#ifndef __HIP_PLATFORM_AMD__
     if (std::is_same<T, __half>::value) cublasSetMathMode(_cublasHandle, CUBLAS_TENSOR_OP_MATH);
 #endif
 }

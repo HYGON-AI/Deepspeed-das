@@ -158,8 +158,11 @@ private:
     unsigned _seq_length;
 
     bool _pre_or_postLayerNorm;
-
+#ifdef __HIP_PLATFORM_HCC__
+    rocblas_handle _cublasHandle;
+#else
     cublasHandle_t _cublasHandle;
+#endif    
     cudaStream_t _stream;
 
     // layers

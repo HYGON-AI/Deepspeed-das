@@ -6,8 +6,11 @@
 #pragma once
 
 #include <cuda_fp16.h>
-#ifndef __HIP_PLATFORM_HCC__
+#ifndef __HIP_PLATFORM_AMD__
 #include <cuda_profiler_api.h>
+#endif
+#ifdef __HIP_PLATFORM_HCC__
+#include<rocblas/rocblas.h>
 #endif
 #include <array>
 #include <cstdio>
@@ -32,7 +35,11 @@ void check(T result, char const* const func, const char* const file, int const l
 template <typename T>
 class GemmTest {
 public:
+#ifdef __HIP_PLATFORM_HCC__
+    GemmTest(int m, int n, int k, rocblas_operation ta, rocblas_operation tb, rocblas_handle h)
+#else
     GemmTest(int m, int n, int k, cublasOperation_t ta, cublasOperation_t tb, cublasHandle_t h)
+#endif
         : M(m), N(n), K(k), transa(ta), transb(tb), handle(h)
     {
         check_cuda_error(cudaMalloc((void**)&A, sizeof(T) * M * K));
@@ -54,8 +61,13 @@ public:
 
         int algo_fw = Run(loops, [=](int algo) {
             cublas_gemm_ex(handle,
+#ifdef __HIP_PLATFORM_HCC__
+                           rocblas_operation_transpose,
+                           rocblas_operation_none,
+#else                           
                            CUBLAS_OP_T,
                            CUBLAS_OP_N,
+#endif                        
                            N,
                            M,
                            K,
@@ -64,17 +76,22 @@ public:
                            B,
                            A,
                            C,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_HCC__                           
                            static_cast<rocblas_gemm_algo>(algo));
-#else
+#else                           
                            static_cast<cublasGemmAlgo_t>(algo));
-#endif
+#endif                           
         });
 
         int algo_bw1 = Run(loops, [=](int algo) {
             cublas_gemm_ex(handle,
+#ifdef __HIP_PLATFORM_HCC__
+                           rocblas_operation_none,
+                           rocblas_operation_transpose,
+#else                           
                            CUBLAS_OP_N,
                            CUBLAS_OP_T,
+#endif
                            K,
                            N,
                            M,
@@ -83,17 +100,22 @@ public:
                            A,
                            C,
                            B,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_HCC__                           
                            static_cast<rocblas_gemm_algo>(algo));
-#else
+#else                           
                            static_cast<cublasGemmAlgo_t>(algo));
 #endif
         });
 
         int algo_bw2 = Run(loops, [=](int algo) {
             cublas_gemm_ex(handle,
+#ifdef __HIP_PLATFORM_HCC__
+                           rocblas_operation_none,
+                           rocblas_operation_none,
+#else 
                            CUBLAS_OP_N,
                            CUBLAS_OP_N,
+#endif                          
                            K,
                            M,
                            N,
@@ -102,9 +124,9 @@ public:
                            B,
                            C,
                            A,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_HCC__                           
                            static_cast<rocblas_gemm_algo>(algo));
-#else
+#else                           
                            static_cast<cublasGemmAlgo_t>(algo));
 #endif
         });
@@ -123,7 +145,7 @@ public:
 #else
         for (int algo = (int)CUBLAS_GEMM_DEFAULT_TENSOR_OP;
              algo <= (int)CUBLAS_GEMM_ALGO15_TENSOR_OP;
-#endif
+#endif           
              algo++) {
             int warm_up = 5;
             for (int i = 0; i < warm_up; ++i) f(algo);
@@ -154,8 +176,13 @@ public:
 
 private:
     int M, N, K;
+#ifdef __HIP_PLATFORM_HCC__
+    rocblas_handle handle;
+    rocblas_operation transa, transb;
+#else
     cublasHandle_t handle;
     cublasOperation_t transa, transb;
+#endif
     T *A, *B, *C;
 };
 
@@ -166,9 +193,16 @@ public:
                     int m,
                     int n,
                     int k,
+#ifdef __HIP_PLATFORM_HCC__                           
+                    rocblas_operation ta,
+                    rocblas_operation tb,
+                    rocblas_handle h)
+#else                           
                     cublasOperation_t ta,
                     cublasOperation_t tb,
                     cublasHandle_t h)
+#endif
+
         : bsz(b), M(m), N(n), K(k), transa(ta), transb(tb), handle(h)
     {
         check_cuda_error(cudaMalloc((void**)&A, sizeof(T) * M * K * bsz));
@@ -208,24 +242,31 @@ public:
                                         stride_b,
                                         stride_c,
                                         bsz,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_HCC__                           
                                         static_cast<rocblas_gemm_algo>(algo));
-#else
+#else                           
                                         static_cast<cublasGemmAlgo_t>(algo));
-#endif
+#endif                            
         });
 
         int algo_bw1 = Run(loops, [=](int algo) {
+#ifdef __HIP_PLATFORM_HCC__
+            int mb = (transa == rocblas_operation_transpose ? K : M);
+            int kb = (transa == rocblas_operation_transpose ? M : K);
+#else
             int mb = (transa == CUBLAS_OP_T ? K : M);
             int kb = (transa == CUBLAS_OP_T ? M : K);
-
+#endif
             int stride_a = mb * N;
             int stride_b = N * kb;
             int stride_c = M * K;
 
             // B need to transpose.
+#ifdef __HIP_PLATFORM_HCC__
+            rocblas_operation op_b = (transb == rocblas_operation_transpose ? rocblas_operation_none : rocblas_operation_transpose);
+#else
             cublasOperation_t op_b = (transb == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);
-
+#endif
             // Calculate d_A.
             cublas_strided_batched_gemm(handle,
                                         mb,
@@ -233,25 +274,38 @@ public:
                                         N,
                                         &alpha,
                                         &beta,
+#ifdef __HIP_PLATFORM_HCC__
+                                        (transa == rocblas_operation_transpose ? B : C),
+                                        (transa == rocblas_operation_transpose ? C : B),
+#else   
                                         (transa == CUBLAS_OP_T ? B : C),
                                         (transa == CUBLAS_OP_T ? C : B),
+#endif                                                                         
                                         A,
-                                        CUBLAS_OP_N,
+#ifdef __HIP_PLATFORM_HCC__                                        
+                                        rocblas_operation_none,
+#else     
+                                        CUBLAS_OP_N,  
+#endif                                                                        
                                         op_b,
                                         stride_a,
                                         stride_b,
                                         stride_c,
                                         bsz,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_HCC__                           
                                         static_cast<rocblas_gemm_algo>(algo));
-#else
+#else                           
                                         static_cast<cublasGemmAlgo_t>(algo));
-#endif
+#endif                                        
         });
 
         int algo_bw2 = Run(loops, [=](int algo) {
             // A need to transpose.
+#ifdef __HIP_PLATFORM_HCC__
+            rocblas_operation op_a = (transa == rocblas_operation_transpose ? rocblas_operation_none : rocblas_operation_transpose);
+#else
             cublasOperation_t op_a = (transa == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);
+#endif
 
             int stride_a = M * K;
             int stride_b = M * N;
@@ -268,16 +322,20 @@ public:
                                         C,
                                         B,
                                         op_a,
-                                        CUBLAS_OP_N,
+#ifdef __HIP_PLATFORM_HCC__                                        
+                                        rocblas_operation_none,
+#else     
+                                        CUBLAS_OP_N,  
+#endif
                                         stride_a,
                                         stride_b,
                                         stride_c,
                                         bsz,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_HCC__                           
                                         static_cast<rocblas_gemm_algo>(algo));
-#else
+#else                           
                                         static_cast<cublasGemmAlgo_t>(algo));
-#endif
+#endif                                         
         });
 
         return std::array<int, 3>({algo_fw, algo_bw1, algo_bw2});
@@ -325,7 +383,12 @@ public:
 
 private:
     int bsz, M, N, K;
+#ifdef __HIP_PLATFORM_HCC__
+    rocblas_handle handle;
+    rocblas_operation transa, transb;
+#else
     cublasHandle_t handle;
     cublasOperation_t transa, transb;
+#endif
     T *A, *B, *C;
 };

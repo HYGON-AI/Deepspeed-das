@@ -1,0 +1,665 @@
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting mpi4py (from -r requirements-1bit-mpi.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/2e/1a/1393e69df9cf7b04143a51776727dd048586781bca82543594ab439e2eb4/mpi4py-3.1.5.tar.gz (2.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.5/2.5 MB 2.2 MB/s eta 0:00:00
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: mpi4py
+  Building wheel for mpi4py (pyproject.toml): started
+  Building wheel for mpi4py (pyproject.toml): finished with status 'done'
+  Created wheel for mpi4py: filename=mpi4py-3.1.5-cp38-cp38-linux_x86_64.whl size=4477163 sha256=d4b69b5d3825b7e11aeb660a117bc3b4e84105fcf6eb52e2b512d4dfcd92f474
+  Stored in directory: /root/.cache/pip/wheels/d1/96/ec/26225f17c90ee4087d39f09d9deea76832778131fa3b073f21
+Successfully built mpi4py
+Installing collected packages: mpi4py
+Successfully installed mpi4py-3.1.5
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting autodoc_pydantic (from -r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/54/c2/1ac9d5894e22513cb9d6fbb99e6ad153056241149e816afbcf8898099885/autodoc_pydantic-2.0.1-py3-none-any.whl (30 kB)
+Collecting docutils<0.18 (from -r requirements-readthedocs.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/4c/5e/6003a0d1f37725ec2ebd4046b657abb9372202655f96e76795dca8c0063c/docutils-0.17.1-py2.py3-none-any.whl (575 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 575.5/575.5 kB 2.5 MB/s eta 0:00:00
+Requirement already satisfied: hjson in /usr/local/lib/python3.8/site-packages (from -r requirements-readthedocs.txt (line 3)) (3.1.0)
+Requirement already satisfied: packaging in /usr/local/lib/python3.8/site-packages (from -r requirements-readthedocs.txt (line 4)) (23.2)
+Requirement already satisfied: psutil in /usr/local/lib/python3.8/site-packages (from -r requirements-readthedocs.txt (line 5)) (5.9.7)
+Requirement already satisfied: py-cpuinfo in /usr/local/lib/python3.8/site-packages (from -r requirements-readthedocs.txt (line 6)) (9.0.0)
+Collecting pydantic<2.0.0 (from -r requirements-readthedocs.txt (line 7))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/74/0f/25686a4276c07a3d7b72595c58d46820a75d98e07ed25888ef1ad1a81e34/pydantic-1.10.13-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 2.3 MB/s eta 0:00:00
+Collecting recommonmark (from -r requirements-readthedocs.txt (line 8))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c6/77/ed589c75db5d02a77a1d5d2d9abc63f29676467d396c64277f98b50b79c2/recommonmark-0.7.1-py2.py3-none-any.whl (10 kB)
+Collecting sphinx_rtd_theme (from -r requirements-readthedocs.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ea/46/00fda84467815c29951a9c91e3ae7503c409ddad04373e7cfc78daad4300/sphinx_rtd_theme-2.0.0-py2.py3-none-any.whl (2.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.8/2.8 MB 2.1 MB/s eta 0:00:00
+Requirement already satisfied: tqdm in /usr/local/lib/python3.8/site-packages (from -r requirements-readthedocs.txt (line 10)) (4.66.1)
+Collecting Sphinx>=4.0 (from autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/48/17/325cf6a257d84751a48ae90752b3d8fe0be8f9535b6253add61c49d0d9bc/sphinx-7.1.2-py3-none-any.whl (3.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 1.9 MB/s eta 0:00:00
+Collecting importlib-metadata>1 (from autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c0/8b/d8427f023c081a8303e6ac7209c16e6878f2765d5b59667f3903fbcfd365/importlib_metadata-7.0.1-py3-none-any.whl (23 kB)
+INFO: pip is looking at multiple versions of autodoc-pydantic to determine which version is compatible with other requirements. This could take a while.
+Collecting autodoc_pydantic (from -r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ce/ce/bb56b4e4dff62605e5bf568b4aab45493ee4c226feeff558a43b35fd0562/autodoc_pydantic-2.0.0-py3-none-any.whl (30 kB)
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/a5/84/0cddbad4050c5f1bc62e858619c7f8282746bfb9c230b2507501253e7f43/autodoc_pydantic-1.9.0-py3-none-any.whl (29 kB)
+Requirement already satisfied: typing-extensions>=4.2.0 in /usr/local/lib/python3.8/site-packages (from pydantic<2.0.0->-r requirements-readthedocs.txt (line 7)) (4.9.0)
+Collecting commonmark>=0.8.1 (from recommonmark->-r requirements-readthedocs.txt (line 8))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/b1/92/dfd892312d822f36c55366118b95d914e5f16de11044a27cf10a7d71bbbf/commonmark-0.9.1-py2.py3-none-any.whl (51 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 51.1/51.1 kB 400.9 kB/s eta 0:00:00
+Collecting sphinxcontrib-jquery<5,>=4 (from sphinx_rtd_theme->-r requirements-readthedocs.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/76/85/749bd22d1a68db7291c89e2ebca53f4306c3f205853cf31e9de279034c3c/sphinxcontrib_jquery-4.1-py2.py3-none-any.whl (121 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.1/121.1 kB 880.5 kB/s eta 0:00:00
+Collecting sphinxcontrib-applehelp (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/06/c1/5e2cafbd03105ce50d8500f9b4e8a6e8d02e22d0475b574c3b3e9451a15f/sphinxcontrib_applehelp-1.0.4-py3-none-any.whl (120 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 120.6/120.6 kB 790.7 kB/s eta 0:00:00
+Collecting sphinxcontrib-devhelp (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c5/09/5de5ed43a521387f18bdf5f5af31d099605c992fd25372b2b9b825ce48ee/sphinxcontrib_devhelp-1.0.2-py2.py3-none-any.whl (84 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.7/84.7 kB 745.8 kB/s eta 0:00:00
+Collecting sphinxcontrib-jsmath (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c2/42/4c8646762ee83602e3fb3fbe774c2fac12f317deb0b5dbeeedd2d3ba4b77/sphinxcontrib_jsmath-1.0.1-py2.py3-none-any.whl (5.1 kB)
+Collecting sphinxcontrib-htmlhelp>=2.0.0 (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/6e/ee/a1f5e39046cbb5f8bc8fba87d1ddf1c6643fbc9194e58d26e606de4b9074/sphinxcontrib_htmlhelp-2.0.1-py3-none-any.whl (99 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.8/99.8 kB 904.7 kB/s eta 0:00:00
+Collecting sphinxcontrib-serializinghtml>=1.1.5 (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c6/77/5464ec50dd0f1c1037e3c93249b040c8fc8078fdda97530eeb02424b6eea/sphinxcontrib_serializinghtml-1.1.5-py2.py3-none-any.whl (94 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 94.0/94.0 kB 841.0 kB/s eta 0:00:00
+Collecting sphinxcontrib-qthelp (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/2b/14/05f9206cf4e9cfca1afb5fd224c7cd434dcc3a433d6d9e4e0264d29c6cdb/sphinxcontrib_qthelp-1.0.3-py2.py3-none-any.whl (90 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.6/90.6 kB 879.1 kB/s eta 0:00:00
+Requirement already satisfied: Jinja2>=3.0 in /usr/local/lib/python3.8/site-packages (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (3.1.2)
+Collecting Pygments>=2.13 (from Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/97/9c/372fef8377a6e340b1704768d20daaded98bf13282b5327beb2e2fe2c7ef/pygments-2.17.2-py3-none-any.whl (1.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 2.1 MB/s eta 0:00:00
+INFO: pip is looking at multiple versions of sphinx to determine which version is compatible with other requirements. This could take a while.
+Collecting Sphinx>=3.4 (from autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c7/64/c3d5a265ebc2e96a6d1c1b3f5d23abdd3dde547d8638a4d06383aa8d2059/sphinx-7.1.1-py3-none-any.whl (3.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 1.5 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c6/33/1cb96d522c5b09080d41c6e23fc4f6bc88d964751fa331786e9ab59b6eca/sphinx-7.1.0-py3-none-any.whl (3.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 2.1 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/4b/a9/9760e8373a11a62f5ef66684771b0a5b2c4a699bf0dbbc650ca2b75cec36/sphinx-7.0.1-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.0 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ee/0e/2c819414c8dad75c55f7ced4044ac48c6fcce8b7a2614bad12612aa4b1ac/sphinx-7.0.0-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.0 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/5f/d8/45ba6097c39ba44d9f0e1462fb232e13ca4ddb5aea93a385dcfa964687da/sphinx-6.2.1-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.0 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/82/7b/880b3d63fe87f9084644c1ed11113ae5775f13df0d417447e96c4c604bab/sphinx-6.2.0-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.1 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/2e/2c/22a20486cad91a66f4f70bd88c20c8bb306ae719cbba93d7debae7efa80d/sphinx-6.1.3-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.1 MB/s eta 0:00:00
+INFO: pip is still looking at multiple versions of sphinx to determine which version is compatible with other requirements. This could take a while.
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/89/ea/7ca493912693b1a46420cba13be885b3a1d758990c72f5d2b51916ce092f/sphinx-6.1.2-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.0 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/9c/53/2ad8a7dd5a6a0f036fc28bc045056bbadc892fdbd888b0f949cdff721acb/sphinx-6.1.1-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.1 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/5e/dd/1bb2e6dbdcb4ab4eba960a0073c164a0239e3b2cab191ca25a9eefa7e9e7/sphinx-6.1.0-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.0 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/1d/a7/45135386be5609225fee4c58a92a8cd891ecc67c4314b6c7a883bf0cda85/sphinx-6.0.1-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.0 MB/s eta 0:00:00
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/d4/a3/83304f734ba5b5b400af0de3d31d1844ea295c1652435668c9aa2b8650c0/sphinx-6.0.0-py3-none-any.whl (3.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 2.1 MB/s eta 0:00:00
+INFO: This is taking longer than usual. You might need to provide the dependency resolver with stricter constraints to reduce runtime. See https://pip.pypa.io/warnings/backtracking for guidance. If you want to abort this run, press Ctrl + C.
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/67/a7/01dd6fd9653c056258d65032aa09a615b5d7b07dd840845a9f41a8860fbc/sphinx-5.3.0-py3-none-any.whl (3.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 2.0 MB/s eta 0:00:00
+Collecting snowballstemmer>=2.0 (from Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ed/dc/c02e01294f7265e63a7315fe086dd1df7dacb9f840a804da846b96d01b96/snowballstemmer-2.2.0-py2.py3-none-any.whl (93 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 93.0/93.0 kB 712.1 kB/s eta 0:00:00
+Collecting babel>=2.9 (from Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/0d/35/4196b21041e29a42dc4f05866d0c94fa26c9da88ce12c38c2265e42c82fb/Babel-2.14.0-py3-none-any.whl (11.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.0/11.0 MB 2.0 MB/s eta 0:00:00
+Collecting alabaster<0.8,>=0.7 (from Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/64/88/c7083fc61120ab661c5d0b82cb77079fc1429d3f913a456c1c82cf4658f7/alabaster-0.7.13-py3-none-any.whl (13 kB)
+Collecting imagesize>=1.3 (from Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ff/62/85c4c919272577931d407be5ba5d71c20f0b616d31a0befe0ae45bb79abd/imagesize-1.4.1-py2.py3-none-any.whl (8.8 kB)
+Requirement already satisfied: requests>=2.5.0 in /usr/local/lib/python3.8/site-packages (from Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (2.31.0)
+Requirement already satisfied: pytz>=2015.7 in /usr/local/lib/python3.8/site-packages (from babel>=2.9->Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (2023.3.post1)
+Requirement already satisfied: zipp>=0.5 in /usr/local/lib/python3.8/site-packages (from importlib-metadata>1->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (3.17.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.8/site-packages (from Jinja2>=3.0->Sphinx>=4.0->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (2.1.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (3.6)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (1.26.14)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->Sphinx>=3.4->autodoc_pydantic->-r requirements-readthedocs.txt (line 1)) (2023.11.17)
+Installing collected packages: snowballstemmer, commonmark, sphinxcontrib-serializinghtml, sphinxcontrib-qthelp, sphinxcontrib-jsmath, sphinxcontrib-htmlhelp, sphinxcontrib-devhelp, sphinxcontrib-applehelp, Pygments, pydantic, importlib-metadata, imagesize, docutils, babel, alabaster, Sphinx, sphinxcontrib-jquery, recommonmark, autodoc_pydantic, sphinx_rtd_theme
+  Attempting uninstall: pydantic
+    Found existing installation: pydantic 2.5.3
+    Uninstalling pydantic-2.5.3:
+      Successfully uninstalled pydantic-2.5.3
+Successfully installed Pygments-2.17.2 Sphinx-5.3.0 alabaster-0.7.13 autodoc_pydantic-1.9.0 babel-2.14.0 commonmark-0.9.1 docutils-0.17.1 imagesize-1.4.1 importlib-metadata-7.0.1 pydantic-1.10.13 recommonmark-0.7.1 snowballstemmer-2.2.0 sphinx_rtd_theme-2.0.0 sphinxcontrib-applehelp-1.0.4 sphinxcontrib-devhelp-1.0.2 sphinxcontrib-htmlhelp-2.0.1 sphinxcontrib-jquery-4.1 sphinxcontrib-jsmath-1.0.1 sphinxcontrib-qthelp-1.0.3 sphinxcontrib-serializinghtml-1.1.5
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Requirement already satisfied: hjson in /usr/local/lib/python3.8/site-packages (from -r requirements-autotuning-ml.txt (line 1)) (3.1.0)
+Collecting tabulate (from -r requirements-autotuning-ml.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl (35 kB)
+Collecting xgboost (from -r requirements-autotuning-ml.txt (line 3))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c3/eb/496aa2f5d356af4185f770bc76055307f8d1870e11016b10fd779b21769c/xgboost-2.0.3-py3-none-manylinux2014_x86_64.whl (297.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 297.1/297.1 MB 1.5 MB/s eta 0:00:00
+Requirement already satisfied: numpy in /usr/local/lib/python3.8/site-packages (from xgboost->-r requirements-autotuning-ml.txt (line 3)) (1.23.5)
+Collecting scipy (from xgboost->-r requirements-autotuning-ml.txt (line 3))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/69/f0/fb07a9548e48b687b8bf2fa81d71aba9cfc548d365046ca1c791e24db99d/scipy-1.10.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (34.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 34.5/34.5 MB 2.0 MB/s eta 0:00:00
+Installing collected packages: tabulate, scipy, xgboost
+Successfully installed scipy-1.10.1 tabulate-0.9.0 xgboost-2.0.3
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting diffusers (from -r requirements-sd.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/aa/0b/af1dd4b355accf28fa413d93c3b7df2c25922ebc3435eecc56818a3f8c1e/diffusers-0.25.0-py3-none-any.whl (1.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 2.1 MB/s eta 0:00:00
+Requirement already satisfied: importlib-metadata in /usr/local/lib/python3.8/site-packages (from diffusers->-r requirements-sd.txt (line 1)) (7.0.1)
+Requirement already satisfied: filelock in /usr/local/lib/python3.8/site-packages (from diffusers->-r requirements-sd.txt (line 1)) (3.13.1)
+Requirement already satisfied: huggingface-hub>=0.19.4 in /usr/local/lib/python3.8/site-packages (from diffusers->-r requirements-sd.txt (line 1)) (0.20.2)
+Requirement already satisfied: numpy in /usr/local/lib/python3.8/site-packages (from diffusers->-r requirements-sd.txt (line 1)) (1.23.5)
+Collecting regex!=2019.12.17 (from diffusers->-r requirements-sd.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/eb/10/4ccc8eed80f11c082a2883d49d4090aa80c7f65704216a529f490cb089b1/regex-2023.12.25-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (777 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 777.0/777.0 kB 2.4 MB/s eta 0:00:00
+Requirement already satisfied: requests in /usr/local/lib/python3.8/site-packages (from diffusers->-r requirements-sd.txt (line 1)) (2.31.0)
+Collecting safetensors>=0.3.1 (from diffusers->-r requirements-sd.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/b6/ae/ef743263a42e21e3722845678c809e3962b6f886453431e847d520839bf0/safetensors-0.4.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 805.9 kB/s eta 0:00:00
+Requirement already satisfied: Pillow in /usr/local/lib/python3.8/site-packages (from diffusers->-r requirements-sd.txt (line 1)) (10.0.1)
+Requirement already satisfied: fsspec>=2023.5.0 in /usr/local/lib/python3.8/site-packages (from huggingface-hub>=0.19.4->diffusers->-r requirements-sd.txt (line 1)) (2023.10.0)
+Requirement already satisfied: tqdm>=4.42.1 in /usr/local/lib/python3.8/site-packages (from huggingface-hub>=0.19.4->diffusers->-r requirements-sd.txt (line 1)) (4.66.1)
+Requirement already satisfied: pyyaml>=5.1 in /usr/local/lib/python3.8/site-packages (from huggingface-hub>=0.19.4->diffusers->-r requirements-sd.txt (line 1)) (6.0.1)
+Requirement already satisfied: typing-extensions>=3.7.4.3 in /usr/local/lib/python3.8/site-packages (from huggingface-hub>=0.19.4->diffusers->-r requirements-sd.txt (line 1)) (4.9.0)
+Requirement already satisfied: packaging>=20.9 in /usr/local/lib/python3.8/site-packages (from huggingface-hub>=0.19.4->diffusers->-r requirements-sd.txt (line 1)) (23.2)
+Requirement already satisfied: zipp>=0.5 in /usr/local/lib/python3.8/site-packages (from importlib-metadata->diffusers->-r requirements-sd.txt (line 1)) (3.17.0)
+Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.8/site-packages (from requests->diffusers->-r requirements-sd.txt (line 1)) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.8/site-packages (from requests->diffusers->-r requirements-sd.txt (line 1)) (3.6)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.8/site-packages (from requests->diffusers->-r requirements-sd.txt (line 1)) (1.26.14)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.8/site-packages (from requests->diffusers->-r requirements-sd.txt (line 1)) (2023.11.17)
+Installing collected packages: safetensors, regex, diffusers
+Successfully installed diffusers-0.25.0 regex-2023.12.25 safetensors-0.4.1
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Requirement already satisfied: tabulate in /usr/local/lib/python3.8/site-packages (from -r requirements-autotuning.txt (line 1)) (0.9.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting intel_extension_for_pytorch (from -r requirements-cpu.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/f1/30/554759da7479b403d66ff28f772f31556a214c63c65ace9dc1845d3cc0eb/intel_extension_for_pytorch-2.1.100-cp38-cp38-manylinux2014_x86_64.whl (53.4 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 53.4/53.4 MB 1.9 MB/s eta 0:00:00
+Requirement already satisfied: psutil in /usr/local/lib/python3.8/site-packages (from intel_extension_for_pytorch->-r requirements-cpu.txt (line 1)) (5.9.7)
+Requirement already satisfied: numpy in /usr/local/lib/python3.8/site-packages (from intel_extension_for_pytorch->-r requirements-cpu.txt (line 1)) (1.23.5)
+Requirement already satisfied: packaging in /usr/local/lib/python3.8/site-packages (from intel_extension_for_pytorch->-r requirements-cpu.txt (line 1)) (23.2)
+Installing collected packages: intel_extension_for_pytorch
+Successfully installed intel_extension_for_pytorch-2.1.100
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting neural-compressor==2.1.0 (from -r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/d5/23/7cb4515b590dffda456d07cb9fec220d4edd01ec2809f164bd80390f39fd/neural_compressor-2.1-py3-none-any.whl (1.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 2.3 MB/s eta 0:00:00
+Requirement already satisfied: numpy in /usr/local/lib/python3.8/site-packages (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (1.23.5)
+Requirement already satisfied: pyyaml in /usr/local/lib/python3.8/site-packages (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (6.0.1)
+Collecting scikit-learn (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/3f/48/6fdd99f5717045f9984616b5c2ec683d6286d30c0ac234563062132b83ab/scikit_learn-1.3.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.1/11.1 MB 2.2 MB/s eta 0:00:00
+Collecting schema (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/0d/93/ca8aa5a772efd69043d0a745172d92bee027caa7565c7f774a2f44b91207/schema-0.7.5-py2.py3-none-any.whl (17 kB)
+Requirement already satisfied: py-cpuinfo in /usr/local/lib/python3.8/site-packages (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (9.0.0)
+Requirement already satisfied: pandas in /usr/local/lib/python3.8/site-packages (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (2.0.3)
+Collecting pycocotools (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/6c/11/6cb76ebc71388ac17691bc3da76276d1642af30bf9097de9bb5f64c92cfa/pycocotools-2.0.7-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (439 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 439.5/439.5 kB 1.4 MB/s eta 0:00:00
+Collecting opencv-python (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/d9/64/7fdfb9386511cd6805451e012c537073a79a958a58795c4e602e538c388c/opencv_python-4.9.0.80-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (62.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.2/62.2 MB 1.9 MB/s eta 0:00:00
+Requirement already satisfied: requests in /usr/local/lib/python3.8/site-packages (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (2.31.0)
+Requirement already satisfied: psutil in /usr/local/lib/python3.8/site-packages (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (5.9.7)
+Requirement already satisfied: Pillow in /usr/local/lib/python3.8/site-packages (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (10.0.1)
+Collecting prettytable (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/4d/81/316b6a55a0d1f327d04cc7b0ba9d04058cb62de6c3a4d4b0df280cbe3b0b/prettytable-3.9.0-py3-none-any.whl (27 kB)
+Collecting deprecated (from neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/20/8d/778b7d51b981a96554f29136cd59ca7880bf58094338085bcf2a979a0e6a/Deprecated-1.2.14-py2.py3-none-any.whl (9.6 kB)
+Collecting wrapt<2,>=1.10 (from deprecated->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ef/c6/56e718e2c58a4078518c14d97e531ef1e9e8a5c1ddafdc0d264a92be1a1a/wrapt-1.16.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (83 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.4/83.4 kB 301.3 kB/s eta 0:00:00
+Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.8/site-packages (from pandas->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (2.8.2)
+Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.8/site-packages (from pandas->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (2023.3.post1)
+Requirement already satisfied: tzdata>=2022.1 in /usr/local/lib/python3.8/site-packages (from pandas->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (2023.4)
+Collecting wcwidth (from prettytable->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/fd/84/fd2ba7aafacbad3c4201d395674fc6348826569da3c0937e75505ead3528/wcwidth-0.2.13-py2.py3-none-any.whl (34 kB)
+Requirement already satisfied: matplotlib>=2.1.0 in /usr/local/lib/python3.8/site-packages (from pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (3.7.4)
+Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.8/site-packages (from requests->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.8/site-packages (from requests->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (3.6)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.8/site-packages (from requests->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (1.26.14)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.8/site-packages (from requests->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (2023.11.17)
+Collecting contextlib2>=0.5.5 (from schema->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/76/56/6d6872f79d14c0cb02f1646cbb4592eef935857c0951a105874b7b62a0c3/contextlib2-21.6.0-py2.py3-none-any.whl (13 kB)
+Requirement already satisfied: scipy>=1.5.0 in /usr/local/lib/python3.8/site-packages (from scikit-learn->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (1.10.1)
+Collecting joblib>=1.1.1 (from scikit-learn->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/10/40/d551139c85db202f1f384ba8bcf96aca2f329440a844f924c8a0040b6d02/joblib-1.3.2-py3-none-any.whl (302 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 302.2/302.2 kB 1.2 MB/s eta 0:00:00
+Collecting threadpoolctl>=2.0.0 (from scikit-learn->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/81/12/fd4dea011af9d69e1cad05c75f3f7202cdcbeac9b712eea58ca779a72865/threadpoolctl-3.2.0-py3-none-any.whl (15 kB)
+Requirement already satisfied: contourpy>=1.0.1 in /usr/local/lib/python3.8/site-packages (from matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (1.1.1)
+Requirement already satisfied: cycler>=0.10 in /usr/local/lib/python3.8/site-packages (from matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in /usr/local/lib/python3.8/site-packages (from matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (4.47.0)
+Requirement already satisfied: kiwisolver>=1.0.1 in /usr/local/lib/python3.8/site-packages (from matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (1.4.5)
+Requirement already satisfied: packaging>=20.0 in /usr/local/lib/python3.8/site-packages (from matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (23.2)
+Requirement already satisfied: pyparsing>=2.3.1 in /usr/local/lib/python3.8/site-packages (from matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (3.1.1)
+Requirement already satisfied: importlib-resources>=3.2.0 in /usr/local/lib/python3.8/site-packages (from matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (6.1.1)
+Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.8/site-packages (from python-dateutil>=2.8.2->pandas->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (1.16.0)
+Requirement already satisfied: zipp>=3.1.0 in /usr/local/lib/python3.8/site-packages (from importlib-resources>=3.2.0->matplotlib>=2.1.0->pycocotools->neural-compressor==2.1.0->-r requirements-sparse_pruning.txt (line 1)) (3.17.0)
+Installing collected packages: wcwidth, wrapt, threadpoolctl, prettytable, opencv-python, joblib, contextlib2, scikit-learn, schema, deprecated, pycocotools, neural-compressor
+Successfully installed contextlib2-21.6.0 deprecated-1.2.14 joblib-1.3.2 neural-compressor-2.1 opencv-python-4.9.0.80 prettytable-3.9.0 pycocotools-2.0.7 schema-0.7.5 scikit-learn-1.3.2 threadpoolctl-3.2.0 wcwidth-0.2.13 wrapt-1.16.0
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting accelerate (from -r requirements-dev.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/f7/fc/c55e5a2da345c9a24aa2e1e0f60eb2ca290b6a41be82da03a6d4baec4f99/accelerate-0.25.0-py3-none-any.whl (265 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 265.7/265.7 kB 1.9 MB/s eta 0:00:00
+Collecting clang-format==16.0.2 (from -r requirements-dev.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ff/d0/36acbc13f760adce6d48ce1378653ad46a7684d71782d30efe24a753c9bb/clang_format-16.0.2-py2.py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.6 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 1.9 MB/s eta 0:00:00
+Collecting coverage (from -r requirements-dev.txt (line 3))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/22/95/83c2429234f40f438e453554844890335c3c67e53bfd6b1e16142da893d0/coverage-7.4.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (234 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 234.4/234.4 kB 1.1 MB/s eta 0:00:00
+Collecting deepspeed-kernels (from -r requirements-dev.txt (line 4))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/42/17/8585afc666ada22f7da2357fa41765e311ae09e793c5e6957c50b8e237f7/deepspeed_kernels-0.0.1.dev1698255861-py3-none-manylinux1_x86_64.whl (44.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.5/44.5 MB 2.0 MB/s eta 0:00:00
+Requirement already satisfied: docutils<0.18 in /usr/local/lib/python3.8/site-packages (from -r requirements-dev.txt (line 5)) (0.17.1)
+Collecting future (from -r requirements-dev.txt (line 6))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/8f/2e/cf6accf7415237d6faeeebdc7832023c90e0282aa16fd3263db0eb4715ec/future-0.18.3.tar.gz (840 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 840.9/840.9 kB 2.4 MB/s eta 0:00:00
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: importlib-metadata>=4 in /usr/local/lib/python3.8/site-packages (from -r requirements-dev.txt (line 7)) (7.0.1)
+Collecting mup (from -r requirements-dev.txt (line 8))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/1c/1f/8f76cd8765b48193e60101f80387e9c7817566529a703e63c78f784dde46/mup-1.0.0.tar.gz (28 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting pre-commit>=2.20.0 (from -r requirements-dev.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/6c/75/526915fedf462e05eeb1c75ceaf7e3f9cde7b5ce6f62740fe5f7f19a0050/pre_commit-3.5.0-py2.py3-none-any.whl (203 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 203.7/203.7 kB 1.5 MB/s eta 0:00:00
+Requirement already satisfied: pytest in /usr/local/lib/python3.8/site-packages (from -r requirements-dev.txt (line 10)) (7.4.4)
+Collecting pytest-forked (from -r requirements-dev.txt (line 11))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/f4/af/9c0bda43e486a3c9bf1e0f876d0f241bc3f229d7d65d09331a0868db9629/pytest_forked-1.6.0-py3-none-any.whl (4.9 kB)
+Collecting pytest-randomly (from -r requirements-dev.txt (line 12))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/24/d3/00e575657422055c4ea220b2f80e8cc6026ab7130372b7067444d1b0ac10/pytest_randomly-3.15.0-py3-none-any.whl (8.7 kB)
+Collecting pytest-xdist (from -r requirements-dev.txt (line 13))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/50/37/125fe5ec459321e2d48a0c38672cfc2419ad87d580196fd894e5f25230b0/pytest_xdist-3.5.0-py3-none-any.whl (42 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 42.0/42.0 kB 321.7 kB/s eta 0:00:00
+Requirement already satisfied: recommonmark in /usr/local/lib/python3.8/site-packages (from -r requirements-dev.txt (line 14)) (0.7.1)
+Requirement already satisfied: sphinx in /usr/local/lib/python3.8/site-packages (from -r requirements-dev.txt (line 15)) (5.3.0)
+Requirement already satisfied: sphinx-rtd-theme in /usr/local/lib/python3.8/site-packages (from -r requirements-dev.txt (line 16)) (2.0.0)
+Collecting tensorboard (from -r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/bc/a2/ff5f4c299eb37c95299a76015da3f30211468e29d8d6f1d011683279baee/tensorboard-2.14.0-py3-none-any.whl (5.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 2.1 MB/s eta 0:00:00
+Collecting transformers (from -r requirements-dev.txt (line 19))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/20/0a/739426a81f7635b422fbe6cb8d1d99d1235579a6ac8024c13d743efa6847/transformers-4.36.2-py3-none-any.whl (8.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.2/8.2 MB 2.2 MB/s eta 0:00:00
+Collecting wandb (from -r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/28/3b/f1485df03e33a390b833081693e56be9e62fef097a82c26ef615605f768d/wandb-0.16.2-py3-none-any.whl (2.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 2.0 MB/s eta 0:00:00
+Requirement already satisfied: numpy>=1.17 in /usr/local/lib/python3.8/site-packages (from accelerate->-r requirements-dev.txt (line 1)) (1.23.5)
+Requirement already satisfied: packaging>=20.0 in /usr/local/lib/python3.8/site-packages (from accelerate->-r requirements-dev.txt (line 1)) (23.2)
+Requirement already satisfied: psutil in /usr/local/lib/python3.8/site-packages (from accelerate->-r requirements-dev.txt (line 1)) (5.9.7)
+Requirement already satisfied: pyyaml in /usr/local/lib/python3.8/site-packages (from accelerate->-r requirements-dev.txt (line 1)) (6.0.1)
+Requirement already satisfied: torch>=1.10.0 in /usr/local/lib/python3.8/site-packages (from accelerate->-r requirements-dev.txt (line 1)) (2.1.0a0+git793d2b5.abi0.dtk2310)
+Requirement already satisfied: huggingface-hub in /usr/local/lib/python3.8/site-packages (from accelerate->-r requirements-dev.txt (line 1)) (0.20.2)
+Requirement already satisfied: safetensors>=0.3.1 in /usr/local/lib/python3.8/site-packages (from accelerate->-r requirements-dev.txt (line 1)) (0.4.1)
+Collecting cmake>=3.24 (from deepspeed-kernels->-r requirements-dev.txt (line 4))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/09/30/df85689d18122becb9b6495cf6778f9ef629bdaa3ec86f49809ab5772e35/cmake-3.28.1-py2.py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (26.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 26.3/26.3 MB 2.1 MB/s eta 0:00:00
+Requirement already satisfied: zipp>=0.5 in /usr/local/lib/python3.8/site-packages (from importlib-metadata>=4->-r requirements-dev.txt (line 7)) (3.17.0)
+Requirement already satisfied: pandas in /usr/local/lib/python3.8/site-packages (from mup->-r requirements-dev.txt (line 8)) (2.0.3)
+Requirement already satisfied: torchvision in /usr/local/lib/python3.8/site-packages (from mup->-r requirements-dev.txt (line 8)) (0.16.0+git267eff6.abi0.dtk2310.torch2.1.0)
+Collecting seaborn (from mup->-r requirements-dev.txt (line 8))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/2d/46/cf3fce41ffc543b6e94dadbe6b647559d591df446ec716e72c3b4ce71b34/seaborn-0.13.1-py3-none-any.whl (294 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 294.8/294.8 kB 651.5 kB/s eta 0:00:00
+Requirement already satisfied: tqdm in /usr/local/lib/python3.8/site-packages (from mup->-r requirements-dev.txt (line 8)) (4.66.1)
+Collecting cfgv>=2.0.0 (from pre-commit>=2.20.0->-r requirements-dev.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c5/55/51844dd50c4fc7a33b653bfaba4c2456f06955289ca770a5dbd5fd267374/cfgv-3.4.0-py2.py3-none-any.whl (7.2 kB)
+Collecting identify>=1.0.0 (from pre-commit>=2.20.0->-r requirements-dev.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/a8/a3/9578c3b5dd725f65d277923dc5cc8fd881d87f68067f8267670b346a5593/identify-2.5.33-py2.py3-none-any.whl (98 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 98.9/98.9 kB 785.7 kB/s eta 0:00:00
+Collecting nodeenv>=0.11.1 (from pre-commit>=2.20.0->-r requirements-dev.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/1a/e6/6d2ead760a9ddb35e65740fd5a57e46aadd7b0c49861ab24f94812797a1c/nodeenv-1.8.0-py2.py3-none-any.whl (22 kB)
+Collecting virtualenv>=20.10.0 (from pre-commit>=2.20.0->-r requirements-dev.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/83/22/54b1180756d2d6194bcafb7425d437c3034c4bff92129c3e1e633079e2c4/virtualenv-20.25.0-py3-none-any.whl (3.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.8/3.8 MB 2.0 MB/s eta 0:00:00
+Requirement already satisfied: iniconfig in /usr/local/lib/python3.8/site-packages (from pytest->-r requirements-dev.txt (line 10)) (2.0.0)
+Requirement already satisfied: pluggy<2.0,>=0.12 in /usr/local/lib/python3.8/site-packages (from pytest->-r requirements-dev.txt (line 10)) (1.3.0)
+Requirement already satisfied: exceptiongroup>=1.0.0rc8 in /usr/local/lib/python3.8/site-packages (from pytest->-r requirements-dev.txt (line 10)) (1.2.0)
+Requirement already satisfied: tomli>=1.0.0 in /usr/local/lib/python3.8/site-packages (from pytest->-r requirements-dev.txt (line 10)) (2.0.1)
+Collecting py (from pytest-forked->-r requirements-dev.txt (line 11))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/f6/f0/10642828a8dfb741e5f3fbaac830550a518a775c7fff6f04a007259b0548/py-1.11.0-py2.py3-none-any.whl (98 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 98.7/98.7 kB 1.1 MB/s eta 0:00:00
+Collecting execnet>=1.1 (from pytest-xdist->-r requirements-dev.txt (line 13))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/e8/9c/a079946da30fac4924d92dbc617e5367d454954494cf1e71567bcc4e00ee/execnet-2.0.2-py3-none-any.whl (37 kB)
+Requirement already satisfied: commonmark>=0.8.1 in /usr/local/lib/python3.8/site-packages (from recommonmark->-r requirements-dev.txt (line 14)) (0.9.1)
+Requirement already satisfied: sphinxcontrib-applehelp in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (1.0.4)
+Requirement already satisfied: sphinxcontrib-devhelp in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (1.0.2)
+Requirement already satisfied: sphinxcontrib-jsmath in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (1.0.1)
+Requirement already satisfied: sphinxcontrib-htmlhelp>=2.0.0 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (2.0.1)
+Requirement already satisfied: sphinxcontrib-serializinghtml>=1.1.5 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (1.1.5)
+Requirement already satisfied: sphinxcontrib-qthelp in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (1.0.3)
+Requirement already satisfied: Jinja2>=3.0 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (3.1.2)
+Requirement already satisfied: Pygments>=2.12 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (2.17.2)
+Requirement already satisfied: snowballstemmer>=2.0 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (2.2.0)
+Requirement already satisfied: babel>=2.9 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (2.14.0)
+Requirement already satisfied: alabaster<0.8,>=0.7 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (0.7.13)
+Requirement already satisfied: imagesize>=1.3 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (1.4.1)
+Requirement already satisfied: requests>=2.5.0 in /usr/local/lib/python3.8/site-packages (from sphinx->-r requirements-dev.txt (line 15)) (2.31.0)
+Requirement already satisfied: sphinxcontrib-jquery<5,>=4 in /usr/local/lib/python3.8/site-packages (from sphinx-rtd-theme->-r requirements-dev.txt (line 16)) (4.1)
+Collecting absl-py>=0.4 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/01/e4/dc0a1dcc4e74e08d7abedab278c795eef54a224363bb18f5692f416d834f/absl_py-2.0.0-py3-none-any.whl (130 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 130.2/130.2 kB 1.2 MB/s eta 0:00:00
+Collecting grpcio>=1.48.2 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/df/f3/f158fa88b8149369f9ef2e8c40de125f6d0923cc248a63780380de7cd9a3/grpcio-1.60.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (5.4 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.4/5.4 MB 2.1 MB/s eta 0:00:00
+Collecting google-auth<3,>=1.6.3 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/93/54/180b2447607fb63c10ba4bed48044b71d112ca83496f96141b65eb278e37/google_auth-2.26.1-py2.py3-none-any.whl (186 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 186.4/186.4 kB 1.2 MB/s eta 0:00:00
+Collecting google-auth-oauthlib<1.1,>=0.5 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/4a/07/8d9a8186e6768b55dfffeb57c719bc03770cf8a970a074616ae6f9e26a57/google_auth_oauthlib-1.0.0-py2.py3-none-any.whl (18 kB)
+Collecting markdown>=2.6.8 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/70/58/2c5a654173937d9f540a4971c569b44dcd55e5424a484d954cdaeebcf79c/Markdown-3.5.1-py3-none-any.whl (102 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 102.2/102.2 kB 880.3 kB/s eta 0:00:00
+Collecting protobuf>=3.19.6 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ae/5b/7ed02a9b8e752c8f7bca8661779c0275b9e3e6a903a3045e6da51f796dda/protobuf-4.25.1-cp37-abi3-manylinux2014_x86_64.whl (294 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 294.6/294.6 kB 1.4 MB/s eta 0:00:00
+Requirement already satisfied: setuptools>=41.0.0 in /usr/local/lib/python3.8/site-packages (from tensorboard->-r requirements-dev.txt (line 17)) (56.0.0)
+Collecting tensorboard-data-server<0.8.0,>=0.7.0 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/7a/13/e503968fefabd4c6b2650af21e110aa8466fe21432cd7c43a84577a89438/tensorboard_data_server-0.7.2-py3-none-any.whl (2.4 kB)
+Collecting werkzeug>=1.0.1 (from tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c3/fc/254c3e9b5feb89ff5b9076a23218dafbc99c96ac5941e900b71206e6313b/werkzeug-3.0.1-py3-none-any.whl (226 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 226.7/226.7 kB 1.3 MB/s eta 0:00:00
+Collecting wheel>=0.26 (from tensorboard->-r requirements-dev.txt (line 17))
+  Using cached https://pypi.tuna.tsinghua.edu.cn/packages/c7/c3/55076fc728723ef927521abaa1955213d094933dc36d4a2008d5101e1af5/wheel-0.42.0-py3-none-any.whl (65 kB)
+Requirement already satisfied: filelock in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-dev.txt (line 19)) (3.13.1)
+Requirement already satisfied: regex!=2019.12.17 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-dev.txt (line 19)) (2023.12.25)
+Collecting tokenizers<0.19,>=0.14 (from transformers->-r requirements-dev.txt (line 19))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ad/75/56230c5c65b226e707e1adbc759c19fdf1b20bb02c0276796b132c97118a/tokenizers-0.15.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.8/3.8 MB 2.0 MB/s eta 0:00:00
+Collecting Click!=8.0.0,>=7.1 (from wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/00/2e/d53fa4befbf2cfa713304affc7ca780ce4fc1fd8710527771b58311a3229/click-8.1.7-py3-none-any.whl (97 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 97.9/97.9 kB 1.1 MB/s eta 0:00:00
+Collecting GitPython!=3.1.29,>=1.0.0 (from wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/8d/c4/82b858fb6483dfb5e338123c154d19c043305b01726a67d89532b8f8f01b/GitPython-3.1.40-py3-none-any.whl (190 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 190.6/190.6 kB 1.9 MB/s eta 0:00:00
+Collecting sentry-sdk>=1.0.0 (from wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/aa/39/a40c841782b775eec1602a82387b4e91322ccafd842fd60fc4deb9f13f7d/sentry_sdk-1.39.1-py2.py3-none-any.whl (254 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 254.1/254.1 kB 2.2 MB/s eta 0:00:00
+Collecting docker-pycreds>=0.4.0 (from wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/f5/e8/f6bd1eee09314e7e6dee49cbe2c5e22314ccdb38db16c9fc72d2fa80d054/docker_pycreds-0.4.0-py2.py3-none-any.whl (9.0 kB)
+Collecting setproctitle (from wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/45/8d/68eec8de2d22a8ed6004344b35f94f2407ba723beee6ab468f162bb7be3e/setproctitle-1.3.3-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (31 kB)
+Collecting appdirs>=1.4.3 (from wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/3b/00/2344469e2084fb287c2e0b57b72910309874c3245463acd6cf5e3db69324/appdirs-1.4.4-py2.py3-none-any.whl (9.6 kB)
+Requirement already satisfied: typing-extensions in /usr/local/lib/python3.8/site-packages (from wandb->-r requirements-dev.txt (line 20)) (4.9.0)
+Requirement already satisfied: pytz>=2015.7 in /usr/local/lib/python3.8/site-packages (from babel>=2.9->sphinx->-r requirements-dev.txt (line 15)) (2023.3.post1)
+Requirement already satisfied: six>=1.4.0 in /usr/local/lib/python3.8/site-packages (from docker-pycreds>=0.4.0->wandb->-r requirements-dev.txt (line 20)) (1.16.0)
+Collecting gitdb<5,>=4.0.1 (from GitPython!=3.1.29,>=1.0.0->wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/fd/5b/8f0c4a5bb9fd491c277c21eff7ccae71b47d43c4446c9d0c6cff2fe8c2c4/gitdb-4.0.11-py3-none-any.whl (62 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.7/62.7 kB 601.4 kB/s eta 0:00:00
+Collecting cachetools<6.0,>=2.0.0 (from google-auth<3,>=1.6.3->tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/a2/91/2d843adb9fbd911e0da45fbf6f18ca89d07a087c3daa23e955584f90ebf4/cachetools-5.3.2-py3-none-any.whl (9.3 kB)
+Collecting pyasn1-modules>=0.2.1 (from google-auth<3,>=1.6.3->tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/cd/8e/bea464350e1b8c6ed0da3a312659cb648804a08af6cacc6435867f74f8bd/pyasn1_modules-0.3.0-py2.py3-none-any.whl (181 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 kB 1.5 MB/s eta 0:00:00
+Collecting rsa<5,>=3.1.4 (from google-auth<3,>=1.6.3->tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/49/97/fa78e3d2f65c02c8e1268b9aba606569fe97f6c8f7c2d74394553347c145/rsa-4.9-py3-none-any.whl (34 kB)
+Collecting requests-oauthlib>=0.7.0 (from google-auth-oauthlib<1.1,>=0.5->tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/6f/bb/5deac77a9af870143c684ab46a7934038a53eb4aa975bc0687ed6ca2c610/requests_oauthlib-1.3.1-py2.py3-none-any.whl (23 kB)
+Requirement already satisfied: fsspec>=2023.5.0 in /usr/local/lib/python3.8/site-packages (from huggingface-hub->accelerate->-r requirements-dev.txt (line 1)) (2023.10.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.8/site-packages (from Jinja2>=3.0->sphinx->-r requirements-dev.txt (line 15)) (2.1.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->sphinx->-r requirements-dev.txt (line 15)) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->sphinx->-r requirements-dev.txt (line 15)) (3.6)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->sphinx->-r requirements-dev.txt (line 15)) (1.26.14)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.8/site-packages (from requests>=2.5.0->sphinx->-r requirements-dev.txt (line 15)) (2023.11.17)
+Requirement already satisfied: sympy in /usr/local/lib/python3.8/site-packages (from torch>=1.10.0->accelerate->-r requirements-dev.txt (line 1)) (1.12)
+Requirement already satisfied: networkx in /usr/local/lib/python3.8/site-packages (from torch>=1.10.0->accelerate->-r requirements-dev.txt (line 1)) (3.1)
+Collecting distlib<1,>=0.3.7 (from virtualenv>=20.10.0->pre-commit>=2.20.0->-r requirements-dev.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/8e/41/9307e4f5f9976bc8b7fea0b66367734e8faf3ec84bc0d412d8cfabbb66cd/distlib-0.3.8-py2.py3-none-any.whl (468 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 468.9/468.9 kB 3.1 MB/s eta 0:00:00
+Collecting platformdirs<5,>=3.9.1 (from virtualenv>=20.10.0->pre-commit>=2.20.0->-r requirements-dev.txt (line 9))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/be/53/42fe5eab4a09d251a76d0043e018172db324a23fcdac70f77a551c11f618/platformdirs-4.1.0-py3-none-any.whl (17 kB)
+Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.8/site-packages (from pandas->mup->-r requirements-dev.txt (line 8)) (2.8.2)
+Requirement already satisfied: tzdata>=2022.1 in /usr/local/lib/python3.8/site-packages (from pandas->mup->-r requirements-dev.txt (line 8)) (2023.4)
+Requirement already satisfied: matplotlib!=3.6.1,>=3.4 in /usr/local/lib/python3.8/site-packages (from seaborn->mup->-r requirements-dev.txt (line 8)) (3.7.4)
+Requirement already satisfied: pillow!=8.3.*,>=5.3.0 in /usr/local/lib/python3.8/site-packages (from torchvision->mup->-r requirements-dev.txt (line 8)) (10.0.1)
+Collecting smmap<6,>=3.0.1 (from gitdb<5,>=4.0.1->GitPython!=3.1.29,>=1.0.0->wandb->-r requirements-dev.txt (line 20))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/a7/a5/10f97f73544edcdef54409f1d839f6049a0d79df68adbc1ceb24d1aaca42/smmap-5.0.1-py3-none-any.whl (24 kB)
+Requirement already satisfied: contourpy>=1.0.1 in /usr/local/lib/python3.8/site-packages (from matplotlib!=3.6.1,>=3.4->seaborn->mup->-r requirements-dev.txt (line 8)) (1.1.1)
+Requirement already satisfied: cycler>=0.10 in /usr/local/lib/python3.8/site-packages (from matplotlib!=3.6.1,>=3.4->seaborn->mup->-r requirements-dev.txt (line 8)) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in /usr/local/lib/python3.8/site-packages (from matplotlib!=3.6.1,>=3.4->seaborn->mup->-r requirements-dev.txt (line 8)) (4.47.0)
+Requirement already satisfied: kiwisolver>=1.0.1 in /usr/local/lib/python3.8/site-packages (from matplotlib!=3.6.1,>=3.4->seaborn->mup->-r requirements-dev.txt (line 8)) (1.4.5)
+Requirement already satisfied: pyparsing>=2.3.1 in /usr/local/lib/python3.8/site-packages (from matplotlib!=3.6.1,>=3.4->seaborn->mup->-r requirements-dev.txt (line 8)) (3.1.1)
+Requirement already satisfied: importlib-resources>=3.2.0 in /usr/local/lib/python3.8/site-packages (from matplotlib!=3.6.1,>=3.4->seaborn->mup->-r requirements-dev.txt (line 8)) (6.1.1)
+Collecting pyasn1<0.6.0,>=0.4.6 (from pyasn1-modules>=0.2.1->google-auth<3,>=1.6.3->tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/d1/75/4686d2872bf2fc0b37917cbc8bbf0dd3a5cdb0990799be1b9cbf1e1eb733/pyasn1-0.5.1-py2.py3-none-any.whl (84 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.9/84.9 kB 765.7 kB/s eta 0:00:00
+Collecting oauthlib>=3.0.0 (from requests-oauthlib>=0.7.0->google-auth-oauthlib<1.1,>=0.5->tensorboard->-r requirements-dev.txt (line 17))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/7e/80/cab10959dc1faead58dc8384a781dfbf93cb4d33d50988f7a69f1b7c9bbe/oauthlib-3.2.2-py3-none-any.whl (151 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 151.7/151.7 kB 797.4 kB/s eta 0:00:00
+Requirement already satisfied: mpmath>=0.19 in /usr/local/lib/python3.8/site-packages (from sympy->torch>=1.10.0->accelerate->-r requirements-dev.txt (line 1)) (1.3.0)
+Building wheels for collected packages: future, mup
+  Building wheel for future (pyproject.toml): started
+  Building wheel for future (pyproject.toml): finished with status 'done'
+  Created wheel for future: filename=future-0.18.3-py3-none-any.whl size=492024 sha256=3038f056ca294df33365793245d94dbe6a663f6b999639da1f4b53f47f7e6a49
+  Stored in directory: /root/.cache/pip/wheels/70/bd/fa/9f18baf78773526a3f6c9d46f27e09ffd7084a2e2f92825b3b
+  Building wheel for mup (pyproject.toml): started
+  Building wheel for mup (pyproject.toml): finished with status 'done'
+  Created wheel for mup: filename=mup-1.0.0-py3-none-any.whl size=23632 sha256=17675273601c62e5f09b7c40e3ec6cbf97a544859d19a6ad7e84fa852cc6c9a6
+  Stored in directory: /root/.cache/pip/wheels/e0/3b/07/9699104336bfbac8cb94a3ed3cc9cf147a72020bedcaba8a07
+Successfully built future mup
+Installing collected packages: distlib, cmake, clang-format, appdirs, wheel, werkzeug, tensorboard-data-server, smmap, setproctitle, sentry-sdk, pyasn1, py, protobuf, platformdirs, oauthlib, nodeenv, identify, grpcio, future, execnet, docker-pycreds, deepspeed-kernels, coverage, Click, cfgv, cachetools, absl-py, virtualenv, rsa, requests-oauthlib, pytest-xdist, pytest-randomly, pytest-forked, pyasn1-modules, markdown, gitdb, tokenizers, seaborn, pre-commit, google-auth, GitPython, accelerate, wandb, transformers, mup, google-auth-oauthlib, tensorboard
+Successfully installed Click-8.1.7 GitPython-3.1.40 absl-py-2.0.0 accelerate-0.25.0 appdirs-1.4.4 cachetools-5.3.2 cfgv-3.4.0 clang-format-16.0.2 cmake-3.28.1 coverage-7.4.0 deepspeed-kernels-0.0.1.dev1698255861 distlib-0.3.8 docker-pycreds-0.4.0 execnet-2.0.2 future-0.18.3 gitdb-4.0.11 google-auth-2.26.1 google-auth-oauthlib-1.0.0 grpcio-1.60.0 identify-2.5.33 markdown-3.5.1 mup-1.0.0 nodeenv-1.8.0 oauthlib-3.2.2 platformdirs-4.1.0 pre-commit-3.5.0 protobuf-4.25.1 py-1.11.0 pyasn1-0.5.1 pyasn1-modules-0.3.0 pytest-forked-1.6.0 pytest-randomly-3.15.0 pytest-xdist-3.5.0 requests-oauthlib-1.3.1 rsa-4.9 seaborn-0.13.1 sentry-sdk-1.39.1 setproctitle-1.3.3 smmap-5.0.1 tensorboard-2.14.0 tensorboard-data-server-0.7.2 tokenizers-0.15.0 transformers-4.36.2 virtualenv-20.25.0 wandb-0.16.2 werkzeug-3.0.1 wheel-0.42.0
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Collecting google (from -r requirements-inf.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ac/35/17c9141c4ae21e9a29a43acdfd848e3e468a810517f862cad07977bf8fe9/google-3.0.0-py2.py3-none-any.whl (45 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.3/45.3 kB 208.2 kB/s eta 0:00:00
+Collecting lm-eval==0.3.0 (from -r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/61/c5/bff92e6b61fc2b0c1b7ac769633731910152e5176a404912ce7c07329ba0/lm_eval-0.3.0-py3-none-any.whl (178 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 178.7/178.7 kB 672.9 kB/s eta 0:00:00
+Requirement already satisfied: protobuf in /usr/local/lib/python3.8/site-packages (from -r requirements-inf.txt (line 3)) (4.25.1)
+Requirement already satisfied: transformers in /usr/local/lib/python3.8/site-packages (from -r requirements-inf.txt (line 4)) (4.36.2)
+Requirement already satisfied: datasets>=2.0.0 in /usr/local/lib/python3.8/site-packages (from lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2.16.1)
+Collecting jsonlines (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/f8/62/d9ba6323b9202dd2fe166beab8a86d29465c41a0288cbe229fac60c1ab8d/jsonlines-4.0.0-py3-none-any.whl (8.7 kB)
+Collecting numexpr (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/0d/47/a2ede0e136a8ddc288b447c260aa035f3e75251f808aa61f6454b16dfd04/numexpr-2.8.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (384 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 384.3/384.3 kB 2.2 MB/s eta 0:00:00
+Collecting openai>=0.6.4 (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/2a/70/5ff7a2c5b37f6cab5ed3df59539d80d959e210d1127dea8e3de14897c4f3/openai-1.7.0-py3-none-any.whl (224 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 224.7/224.7 kB 1.4 MB/s eta 0:00:00
+Collecting pybind11>=2.6.2 (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/06/55/9f73c32dda93fa4f539fafa268f9504e83c489f460c380371d94296126cd/pybind11-2.11.1-py3-none-any.whl (227 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 227.7/227.7 kB 1.5 MB/s eta 0:00:00
+Collecting pycountry (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/48/12/fdbcd29b5a243af2f1c1a83636a21e3837aeaa070c9212ebe657e39ce563/pycountry-23.12.11-py3-none-any.whl (6.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 2.2 MB/s eta 0:00:00
+Collecting pytablewriter (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/06/74/b39b823ee7dba155b117634e62733a0dfdfe5aa100a553b435062cee2062/pytablewriter-1.2.0-py3-none-any.whl (111 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 111.1/111.1 kB 660.5 kB/s eta 0:00:00
+Collecting rouge-score>=0.0.4 (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/e2/c5/9136736c37022a6ad27fea38f3111eb8f02fe75d067f9a985cc358653102/rouge_score-0.1.2.tar.gz (17 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting sacrebleu==1.5.0 (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/3b/7f/4fd83db8570288c3899d8e57666c2841403c15659f3d792a3cb8dc1c6689/sacrebleu-1.5.0-py3-none-any.whl (65 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 65.6/65.6 kB 405.6 kB/s eta 0:00:00
+Requirement already satisfied: scikit-learn>=0.24.1 in /usr/local/lib/python3.8/site-packages (from lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.3.2)
+Collecting sqlitedict (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/12/9a/7620d1e9dcb02839ed6d4b14064e609cdd7a8ae1e47289aa0456796dd9ca/sqlitedict-2.1.0.tar.gz (21 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: torch>=1.7 in /usr/local/lib/python3.8/site-packages (from lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2.1.0a0+git793d2b5.abi0.dtk2310)
+Collecting tqdm-multiprocess (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/25/7e/0d889fc6c84e3df6b69aaafe893fc77f69b3d968ac9ce574d1c62c688050/tqdm_multiprocess-0.0.11-py3-none-any.whl (9.8 kB)
+Collecting zstandard (from lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/ef/e7/1cce80b1abc3b2d07eeb0a41a179adb2a49aba8b3064518497664a3ba3ba/zstandard-0.22.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (5.4 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.4/5.4 MB 2.3 MB/s eta 0:00:00
+Collecting portalocker (from sacrebleu==1.5.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/17/9e/87671efcca80ba6203811540ed1f9c0462c1609d2281d7b7f53cef05da3d/portalocker-2.8.2-py3-none-any.whl (17 kB)
+Collecting beautifulsoup4 (from google->-r requirements-inf.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/57/f4/a69c20ee4f660081a7dedb1ac57f29be9378e04edfcb90c526b923d4bebc/beautifulsoup4-4.12.2-py3-none-any.whl (142 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 143.0/143.0 kB 1.2 MB/s eta 0:00:00
+Requirement already satisfied: filelock in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (3.13.1)
+Requirement already satisfied: huggingface-hub<1.0,>=0.19.3 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (0.20.2)
+Requirement already satisfied: numpy>=1.17 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (1.23.5)
+Requirement already satisfied: packaging>=20.0 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (23.2)
+Requirement already satisfied: pyyaml>=5.1 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (6.0.1)
+Requirement already satisfied: regex!=2019.12.17 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (2023.12.25)
+Requirement already satisfied: requests in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (2.31.0)
+Requirement already satisfied: tokenizers<0.19,>=0.14 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (0.15.0)
+Requirement already satisfied: safetensors>=0.3.1 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (0.4.1)
+Requirement already satisfied: tqdm>=4.27 in /usr/local/lib/python3.8/site-packages (from transformers->-r requirements-inf.txt (line 4)) (4.66.1)
+Collecting sentencepiece!=0.1.92,>=0.1.91 (from transformers->-r requirements-inf.txt (line 4))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c9/58/4fbd3f33a38c9809fedf57bbef7e086b9909d6807148f35d68c0c90896d3/sentencepiece-0.1.99-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 2.1 MB/s eta 0:00:00
+Requirement already satisfied: pyarrow>=8.0.0 in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (14.0.2)
+Requirement already satisfied: pyarrow-hotfix in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (0.6)
+Requirement already satisfied: dill<0.3.8,>=0.3.0 in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (0.3.7)
+Requirement already satisfied: pandas in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2.0.3)
+Requirement already satisfied: xxhash in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (3.4.1)
+Requirement already satisfied: multiprocess in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (0.70.15)
+Requirement already satisfied: fsspec[http]<=2023.10.0,>=2023.1.0 in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2023.10.0)
+Requirement already satisfied: aiohttp in /usr/local/lib/python3.8/site-packages (from datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (3.9.1)
+Requirement already satisfied: typing-extensions>=3.7.4.3 in /usr/local/lib/python3.8/site-packages (from huggingface-hub<1.0,>=0.19.3->transformers->-r requirements-inf.txt (line 4)) (4.9.0)
+Collecting anyio<5,>=3.5.0 (from openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/bf/cd/d6d9bb1dadf73e7af02d18225cbd2c93f8552e13130484f1c8dcfece292b/anyio-4.2.0-py3-none-any.whl (85 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.5/85.5 kB 637.6 kB/s eta 0:00:00
+Collecting distro<2,>=1.7.0 (from openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl (20 kB)
+Collecting httpx<1,>=0.23.0 (from openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/39/9b/4937d841aee9c2c8102d9a4eeb800c7dad25386caabb4a1bf5010df81a57/httpx-0.26.0-py3-none-any.whl (75 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 75.9/75.9 kB 832.6 kB/s eta 0:00:00
+Requirement already satisfied: pydantic<3,>=1.9.0 in /usr/local/lib/python3.8/site-packages (from openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.10.13)
+Collecting sniffio (from openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c3/a0/5dba8ed157b0136607c7f2151db695885606968d1fae123dc3391e0cfdbf/sniffio-1.3.0-py3-none-any.whl (10 kB)
+Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.8/site-packages (from requests->transformers->-r requirements-inf.txt (line 4)) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.8/site-packages (from requests->transformers->-r requirements-inf.txt (line 4)) (3.6)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.8/site-packages (from requests->transformers->-r requirements-inf.txt (line 4)) (1.26.14)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.8/site-packages (from requests->transformers->-r requirements-inf.txt (line 4)) (2023.11.17)
+Requirement already satisfied: absl-py in /usr/local/lib/python3.8/site-packages (from rouge-score>=0.0.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2.0.0)
+Collecting nltk (from rouge-score>=0.0.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/a6/0a/0d20d2c0f16be91b9fa32a77b76c60f9baf6eba419e5ef5deca17af9c582/nltk-3.8.1-py3-none-any.whl (1.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.5/1.5 MB 1.9 MB/s eta 0:00:00
+Requirement already satisfied: six>=1.14.0 in /usr/local/lib/python3.8/site-packages (from rouge-score>=0.0.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.16.0)
+Requirement already satisfied: scipy>=1.5.0 in /usr/local/lib/python3.8/site-packages (from scikit-learn>=0.24.1->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.10.1)
+Requirement already satisfied: joblib>=1.1.1 in /usr/local/lib/python3.8/site-packages (from scikit-learn>=0.24.1->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.3.2)
+Requirement already satisfied: threadpoolctl>=2.0.0 in /usr/local/lib/python3.8/site-packages (from scikit-learn>=0.24.1->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (3.2.0)
+Requirement already satisfied: sympy in /usr/local/lib/python3.8/site-packages (from torch>=1.7->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.12)
+Requirement already satisfied: networkx in /usr/local/lib/python3.8/site-packages (from torch>=1.7->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (3.1)
+Requirement already satisfied: jinja2 in /usr/local/lib/python3.8/site-packages (from torch>=1.7->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (3.1.2)
+Collecting soupsieve>1.2 (from beautifulsoup4->google->-r requirements-inf.txt (line 1))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/4c/f3/038b302fdfbe3be7da016777069f26ceefe11a681055ea1f7817546508e3/soupsieve-2.5-py3-none-any.whl (36 kB)
+Requirement already satisfied: attrs>=19.2.0 in /usr/local/lib/python3.8/site-packages (from jsonlines->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (23.2.0)
+Collecting importlib-resources<6.0.0,>=5.12.0 (from pycountry->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/7a/68/bd9dd6bbf06772c7accce77d0354d783333fbe712a60b08fc13540c05422/importlib_resources-5.13.0-py3-none-any.whl (32 kB)
+Requirement already satisfied: setuptools>=38.3.0 in /usr/local/lib/python3.8/site-packages (from pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (56.0.0)
+Collecting DataProperty<2,>=1.0.1 (from pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/b1/3b/90ebd66ad57c588d6087e86e327436343e9cc60776a9445b79c6e80a022d/DataProperty-1.0.1-py3-none-any.whl (27 kB)
+Collecting mbstrdecoder<2,>=1.0.0 (from pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/c2/0f/726229136022b154895138bb10ba35e8435c4143f614cb5ad4d4e3fc21ec/mbstrdecoder-1.1.3-py3-none-any.whl (7.8 kB)
+Collecting pathvalidate<4,>=2.3.0 (from pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/0c/ab/673cce13ab635fd755d206b18c0a371ef6e28ddbe25fadba9ae6c59f22a5/pathvalidate-3.2.0-py3-none-any.whl (23 kB)
+Collecting tabledata<2,>=1.3.1 (from pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/06/e2/96b10ebc00d20b55967200e3d95c2137d91f58af1af672627683431c9d5c/tabledata-1.3.3-py3-none-any.whl (11 kB)
+Collecting tcolorpy<1,>=0.0.5 (from pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/34/d0/8a701df46bf546fd155da02934b0bb2ac6ad4186e29f4a3297e744ab259d/tcolorpy-0.1.4-py3-none-any.whl (7.9 kB)
+Collecting typepy[datetime]<2,>=1.3.2 (from pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/f1/10/0d6dc654bb4e0eca017bbaf43a315b464c888576a68a2883cd4a74bd1b6b/typepy-1.3.2-py3-none-any.whl (31 kB)
+Collecting colorama (from tqdm-multiprocess->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Requirement already satisfied: exceptiongroup>=1.0.2 in /usr/local/lib/python3.8/site-packages (from anyio<5,>=3.5.0->openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.2.0)
+Requirement already satisfied: multidict<7.0,>=4.5 in /usr/local/lib/python3.8/site-packages (from aiohttp->datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (6.0.4)
+Requirement already satisfied: yarl<2.0,>=1.0 in /usr/local/lib/python3.8/site-packages (from aiohttp->datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.9.4)
+Requirement already satisfied: frozenlist>=1.1.1 in /usr/local/lib/python3.8/site-packages (from aiohttp->datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.4.1)
+Requirement already satisfied: aiosignal>=1.1.2 in /usr/local/lib/python3.8/site-packages (from aiohttp->datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.3.1)
+Requirement already satisfied: async-timeout<5.0,>=4.0 in /usr/local/lib/python3.8/site-packages (from aiohttp->datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (4.0.3)
+Collecting httpcore==1.* (from httpx<1,>=0.23.0->openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/56/ba/78b0a99c4da0ff8b0f59defa2f13ca4668189b134bd9840b6202a93d9a0f/httpcore-1.0.2-py3-none-any.whl (76 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 76.9/76.9 kB 782.8 kB/s eta 0:00:00
+Collecting h11<0.15,>=0.13 (from httpcore==1.*->httpx<1,>=0.23.0->openai>=0.6.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/95/04/ff642e65ad6b90db43e668d70ffb6736436c7ce41fcc549f4e9472234127/h11-0.14.0-py3-none-any.whl (58 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 58.3/58.3 kB 447.6 kB/s eta 0:00:00
+Requirement already satisfied: zipp>=3.1.0 in /usr/local/lib/python3.8/site-packages (from importlib-resources<6.0.0,>=5.12.0->pycountry->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (3.17.0)
+Collecting chardet<6,>=3.0.4 (from mbstrdecoder<2,>=1.0.0->pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2))
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/38/6f/f5fbc992a329ee4e0f288c1fe0e2ad9485ed064cac731ed2fe47dcc38cbf/chardet-5.2.0-py3-none-any.whl (199 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 199.4/199.4 kB 1.5 MB/s eta 0:00:00
+Requirement already satisfied: python-dateutil<3.0.0,>=2.8.0 in /usr/local/lib/python3.8/site-packages (from typepy[datetime]<2,>=1.3.2->pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2.8.2)
+Requirement already satisfied: pytz>=2018.9 in /usr/local/lib/python3.8/site-packages (from typepy[datetime]<2,>=1.3.2->pytablewriter->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2023.3.post1)
+Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.8/site-packages (from jinja2->torch>=1.7->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2.1.3)
+Requirement already satisfied: click in /usr/local/lib/python3.8/site-packages (from nltk->rouge-score>=0.0.4->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (8.1.7)
+Requirement already satisfied: tzdata>=2022.1 in /usr/local/lib/python3.8/site-packages (from pandas->datasets>=2.0.0->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (2023.4)
+Requirement already satisfied: mpmath>=0.19 in /usr/local/lib/python3.8/site-packages (from sympy->torch>=1.7->lm-eval==0.3.0->-r requirements-inf.txt (line 2)) (1.3.0)
+Building wheels for collected packages: rouge-score, sqlitedict
+  Building wheel for rouge-score (setup.py): started
+  Building wheel for rouge-score (setup.py): finished with status 'done'
+  Created wheel for rouge-score: filename=rouge_score-0.1.2-py3-none-any.whl size=24950 sha256=4eedd104957ec01e2889adc8936ebf8f3fbfcbcf1668bdbec0477e6222fd33ba
+  Stored in directory: /root/.cache/pip/wheels/88/8d/5a/cbcddcc5d2fae2c2f8d83a91c3f5205afee148935880a9c29b
+  Building wheel for sqlitedict (setup.py): started
+  Building wheel for sqlitedict (setup.py): finished with status 'done'
+  Created wheel for sqlitedict: filename=sqlitedict-2.1.0-py3-none-any.whl size=16853 sha256=c4ca7ac595a46c24bae68a5f79ce425349b65bd1234fee2427097e7d331bd95b
+  Stored in directory: /root/.cache/pip/wheels/99/33/5f/198b642969cabb00a58ec08bcd43739227dc46f8e21147573f
+Successfully built rouge-score sqlitedict
+Installing collected packages: sqlitedict, sentencepiece, zstandard, tcolorpy, soupsieve, sniffio, pybind11, portalocker, pathvalidate, numexpr, nltk, jsonlines, importlib-resources, h11, distro, colorama, chardet, tqdm-multiprocess, sacrebleu, rouge-score, pycountry, mbstrdecoder, httpcore, beautifulsoup4, anyio, typepy, httpx, google, openai, DataProperty, tabledata, pytablewriter, lm-eval
+  Attempting uninstall: importlib-resources
+    Found existing installation: importlib-resources 6.1.1
+    Uninstalling importlib-resources-6.1.1:
+      Successfully uninstalled importlib-resources-6.1.1
+Successfully installed DataProperty-1.0.1 anyio-4.2.0 beautifulsoup4-4.12.2 chardet-5.2.0 colorama-0.4.6 distro-1.9.0 google-3.0.0 h11-0.14.0 httpcore-1.0.2 httpx-0.26.0 importlib-resources-5.13.0 jsonlines-4.0.0 lm-eval-0.3.0 mbstrdecoder-1.1.3 nltk-3.8.1 numexpr-2.8.6 openai-1.7.0 pathvalidate-3.2.0 portalocker-2.8.2 pybind11-2.11.1 pycountry-23.12.11 pytablewriter-1.2.0 rouge-score-0.1.2 sacrebleu-1.5.0 sentencepiece-0.1.99 sniffio-1.3.0 soupsieve-2.5 sqlitedict-2.1.0 tabledata-1.3.3 tcolorpy-0.1.4 tqdm-multiprocess-0.0.11 typepy-1.3.2 zstandard-0.22.0
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Requirement already satisfied: hjson in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 1)) (3.1.0)
+Requirement already satisfied: ninja in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 2)) (1.11.1.1)
+Requirement already satisfied: numpy in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 3)) (1.23.5)
+Requirement already satisfied: packaging>=20.0 in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 4)) (23.2)
+Requirement already satisfied: psutil in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 5)) (5.9.7)
+Requirement already satisfied: py-cpuinfo in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 6)) (9.0.0)
+Requirement already satisfied: pydantic in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 7)) (1.10.13)
+Requirement already satisfied: pynvml in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 8)) (11.5.0)
+Requirement already satisfied: tqdm in /usr/local/lib/python3.8/site-packages (from -r requirements.txt (line 9)) (4.66.1)
+Requirement already satisfied: typing-extensions>=4.2.0 in /usr/local/lib/python3.8/site-packages (from pydantic->-r requirements.txt (line 7)) (4.9.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 23.2.1 -> 23.3.2
+[notice] To update, run: pip install --upgrade pip

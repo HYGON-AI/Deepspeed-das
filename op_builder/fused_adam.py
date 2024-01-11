@@ -29,8 +29,7 @@ class FusedAdamBuilder(CUDAOpBuilder):
         return args + self.version_dependent_macros()
 
     def nvcc_args(self):
-        nvcc_flags = super().nvcc_args()
-        nvcc_flags += ['-O3'] + self.version_dependent_macros()
+        nvcc_flags = ['-O3'] + self.version_dependent_macros()
         if not self.is_rocm_pytorch():
             nvcc_flags.extend(
                 ['-allow-unsupported-compiler' if sys.platform == "win32" else '', '-lineinfo', '--use_fast_math'] +

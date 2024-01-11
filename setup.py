@@ -21,9 +21,10 @@ The wheel will be located at: dist/*.whl
 import os
 import sys
 import subprocess
-from setuptools import setup, find_packages, find_namespace_packages
+from setuptools import setup, find_packages
 from setuptools.command import egg_info
 import time
+import typing
 
 torch_available = True
 try:
@@ -56,6 +57,22 @@ def fetch_requirements(path):
         return [r.strip() for r in fd.readlines()]
 
 
+def is_env_set(key):
+    """
+    Checks if an environment variable is set and not "".
+    """
+    return bool(os.environ.get(key, None))
+
+
+def get_env_if_set(key, default: typing.Any = ""):
+    """
+    Returns an environment variable if it is set and not "",
+    otherwise returns a default value. In contrast, the fallback
+    parameter of os.environ.get() is skipped if the variable is set to "".
+    """
+    return os.environ.get(key, None) or default
+
+
 install_requires = fetch_requirements('requirements/requirements.txt')
 extras_require = {
     '1bit': [],  # add cupy based on cuda/rocm version
@@ -65,8 +82,10 @@ extras_require = {
     'autotuning': fetch_requirements('requirements/requirements-autotuning.txt'),
     'autotuning_ml': fetch_requirements('requirements/requirements-autotuning-ml.txt'),
     'sparse_attn': fetch_requirements('requirements/requirements-sparse_attn.txt'),
+    'sparse': fetch_requirements('requirements/requirements-sparse_pruning.txt'),
     'inf': fetch_requirements('requirements/requirements-inf.txt'),
-    'sd': fetch_requirements('requirements/requirements-sd.txt')
+    'sd': fetch_requirements('requirements/requirements-sd.txt'),
+    'triton': fetch_requirements('requirements/requirements-triton.txt'),
 }
 
 # Add specific cupy version to both onebit extension variants.
@@ -99,8 +118,8 @@ cmdclass = {}
 
 # For any pre-installed ops force disable ninja.
 if torch_available:
-    from accelerator import get_accelerator
-    cmdclass['build_ext'] = get_accelerator().build_extension().with_options(use_ninja=False)
+   from accelerator import get_accelerator
+   cmdclass['build_ext'] = get_accelerator().build_extension().with_options(use_ninja=False)
 
 if torch_available:
     TORCH_MAJOR = torch.__version__.split('.')[0]
@@ -108,21 +127,19 @@ if torch_available:
 else:
     TORCH_MAJOR = "0"
     TORCH_MINOR = "0"
-
 if torch_available and not torch.cuda.is_available():
     # Fix to allow docker builds, similar to https://github.com/NVIDIA/apex/issues/486.
     print("[WARNING] Torch did not find cuda available, if cross-compiling or running with cpu only "
           "you can ignore this message. Adding compute capability for Pascal, Volta, and Turing "
           "(compute capabilities 6.0, 6.1, 6.2)")
-          
-    if os.environ.get("TORCH_CUDA_ARCH_LIST", None) is None:
+    if not is_env_set("TORCH_CUDA_ARCH_LIST"):
         os.environ["TORCH_CUDA_ARCH_LIST"] = get_default_compute_capabilities()
 
 ext_modules = []
 
 # Default to pre-install kernels to false so we rely on JIT on Linux, opposite on Windows.
 BUILD_OP_PLATFORM = 1 if sys.platform == "win32" else 0
-BUILD_OP_DEFAULT = int(os.environ.get('DS_BUILD_OPS', BUILD_OP_PLATFORM))
+BUILD_OP_DEFAULT = int(get_env_if_set('DS_BUILD_OPS', BUILD_OP_PLATFORM))
 print(f"DS_BUILD_OPS={BUILD_OP_DEFAULT}")
 
 if BUILD_OP_DEFAULT:
@@ -146,7 +163,7 @@ def op_envvar(op_name):
 
 def op_enabled(op_name):
     env_var = op_envvar(op_name)
-    return int(os.environ.get(env_var, BUILD_OP_DEFAULT))
+    return int(get_env_if_set(env_var, BUILD_OP_DEFAULT))
 
 
 compatible_ops = dict.fromkeys(ALL_OPS.keys(), False)
@@ -154,14 +171,12 @@ install_ops = dict.fromkeys(ALL_OPS.keys(), False)
 for op_name, builder in ALL_OPS.items():
     op_compatible = builder.is_compatible()
     compatible_ops[op_name] = op_compatible
-    print("op_name: ", op_name)
-    print("op_enabled: ", op_enabled(op_name))
-    print("op_compatible: ", op_compatible)
+    compatible_ops["deepspeed_not_implemented"] = False
 
     # If op is requested but not available, throw an error.
     if op_enabled(op_name) and not op_compatible:
         env_var = op_envvar(op_name)
-        if env_var not in os.environ:
+        if not is_env_set(env_var):
             builder.warning(f"One can disable {op_name} with {env_var}=0")
         abort(f"Unable to pre-compile {op_name}")
 
@@ -180,14 +195,12 @@ print(f'Install Ops={install_ops}')
 # Write out version/git info.
 git_hash_cmd = "git rev-parse --short HEAD"
 git_branch_cmd = "git rev-parse --abbrev-ref HEAD"
-#if command_exists('git') and 'DS_BUILD_STRING' not in os.environ:
-if command_exists('git'):
+if command_exists('git') and not is_env_set('DS_BUILD_STRING'):
     try:
         result = subprocess.check_output(git_hash_cmd, shell=True)
         git_hash = result.decode('utf-8').strip()
         result = subprocess.check_output(git_branch_cmd, shell=True)
         git_branch = result.decode('utf-8').strip()
-
     except subprocess.CalledProcessError:
         git_hash = "unknown"
         git_branch = "unknown"
@@ -215,6 +228,22 @@ if sys.platform == "win32":
 # Parse the DeepSpeed version string from version.txt.
 version_str = open('version.txt', 'r').read().strip()
 dcu_version_str = version_str
+# # Build specifiers like .devX can be added at install time. Otherwise, add the git hash.
+# # Example: DS_BUILD_STRING=".dev20201022" python setup.py sdist bdist_wheel.
+
+# # Building wheel for distribution, update version file.
+# if is_env_set('DS_BUILD_STRING'):
+#     # Build string env specified, probably building for distribution.
+#     with open('build.txt', 'w') as fd:
+#         fd.write(os.environ['DS_BUILD_STRING'])
+#     version_str += os.environ['DS_BUILD_STRING']
+# elif os.path.isfile('build.txt'):
+#     # build.txt exists, probably installing from distribution.
+#     with open('build.txt', 'r') as fd:
+#         version_str += fd.read().strip()
+# else:
+#     # None of the above, probably installing from source.
+#     version_str += f'+{git_hash}'
 abi_version = subprocess.getoutput("echo '#include <string>' | gcc -x c++ -E -dM - | fgrep _GLIBCXX_USE_CXX11_ABI >tmp.txt")
 abi_version = 'abi' + subprocess.getoutput("awk '{print $3}' tmp.txt")
 # print(abi_version)
@@ -230,6 +259,7 @@ torch_version = "torch"+ subprocess.getoutput("python3 -c \"import torch;print(t
 
 dcu_version_str += f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
 print("dcu_version_str=", dcu_version_str)
+
 torch_version = ".".join([TORCH_MAJOR, TORCH_MINOR])
 bf16_support = False
 # Set cuda_version to 0.0 if cpu-only.
@@ -257,7 +287,7 @@ torch_info = {
     "hip_version": hip_version
 }
 
-print(f"version={version_str}, dcu_version={dcu_version_str}, git_hash={git_hash}, git_branch={git_branch}")
+print(f"version={version_str}, git_hash={git_hash}, git_branch={git_branch}")
 with open('deepspeed/git_version_info_installed.py', 'w') as fd:
     fd.write(f"version='{version_str}'\n")
     fd.write(f"dcu_version='{dcu_version_str}'\n")
@@ -292,9 +322,7 @@ setup(name='deepspeed',
       },
       install_requires=install_requires,
       extras_require=extras_require,
-      #packages=find_packages(include=['deepspeed', 'deepspeed.*']),
-      packages=find_namespace_packages(include=['deepspeed',
-                                      'deepspeed.*']),
+      packages=find_packages(include=['deepspeed', 'deepspeed.*']),
       include_package_data=True,
       scripts=[
           'bin/deepspeed', 'bin/deepspeed.pt', 'bin/ds', 'bin/ds_ssh', 'bin/ds_report', 'bin/ds_bench', 'bin/dsr',
@@ -305,7 +333,7 @@ setup(name='deepspeed',
           'Programming Language :: Python :: 3.8', 'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10'
       ],
-      license='MIT',
+      license='Apache Software License 2.0',
       ext_modules=ext_modules,
       cmdclass=cmdclass)
 
