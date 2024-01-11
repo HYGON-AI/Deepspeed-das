@@ -30,28 +30,34 @@ class AsyncIOBuilder(OpBuilder):
 
     def include_paths(self):
         return ['csrc/aio/py_lib', 'csrc/aio/common']
+        #return ['csrc/aio/py_lib', 'csrc/aio/common', '/parastor/home/aishsh/build_source/libaio_build/include/']
 
     def cxx_args(self):
         # -O0 for improved debugging, since performance is bound by I/O
         CPU_ARCH = self.cpu_arch()
         SIMD_WIDTH = self.simd_width()
+        import torch  # Keep this import here to avoid errors when building DeepSpeed wheel without torch installed
+        TORCH_MAJOR, TORCH_MINOR = map(int, torch.__version__.split('.')[0:2])
+        if TORCH_MAJOR >= 2 and TORCH_MINOR >= 1:
+            CPP_STD = '-std=c++17'
+        else:
+            CPP_STD = '-std=c++14'
         return [
             '-g',
             '-Wall',
-            '-O0',
-            '-std=c++14',
+            #'-O0',
+            CPP_STD,
             '-shared',
             '-fPIC',
             '-Wno-reorder',
             CPU_ARCH,
             '-fopenmp',
             SIMD_WIDTH,
-            '-laio',
         ]
 
     def extra_ldflags(self):
-        #return ['-laio']
-        return ['-laio', '-liomp5']
+        return ['-laio']
+        #return ['-L/parastor/home/aishsh/build_source/libaio_build/lib/' , '-laio']
 
     def check_for_libaio_pkg(self):
         libs = dict(
@@ -75,12 +81,14 @@ class AsyncIOBuilder(OpBuilder):
         return found
 
     def is_compatible(self, verbose=True):
-        # Check for the existence of libaio by using distutils
-        # to compile and link a test program that calls io_submit,
-        # which is a function provided by libaio that is used in the async_io op.
-        # If needed, one can define -I and -L entries in CFLAGS and LDFLAGS
-        # respectively to specify the directories for libaio.h and libaio.so.
-        aio_compatible = self.has_function('io_submit', ('aio', ))
+         #Check for the existence of libaio by using distutils
+         #to compile and link a test program that calls io_submit,
+         #which is a function provided by libaio that is used in the async_io op.
+         #If needed, one can define -I and -L entries in CFLAGS and LDFLAGS
+         #respectively to specify the directories for libaio.h and libaio.so.
+        
+        aio_compatible = self.has_function('io_pgetevents', ('aio', ))
+        print("aio_compatible=", aio_compatible)
         if verbose and not aio_compatible:
             self.warning(f"{self.NAME} requires the dev libaio .so object and headers but these were not found.")
 

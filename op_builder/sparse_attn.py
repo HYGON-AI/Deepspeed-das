@@ -35,7 +35,7 @@ class SparseAttnBuilder(OpBuilder):
 
         if self.is_rocm_pytorch():
             #self.warning(f'{self.NAME} is not compatible with ROCM')
-#aiss debug
+            #return False
             return True
 
         try:

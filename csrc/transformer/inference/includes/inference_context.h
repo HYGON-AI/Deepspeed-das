@@ -12,7 +12,9 @@
 #include <vector>
 #include "cublas_v2.h"
 #include "cuda.h"
-
+#ifdef __HIP_PLATFORM_AMD__
+#include "rocblas/rocblas.h"
+#endif
 #define MEGABYTE (1024 * 1024)
 #define GIGABYTE (1024 * 1024 * 1024)
 
@@ -60,13 +62,22 @@ public:
     {
         _workSpaceSize = 0;
         _workspace = 0;
-        if (cublasCreate(&_cublasHandle) != CUBLAS_STATUS_SUCCESS) {
-            auto message = std::string("Fail to create cublas handle.");
+#ifdef __HIP_PLATFORM_AMD__
+        rocblas_status stat = rocblas_create_handle(&_cublasHandle);
+        if (stat != CUBLAS_STATUS_SUCCESS) {
+#else
+        cublasStatus_t stat = cublasCreate(&_cublasHandle);
+        if (stat != CUBLAS_STATUS_SUCCESS) {
+#endif
+            // It would be nice to use cublasGetStatusName and
+            // cublasGetStatusString, but they were only added in CUDA 11.4.2.
+            auto message = std::string("Failed to create cublas handle: cublasStatus_t was ") +
+                           std::to_string(stat);
             std::cerr << message << std::endl;
             throw std::runtime_error(message);
         }
-#ifndef __HIP_PLATFORM_HCC__
-        cublasSetMathMode(_cublasHandle, CUBLAS_TENSOR_OP_MATH);
+#ifndef __HIP_PLATFORM_AMD__
+        rocblas_set_math_mode(_cublasHandle, CUBLAS_TENSOR_OP_MATH);
 #endif
         cudaEventCreate(&_comp1_event);
         cudaEventCreate(&_comp2_event);
@@ -76,7 +87,11 @@ public:
 
     virtual ~InferenceContext()
     {
+#ifdef __HIP_PLATFORM_AMD__
+        rocblas_destroy_handle(_cublasHandle);
+#else
         cublasDestroy(_cublasHandle);
+#endif
         cudaFree(_workspace);
         cudaEventDestroy(_comp1_event);
         cudaEventDestroy(_comp2_event);
@@ -136,7 +151,7 @@ public:
 
         if (_max_seq_len < min_out_tokens) {
             printf(
-                "Allocatable workspace available (%d tokens) is less than minimum requested "
+                "Allocatable workspace available (%ld tokens) is less than minimum requested "
                 "workspace (%d tokens)\n",
                 _max_seq_len,
                 min_out_tokens);
@@ -175,7 +190,7 @@ public:
         _workSpaceSize = workSpaceSize;
         _attention_unfused_workspace_offset = workSpaceSize - temp_size;
     }
-    inline size_t GetMaxTokenLenght() const { return _max_seq_len; }
+    inline size_t GetMaxTokenLength() const { return _max_seq_len; }
 
     cudaEvent_t GetCompEvent(int id) { return id == 1 ? _comp1_event : _comp2_event; }
 
@@ -230,8 +245,11 @@ public:
         cudaMalloc(&_workspace, _workSpaceSize);
         return _workspace != nullptr;
     }
+#ifdef __HIP_PLATFORM_AMD__
+    rocblas_handle GetCublasHandle() { return _cublasHandle; }
+#else
     cublasHandle_t GetCublasHandle() { return _cublasHandle; }
-
+#endif
     std::pair<uint64_t, uint64_t> IncrementOffset(uint64_t offset_inc)
     {
         uint64_t offset = _curr_offset;
@@ -255,8 +273,11 @@ public:
     }
 
 private:
+#ifdef __HIP_PLATFORM_AMD__
+    rocblas_handle _cublasHandle;
+#else
     cublasHandle_t _cublasHandle;
-
+#endif
     cudaEvent_t _comp_event;
     cudaEvent_t _comm_event;
 

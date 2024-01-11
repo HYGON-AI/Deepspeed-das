@@ -13,11 +13,20 @@
 #ifndef __HIP_PLATFORM_HCC__
 #include <mma.h>
 #endif
+#ifdef __HIP_PLATFORM_HCC__
+#include <rocblas/rocblas.h>
+#endif
 #include <stdio.h>
-
-int cublas_gemm_ex(cublasHandle_t handle,
+int cublas_gemm_ex(
+#ifdef __HIP_PLATFORM_HCC__
+                   rocblas_handle handle,
+                   rocblas_operation transa,
+                   rocblas_operation transb,
+#else                  
+                   cublasHandle_t handle,
                    cublasOperation_t transa,
                    cublasOperation_t transb,
+#endif
                    int m,
                    int n,
                    int k,
@@ -32,9 +41,16 @@ int cublas_gemm_ex(cublasHandle_t handle,
                    cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT);
 #endif
 
-int cublas_gemm_ex(cublasHandle_t handle,
+int cublas_gemm_ex(
+#ifdef __HIP_PLATFORM_HCC__
+                   rocblas_handle handle,
+                   rocblas_operation transa,
+                   rocblas_operation transb,
+#else                  
+                   cublasHandle_t handle,
                    cublasOperation_t transa,
                    cublasOperation_t transb,
+#endif
                    int m,
                    int n,
                    int k,
@@ -49,7 +65,12 @@ int cublas_gemm_ex(cublasHandle_t handle,
                    cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT_TENSOR_OP);
 #endif
 
-int cublas_strided_batched_gemm(cublasHandle_t handle,
+int cublas_strided_batched_gemm(
+#ifdef __HIP_PLATFORM_HCC__
+                                rocblas_handle handle,
+#else                            
+                                cublasHandle_t handle,
+#endif                            
                                 int m,
                                 int n,
                                 int k,
@@ -58,8 +79,13 @@ int cublas_strided_batched_gemm(cublasHandle_t handle,
                                 const float* A,
                                 const float* B,
                                 float* C,
+#ifdef __HIP_PLATFORM_HCC__                                 
+                                rocblas_operation op_A,
+                                rocblas_operation op_B,
+#else                                
                                 cublasOperation_t op_A,
                                 cublasOperation_t op_B,
+#endif                                
                                 int stride_A,
                                 int stride_B,
                                 int stride_C,
@@ -70,7 +96,12 @@ int cublas_strided_batched_gemm(cublasHandle_t handle,
                                 cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT);
 #endif
 
-int cublas_strided_batched_gemm(cublasHandle_t handle,
+int cublas_strided_batched_gemm(
+#ifdef __HIP_PLATFORM_HCC__
+                                rocblas_handle handle,
+#else                   
+                                cublasHandle_t handle,
+#endif                                
                                 int m,
                                 int n,
                                 int k,
@@ -79,8 +110,13 @@ int cublas_strided_batched_gemm(cublasHandle_t handle,
                                 const __half* A,
                                 const __half* B,
                                 __half* C,
+#ifdef __HIP_PLATFORM_HCC__                                 
+                                rocblas_operation op_A,
+                                rocblas_operation op_B,
+#else                                
                                 cublasOperation_t op_A,
                                 cublasOperation_t op_B,
+#endif                            
                                 int stride_A,
                                 int stride_B,
                                 int stride_C,

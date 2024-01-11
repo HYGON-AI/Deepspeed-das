@@ -1,10 +1,13 @@
 #!/bin/bash
-pip3 install -r  requirements-1bit-adam.txt
-pip3 install -r  requirements-autotuning-ml.txt
-pip3 install -r  requirements-1bit-mpi.txt
-pip3 install -r  requirements-autotuning.txt
-pip3 install -r  requirements-dev.txt
-pip3 install -r  requirements-inf.txt
-pip3 install -r  requirements-sd.txt
-pip3 install -r  requirements.txt
-
+pip install -r requirements-1bit-mpi.txt	
+pip install -r requirements-readthedocs.txt
+pip install -r requirements-autotuning-ml.txt	
+pip install -r requirements-sd.txt
+pip install -r requirements-autotuning.txt	
+pip install -r requirements-sparse_attn.txt
+pip install -r requirements-cpu.txt		
+pip install -r requirements-sparse_pruning.txt
+pip install -r requirements-dev.txt		
+pip install -r requirements-triton.txt
+pip install -r requirements-inf.txt		
+pip install -r requirements.txt
