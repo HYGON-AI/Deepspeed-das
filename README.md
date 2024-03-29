@@ -34,6 +34,9 @@ git clone -b ds-v0.12.3-rocm http://developer.hpccube.com/codes/aicomponent/deep
 ```
 1. 设置环境变量
 cd deepspeed
+pip3 install -r  requirements/requirements.txt  -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+pip3 install -r  requirements/requirements-dev.txt  -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --no-deps
+
 source /opt/dtk/env.sh
 export BUILD_ROOT=`pwd`
 echo $BUILD_ROOT
