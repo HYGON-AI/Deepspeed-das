@@ -1580,7 +1580,7 @@ class DeepSpeedZeroOptimizer(ZeROOptimizer):
                 if hasattr(p, PIPE_REPLICATED) and p.ds_pipe_replicated:
                     continue
                 if is_model_parallel_parameter(p) or (self.model_parallel_rank == 0):
-                    if torch.cuda.get_device_name(0).find('E100') != -1:
+                    if torch.cuda.get_device_name(0) == 'K100_AI':
                         param_norm = g.data.float().norm(2)
                     else:
                         param_norm = g.data.double().norm(2)

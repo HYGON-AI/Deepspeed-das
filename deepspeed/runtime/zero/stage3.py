@@ -1674,13 +1674,18 @@ class DeepSpeedZeroOptimizer_Stage3(ZeROOptimizer):
             grad_norms = []
             for g, p in zip(gradients, params):
                 if is_model_parallel_parameter(p) or (self.model_parallel_rank == 0):
-                    grad_norms.append(g.to(get_accelerator().device_name(), non_blocking=True).double().norm(2))
+                    if torch.cuda.get_device_name(0) == 'K100_AI':
+                        grad_norms.append(g.to(get_accelerator().device_name(), non_blocking=True).float.norm(2))
+                    else:
+                        grad_norms.append(g.to(get_accelerator().device_name(), non_blocking=True).double().norm(2))
 
             # Sum across all model parallel GPUs.
             if len(grad_norms) == 0:
                 # FIX https://github.com/microsoft/DeepSpeed/issues/3564
-                total_norm_cuda = torch.tensor(0,
-                                               dtype=gradients[0].dtype).to(get_accelerator().device_name()).double()
+                if torch.cuda.get_device_name(0) == 'K100_AI':
+                    total_norm_cuda = torch.tensor(0,dtype=gradients[0].dtype).to(get_accelerator().device_name()).float()
+                else:
+                    total_norm_cuda = torch.tensor(0,dtype=gradients[0].dtype).to(get_accelerator().device_name()).double()
             else:
                 total_norm_cuda = torch.sum(torch.pow(torch.stack(grad_norms), 2))
 
