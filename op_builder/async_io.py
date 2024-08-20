@@ -88,7 +88,6 @@ class AsyncIOBuilder(OpBuilder):
          #respectively to specify the directories for libaio.h and libaio.so.
         
         aio_compatible = self.has_function('io_pgetevents', ('aio', ))
-        print("aio_compatible=", aio_compatible)
         if verbose and not aio_compatible:
             self.warning(f"{self.NAME} requires the dev libaio .so object and headers but these were not found.")
 

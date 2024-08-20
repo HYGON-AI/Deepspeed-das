@@ -34,22 +34,19 @@ git clone -b ds-v0.12.3-rocm http://developer.hpccube.com/codes/aicomponent/deep
 ```
 1. 设置环境变量
 cd deepspeed
-pip3 install -r  requirements/requirements.txt  -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
-pip3 install -r  requirements/requirements-dev.txt  -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --no-deps
-
 source /opt/dtk/env.sh
 export BUILD_ROOT=`pwd`
 echo $BUILD_ROOT
-export LD_LIBRARY_PATH=/usr/local/lib/python3.8/site-packages/torch/lib:$BUILD_ROOT/libaio_build/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/local/lib/python3.10/site-packages/torch/lib:$BUILD_ROOT/libaio_build/lib:$LD_LIBRARY_PATH
 export C_INCLUDE_PATH=$BUILD_ROOT/libaio_build/include:$C_INCLUDE_PATH
 export C_PLUS_INCLUDE_PATH=$C_INCLUDE_PATH
-export CFLAGS="-Ithird_party/libaio_build/include/"
-export LDFLAGS="-Lthird_party/libaio_build/lib/"
+export CFLAGS="-I$BUILD_ROOT/third_party/libaio_build/include/"
+export LDFLAGS="-L$BUILD_ROOT/third_party/libaio_build/lib/"
 
 2. 编译whl包
 export CXX=hipcc
 export CC=hipcc
-DS_BUILD_EVOFORMER_ATTN=0 DS_BUILD_CUTLASS_OPS=0 DS_BUILD_OPS=1 HIP_PLATFORM_AMD=1 DS_ACCELERATOR='cuda' python3 setup.py install bdist_wheel
+DS_BUILD_SPARSE_ATTN=0 DS_BUILD_EVOFORMER_ATTN=0 DS_BUILD_CUTLASS_OPS=0 DS_BUILD_FP_QUANTIZER=0  DS_BUILD_OPS=1  DS_ACCELERATOR='cuda' python3 setup.py install bdist_wheel
 
 3. 安装
 pip3 install ./dist/deepspeed*.whl

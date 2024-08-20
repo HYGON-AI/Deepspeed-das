@@ -28,9 +28,18 @@ class NPU_Accelerator(DeepSpeedAccelerator):
     def is_synchronized_device(self):
         return False
 
+    def use_host_timers(self):
+        return self.is_synchronized_device()
+
+    def resolves_data_dependency(self):
+        return self.is_synchronized_device()
+
+    def handles_memory_backpressure(self):
+        return self.is_synchronized_device()
+
     # Device APIs
     def device_name(self, device_index=None):
-        if device_index == None:
+        if device_index is None:
             return 'npu'
         return 'npu:{}'.format(device_index)
 
@@ -176,6 +185,17 @@ class NPU_Accelerator(DeepSpeedAccelerator):
     def is_triton_supported(self):
         return False
 
+    # Graph operations
+    def create_graph(self):
+        return None
+
+    def capture_to_graph(self, graph, pool=None, stream=None):
+        from deepspeed.runtime.utils import noop_context
+        return noop_context()
+
+    def replay_graph(self, graph):
+        return
+
     # Tensor operations
 
     @property
@@ -255,3 +275,13 @@ class NPU_Accelerator(DeepSpeedAccelerator):
     def build_extension(self):
         from torch.utils.cpp_extension import BuildExtension
         return BuildExtension
+
+    def export_envs(self):
+        return ['ASCEND', 'HCCL', 'LD_LIBRARY', 'PATH']
+
+    def visible_devices_envs(self):
+        return ['ASCEND_RT_VISIBLE_DEVICES']
+
+    def set_visible_devices_envs(self, current_env, local_accelerator_ids):
+        for env in self.visible_devices_envs():
+            current_env[env] = ",".join(map(str, local_accelerator_ids))

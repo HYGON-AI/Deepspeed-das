@@ -35,8 +35,8 @@ except ImportError:
         'Please visit https://pytorch.org/ to see how to properly install torch on your system.')
 
 from op_builder import get_default_compute_capabilities, OpBuilder
-from op_builder.all_ops import ALL_OPS
 from op_builder.builder import installed_cuda_version
+from op_builder.all_ops import ALL_OPS, accelerator_name
 
 # Fetch rocm state.
 is_rocm_pytorch = OpBuilder.is_rocm_pytorch()
@@ -195,12 +195,15 @@ print(f'Install Ops={install_ops}')
 # Write out version/git info.
 git_hash_cmd = "git rev-parse --short HEAD"
 git_branch_cmd = "git rev-parse --abbrev-ref HEAD"
+git_tag_cmd = "git describe --tags"
 if command_exists('git') and not is_env_set('DS_BUILD_STRING'):
     try:
         result = subprocess.check_output(git_hash_cmd, shell=True)
         git_hash = result.decode('utf-8').strip()
         result = subprocess.check_output(git_branch_cmd, shell=True)
         git_branch = result.decode('utf-8').strip()
+        result = subprocess.check_output(git_tag_cmd, shell=True)
+        git_tag = result.decode('utf-8').strip()
     except subprocess.CalledProcessError:
         git_hash = "unknown"
         git_branch = "unknown"
@@ -252,13 +255,14 @@ dtk_version_path = subprocess.getoutput("echo $DTKROOT")
 
 with open("{0}/.info/rocm_version".format(dtk_version_path), 'r') as fd:
     dtk_version_str = fd.read().split('.')[:2]
-    dtk_version_str ='dtk' +  "".join(dtk_version_str)
+    dtk_version_str = 'dtk' +  "".join(dtk_version_str)
+    dtk_version_str = dtk_version_str.replace('\n', '')
 
 torch_version = "torch"+ subprocess.getoutput("python3 -c \"import torch;print(torch.__version__)\"")
-# print(torch_version)
+#print(torch_version)
 
-dcu_version_str += f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
-print("dcu_version_str=", dcu_version_str)
+dcu_version_str  = git_tag #+= f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
+
 
 torch_version = ".".join([TORCH_MAJOR, TORCH_MINOR])
 bf16_support = False
@@ -296,9 +300,9 @@ with open('deepspeed/git_version_info_installed.py', 'w') as fd:
     fd.write(f"installed_ops={install_ops}\n")
     fd.write(f"compatible_ops={compatible_ops}\n")
     fd.write(f"torch_info={torch_info}\n")
+    fd.write(f"accelerator_name='{accelerator_name}'\n")
 
 print(f'install_requires={install_requires}')
-print(f'compatible_ops={compatible_ops}')
 print(f'ext_modules={ext_modules}')
 
 # Parse README.md to make long_description for PyPI page.

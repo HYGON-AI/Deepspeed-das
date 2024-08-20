@@ -8,9 +8,7 @@ from typing import Optional
 
 import torch
 
-import deepspeed.comm as dist
 from deepspeed.accelerator import get_accelerator
-from ..allocator import on_device
 from ..config_v2 import RaggedInferenceEngineConfig
 from ..inference_utils import ActivationType, ceil_div, is_gated
 from ..model_implementations import *
@@ -24,6 +22,7 @@ from ..modules.configs import (
     DSUnembedConfig,
     NormTypeEnum,
     PositionalEmbeddingType,
+    RotateHalfConfig,
 )
 from ..modules import heuristics
 from ..ragged import (
@@ -36,6 +35,7 @@ from .inference_model_base import (
     DSModelImplementationConfig,
     MPType,
 )
+from ..inference_parameter import InferenceParameter
 
 try:
     from functools import cached_property
@@ -153,29 +153,17 @@ class DSTransformerModelBase(DSInferenceModelBase):
         """
         ...
 
+    @property
+    @abstractmethod
+    def positional_embedding_config(self) -> Optional[RotateHalfConfig]:
+        """
+        The positional embedding configuration for the model.
+        """
+        ...
+
     """
     Derived helpers
     """
-
-    @cached_property
-    def tp_rank(self) -> int:
-        """
-        The rank of the current process.
-
-        # TODO(cmikeh2): Kind of a hack right now, but this is too verbose to use at
-        the frequency we need.
-        """
-        return dist.get_rank(group=self._base_mp_group)
-
-    @cached_property
-    def tp_size(self) -> int:
-        """
-        The total number of processes.
-
-        # TODO(cmikeh2): Kind of a hack right now, but this is too verbose to use at
-        the frequency we need.
-        """
-        return dist.get_world_size(group=self._base_mp_group)
 
     @cached_property
     def n_heads_q_local(self) -> int:
@@ -248,13 +236,13 @@ class DSTransformerModelBase(DSInferenceModelBase):
 
         self.embed = heuristics.instantiate_embed(embed_config, self._engine_config)
 
-    @on_device
-    def transform_embedding_param(self, param: torch.Tensor) -> torch.Tensor:
+    def transform_embedding_param(self, param: torch.Tensor) -> InferenceParameter:
         """
         Performs embedding sharding along the channels dimension.
         """
         # Until we can do non-contiguous all-gather, we won't shard the embedding parameters.
-        return param.to(self.activation_dtype.value)
+        param = param.to(self.activation_dtype.value)
+        return InferenceParameter.initialize(param)
 
     ######### Unembedding #########
     def make_unembedding_layer(self) -> None:
@@ -287,12 +275,12 @@ class DSTransformerModelBase(DSInferenceModelBase):
                                               device=get_accelerator().current_device(),
                                               dtype=self.activation_dtype.value)
 
-    @on_device
-    def transform_unembed_param(self, param: torch.Tensor) -> torch.Tensor:
+    def transform_unembed_param(self, param: torch.Tensor) -> InferenceParameter:
         """
         Performs sharding along the vocab dimension.
         """
-        return shard_unembed_param(param, self.tp_rank, self.tp_size).to(self.activation_dtype.value)
+        param = shard_unembed_param(param, self.tp_rank, self.tp_size).to(self.activation_dtype.value)
+        return InferenceParameter.initialize(param)
 
     ######### QKV #########
     def make_qkv_layer(self) -> None:
@@ -313,8 +301,7 @@ class DSTransformerModelBase(DSInferenceModelBase):
 
         self.qkv = heuristics.instantiate_linear(linear_config, self._engine_config)
 
-    @on_device
-    def transform_qkv_param(self, param: torch.Tensor) -> torch.Tensor:
+    def transform_qkv_param(self, param: torch.Tensor) -> InferenceParameter:
         """
         Passes a QKV parameter to the underlying implementation for any necessary
         transformations.
@@ -341,7 +328,8 @@ class DSTransformerModelBase(DSInferenceModelBase):
                                             scale_factor=softmax_scale,
                                             input_dtype=self.activation_dtype,
                                             output_dtype=self.activation_dtype,
-                                            positional_embedding_type=self.positional_embedding_type)
+                                            positional_embedding_type=self.positional_embedding_type,
+                                            positional_embedding_config=self.positional_embedding_config)
 
         self.attn = heuristics.instantiate_attention(attn_config, self._engine_config)
 
@@ -365,6 +353,9 @@ class DSTransformerModelBase(DSInferenceModelBase):
 
         return token_capacity, max_new_blocks
 
+    def get_remaining_block_capacity(self, sequence: DSSequenceDescriptor) -> int:
+        return sequence.seen_tokens % self.attn.kv_block_size
+
     def maybe_allocate_kv(self, sequence: DSSequenceDescriptor, n_new_tokens: int) -> None:
         """
         See ``DSInferenceModelBase.maybe_allocate_kv`` for documentation.
@@ -372,13 +363,14 @@ class DSTransformerModelBase(DSInferenceModelBase):
         This method assumes an autoregressive dense attention pattern. Override this method
         if this does not match the model's attention pattern.
         """
-        _, n_needed_blocks = self.get_kv_requirements(sequence, n_new_tokens, self.state_manager.free_blocks)
+        free_block = self.state_manager.free_blocks[0]
+        _, n_needed_blocks = self.get_kv_requirements(sequence, n_new_tokens, free_block)
 
         if n_needed_blocks > 0:
             new_blocks = self.state_manager.allocate_blocks(n_needed_blocks)
             sequence.extend_kv_cache(new_blocks)
 
-    def kv_cache_config(self) -> KVCacheConfig:
+    def kv_cache_config(self) -> Tuple[KVCacheConfig, ...]:
         """
         See ``DSInferenceModelBase.kv_cache_config`` for documentation.
 
@@ -392,7 +384,7 @@ class DSTransformerModelBase(DSInferenceModelBase):
                                                   cache_shape=cache_shape,
                                                   cache_dtype=self.activation_dtype,
                                                   max_blocks_per_allocation_group=max_blocks)
-        return self._kv_cache_config
+        return (self._kv_cache_config, )
 
     def prepare_batch(self, wrapped_batch: RaggedBatchWrapper) -> None:
         """
@@ -422,8 +414,7 @@ class DSTransformerModelBase(DSInferenceModelBase):
 
         self.attn_out = heuristics.instantiate_linear(linear_config, self._engine_config)
 
-    @on_device
-    def transform_attn_out_param(self, param: torch.Tensor) -> Optional[torch.Tensor]:
+    def transform_attn_out_param(self, param: torch.Tensor) -> Optional[InferenceParameter]:
         """
         Shards an attention output projection parameter and passes it to the underlying
         implementation for any necessary transformations. This will return `None` for bias parameters
@@ -460,8 +451,7 @@ class DSTransformerModelBase(DSInferenceModelBase):
 
         self.mlp_1 = heuristics.instantiate_linear(linear_config, self._engine_config)
 
-    @on_device
-    def transform_mlp_1_param(self, param: torch.Tensor) -> torch.Tensor:
+    def transform_mlp_1_param(self, param: torch.Tensor) -> InferenceParameter:
         """
         Shards the first MLP parameter and passes it to the underlying implementation
         for any necessary transformations.
@@ -491,8 +481,7 @@ class DSTransformerModelBase(DSInferenceModelBase):
 
         self.mlp_2 = heuristics.instantiate_linear(linear_config, self._engine_config)
 
-    @on_device
-    def transform_mlp_2_param(self, param: torch.Tensor) -> Optional[torch.Tensor]:
+    def transform_mlp_2_param(self, param: torch.Tensor) -> Optional[InferenceParameter]:
         """
         Shards the second MLP parameter and passes it to the underlying implementation
         for any necessary transformations. This will return `None` for bias parameters
@@ -528,8 +517,7 @@ class DSTransformerModelBase(DSInferenceModelBase):
 
         self.norm = heuristics.instantiate_pre_norm(norm_config, self._engine_config)
 
-    @on_device
-    def transform_norm_param(self, param: torch.Tensor) -> torch.Tensor:
+    def transform_norm_param(self, param: torch.Tensor) -> InferenceParameter:
         """
         Passes a normalization parameter to the underlying implementation for any
         necessary transformations.
@@ -547,11 +535,25 @@ class DSTransformerModelBase(DSInferenceModelBase):
 class DSMoETransformerModelBase(DSTransformerModelBase):
 
     @property
-    def num_experts(self) -> int:
+    def n_experts(self) -> int:
         """
         Return the number of experts in the model.
         """
         raise NotImplementedError("Attempted to access an unimplemented number of experts")
+
+    @property
+    def n_top_k(self) -> int:
+        """
+        Number of experts per token.
+        """
+        raise NotImplementedError("Attempted to access an unimplemented number of experts per token")
+
+    @property
+    def normalize_expert_scores(self) -> bool:
+        """
+        Whether to normalize expert scores. If true, sum(expert_scores) = 1.
+        """
+        raise NotImplementedError("Attempted to access an unimplemented normalization flag")
 
     def make_moe_layer(self) -> None:
         """
@@ -564,15 +566,16 @@ class DSMoETransformerModelBase(DSTransformerModelBase):
             model_dim=self.model_dim,
             intermediate_features=sharded_dim,
             activation=self.mlp_activation_fn,
-            n_experts=self.num_experts,
+            n_experts=self.n_experts,
+            top_k=self.n_top_k,
             input_dtype=self.activation_dtype,
             output_dtype=self.activation_dtype,
+            normalize_scores=self.normalize_expert_scores,
         )
 
         self.moe = heuristics.instantiate_moe(moe_config, self._engine_config)
 
-    @on_device
-    def transform_moe_gate_param(self, param: torch.Tensor) -> torch.Tensor:
+    def transform_moe_gate_param(self, param: torch.Tensor) -> InferenceParameter:
         """
         Passes a MoE gate parameter to the underlying implementation for any necessary transformations.
 
@@ -580,8 +583,7 @@ class DSMoETransformerModelBase(DSTransformerModelBase):
         """
         return self.moe.transform_gate_param(param)
 
-    @on_device
-    def transform_moe_mlp_1_param(self, param: torch.Tensor) -> torch.Tensor:
+    def transform_moe_mlp_1_param(self, param: torch.Tensor) -> InferenceParameter:
         """
         Shards the first MoE param and passes it to the underlying implementation. Since it's possible for an architecture
         to have both MoE and non-MoE layers, this can't be overloaded on the MLP1 transform. Furthermore, since both
@@ -596,7 +598,6 @@ class DSMoETransformerModelBase(DSTransformerModelBase):
 
         return self.moe.transform_moe_mlp_1_param(param)
 
-    @on_device
     def transform_moe_mlp_2_param(self, param: torch.Tensor) -> Optional[torch.Tensor]:
         """
         Shards the second MoE param and passes it to the underlying implementation. See the above for context on why this API
