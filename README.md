@@ -15,7 +15,7 @@ pip install deepspeed* (下载的deepspeed的whl包)
 #### 编译环境准备
 提供2种环境准备方式：
 
-1. 基于光源pytorch基础镜像环境：镜像下载地址：[https://sourcefind.cn/#/image/dcu/pytorch](https://sourcefind.cn/#/image/dcu/pytorch)，根据pytorch、python、dtk及系统下载对应的镜像版本。
+1. 基于光源pytorch基础镜像环境,根据pytorch、python、dtk及系统下载对应的镜像版本。
 
 2. 基于现有python环境：安装pytorch，pytorch whl包下载目录：[https://cancon.hpccube.com:65024/4/main/pytorch/dtk23.10](https://cancon.hpccube.com:65024/4/main/pytorch/dtk23.10)，根据python、dtk版本,下载对应pytorch的whl包。安装命令如下：
 ```shell
@@ -54,7 +54,7 @@ pip3 install ./dist/deepspeed*.whl
 
 ## 版本号查询
 - python -c "import deepspeed; print(deepspeed.\_\_version__)"，查询软件版本，版本号与官方版本同步；
-- python -c "import deepspeed; print(deepspeed.\_\_dcu_version__)"，查询基于dcu的内部版本号；
+- python -c "import deepspeed; print(deepspeed.\_\_hcu_version__)"，查询基于hcu的内部版本号；
 
 ## Known Issue
 - 无
