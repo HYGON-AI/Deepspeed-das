@@ -13,11 +13,8 @@
 #endif
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
-#ifndef __HIP_PLATFORM_HCC__
+#ifndef __HIP_PLATFORM_AMD__
 #include <mma.h>
-#endif
-#ifdef __HIP_PLATFORM_HCC__
-#include <rocblas/rocblas.h>
 #endif
 #include <stdio.h>
 #include <iostream>
@@ -31,24 +28,17 @@ class BlasContext {
 public:
     BlasContext()
     {
-#ifdef __HIP_PLATFORM_HCC__
-        if (rocblas_create_handle(&_handle) != rocblas_status_success) {
-#else
         if (cublasCreate(&_handle) != CUBLAS_STATUS_SUCCESS) {
-#endif
             auto message = std::string("Fail to create cublas handle.");
             std::cerr << message << std::endl;
             throw std::runtime_error(message);
         }
-#ifndef __HIP_PLATFORM_HCC__
+#ifndef __HIP_PLATFORM_AMD__
         cublasSetMathMode(_handle, CUBLAS_TENSOR_OP_MATH);
 #endif
     }
-#ifdef __HIP_PLATFORM_HCC__
-    virtual ~BlasContext() { rocblas_destroy_handle(_handle); }
-#else
+
     virtual ~BlasContext() { cublasDestroy(_handle); }
-#endif
 
     static BlasContext& getInstance()
     {
@@ -56,22 +46,18 @@ public:
         static BlasContext _instance;
         return _instance;
     }
-#ifdef __HIP_PLATFORM_HCC__
-    rocblas_handle get_handle() const { return _handle; }
-#else
+
     cublasHandle_t get_handle() const { return _handle; }
-#endif
+
 private:
-#ifdef __HIP_PLATFORM_HCC__
-    rocblas_handle _handle;
-#else
     cublasHandle_t _handle;
-#endif
 };
 
 enum class BlasType { FP32, FP16, BF16 };
 
-#ifdef __HIP_PLATFORM_HCC__
+// TODO HIP: Remove backward compatibility for torch<=2.0 in future
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
 rocblas_operation get_trans_op(bool do_trans)
 {
     return (do_trans) ? rocblas_operation_transpose : rocblas_operation_none;
@@ -92,9 +78,15 @@ cublasOperation_t get_trans_op(bool do_trans) { return (do_trans) ? CUBLAS_OP_T 
 cublasDataType_t get_datatype(BlasType type)
 {
     switch (type) {
+#ifdef __HIP_PLATFORM_AMD__
+        case BlasType::FP32: return HIPBLAS_R_32F;
+        case BlasType::FP16: return HIPBLAS_R_16F;
+        case BlasType::BF16: return HIPBLAS_R_16B;
+#else
         case BlasType::FP32: return CUDA_R_32F;
         case BlasType::FP16: return CUDA_R_16F;
         case BlasType::BF16: return CUDA_R_16BF;
+#endif
         default: throw std::runtime_error("Unsupported BlasType");
     }
 }
@@ -115,36 +107,37 @@ int blas_gemm_ex(void* C,
                  const float* beta,
                  BlasType type)
 {
-#ifdef __HIP_PLATFORM_HCC__
-   rocblas_operation transa_op = get_trans_op(transa);
-   rocblas_operation transb_op = get_trans_op(transb);
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+    rocblas_operation_t transa_op = get_trans_op(transa);
+    rocblas_operation_t transb_op = get_trans_op(transb);
 
-   rocblas_datatype abc_type = get_datatype(type);
+    rocblas_datatype_t abc_type = get_datatype(type);
 
-   rocblas_status status = rocblas_gemm_ex(BlasContext::getInstance().get_handle(),
-                                           transa_op,
-                                           transb_op,
-                                           m,
-                                           n,
-                                           k,
-                                           (const void*)alpha,
-                                           A,
-                                           abc_type,
-                                           lda,
-                                           B,
-                                           abc_type,
-                                           ldb,
-                                           (const void*)beta,
-                                           C,
-                                           abc_type,
-                                           ldc,
-                                           C,
-                                           abc_type,
-                                           ldc,
-                                           rocblas_datatype_f32_r,
-                                           rocblas_gemm_algo_standard,
-                                           0,
-                                           0);
+    rocblas_status status = rocblas_gemm_ex(BlasContext::getInstance().get_handle(),
+                                            transa_op,
+                                            transb_op,
+                                            m,
+                                            n,
+                                            k,
+                                            (const void*)alpha,
+                                            A,
+                                            abc_type,
+                                            lda,
+                                            B,
+                                            abc_type,
+                                            ldb,
+                                            (const void*)beta,
+                                            C,
+                                            abc_type,
+                                            ldc,
+                                            C,
+                                            abc_type,
+                                            ldc,
+                                            rocblas_datatype_f32_r,
+                                            rocblas_gemm_algo_standard,
+                                            0,
+                                            0);
 #else
     cublasOperation_t transa_op = get_trans_op(transa);
     cublasOperation_t transb_op = get_trans_op(transb);
@@ -167,11 +160,18 @@ int blas_gemm_ex(void* C,
                                          C,
                                          abc_type,
                                          ldc,
+#if defined(__HIP_PLATFORM_AMD__) && defined(HIPBLAS_V2)
+                                         HIPBLAS_COMPUTE_32F,
+#elif defined(__HIP_PLATFORM_AMD__)
+                                         HIPBLAS_R_32F,
+#else
                                          CUDA_R_32F,
+#endif
                                          CUBLAS_GEMM_DEFAULT_TENSOR_OP);
 #endif
 
-#ifdef __HIP_PLATFORM_HCC__
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
     if (status != rocblas_status_success) {
 #else
     if (status != CUBLAS_STATUS_SUCCESS) {
@@ -206,15 +206,15 @@ int blas_strided_batched_gemm(void* C,
                               int batch,
                               BlasType type)
 {
-#ifdef __HIP_PLATFORM_HCC__
-    rocblas_operation transa_op = get_trans_op(transa);
-    rocblas_operation transb_op = get_trans_op(transb);
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+    rocblas_operation_t transa_op = get_trans_op(transa);
+    rocblas_operation_t transb_op = get_trans_op(transb);
 
-    rocblas_datatype abc_type = get_datatype(type);
-    BlasContext& blasInstance = BlasContext::getInstance();
-    rocblas_handle handle = blasInstance.get_handle();
-    rocblas_status status = 
-        rocblas_gemm_strided_batched_ex(handle,
+    rocblas_datatype_t abc_type = get_datatype(type);
+
+    rocblas_status status =
+        rocblas_gemm_strided_batched_ex(BlasContext::getInstance()::get_handle(),
                                         transa_op,
                                         transb_op,
                                         m,
@@ -270,11 +270,18 @@ int blas_strided_batched_gemm(void* C,
                                                        ldc,
                                                        stride_C,
                                                        batch,
+#if defined(__HIP_PLATFORM_AMD__) && defined(HIPBLAS_V2)
+                                                       HIPBLAS_COMPUTE_32F,
+#elif defined(__HIP_PLATFORM_AMD__)
+                                                       HIPBLAS_R_32F,
+#else
                                                        CUDA_R_32F,
+#endif
                                                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
 #endif
 
-#ifdef __HIP_PLATFORM_HCC__
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
     if (status != rocblas_status_success) {
 #else
     if (status != CUBLAS_STATUS_SUCCESS) {

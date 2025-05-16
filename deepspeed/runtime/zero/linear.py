@@ -16,6 +16,7 @@
 #when implemented outside of torch.autograd.Function
 
 import math
+import functools
 
 import torch
 from torch import Tensor
@@ -25,11 +26,12 @@ from torch.nn.modules.module import Module
 from deepspeed.runtime.utils import noop_decorator
 from deepspeed import comm as dist
 from deepspeed.accelerator import get_accelerator
-import functools
+
 
 def print_rank_0(message, debug=False, force=False):
     if dist.get_rank() == 0 and (debug or force):
         print(message)
+
 
 try:
     # Fix `torch.[device].amp.custom_fwd/bwd` FutureWarning in torch 2.4
@@ -42,6 +44,8 @@ try:
         autocast_custom_bwd = get_accelerator().amp().custom_bwd
 except (ImportError, AttributeError) as exp:
     autocast_custom_fwd = noop_decorator
+    autocast_custom_bwd = noop_decorator
+
 
 class LinearFunctionForZeroStage3(torch.autograd.Function):
 

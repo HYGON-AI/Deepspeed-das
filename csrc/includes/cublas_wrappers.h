@@ -10,23 +10,18 @@
 #include <cuda.h>
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
-#ifndef __HIP_PLATFORM_HCC__
+#ifndef __HIP_PLATFORM_AMD__
 #include <mma.h>
 #endif
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
 #include <rocblas/rocblas.h>
 #endif
 #include <stdio.h>
-int cublas_gemm_ex(
-#ifdef __HIP_PLATFORM_HCC__
-                   rocblas_handle handle,
-                   rocblas_operation transa,
-                   rocblas_operation transb,
-#else                  
-                   cublasHandle_t handle,
+#include <torch/version.h>
+
+int cublas_gemm_ex(cublasHandle_t handle,
                    cublasOperation_t transa,
                    cublasOperation_t transb,
-#endif
                    int m,
                    int n,
                    int k,
@@ -35,22 +30,17 @@ int cublas_gemm_ex(
                    const float* A,
                    const float* B,
                    float* C,
-#ifdef __HIP_PLATFORM_HCC__
+// TODO HIP: Remove backward compatibility for torch<=2.0 in future
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
                    rocblas_gemm_algo algo = rocblas_gemm_algo_standard);
 #else
                    cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT);
 #endif
 
-int cublas_gemm_ex(
-#ifdef __HIP_PLATFORM_HCC__
-                   rocblas_handle handle,
-                   rocblas_operation transa,
-                   rocblas_operation transb,
-#else                  
-                   cublasHandle_t handle,
+int cublas_gemm_ex(cublasHandle_t handle,
                    cublasOperation_t transa,
                    cublasOperation_t transb,
-#endif
                    int m,
                    int n,
                    int k,
@@ -59,18 +49,14 @@ int cublas_gemm_ex(
                    const __half* A,
                    const __half* B,
                    __half* C,
-#ifdef __HIP_PLATFORM_HCC__
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
                    rocblas_gemm_algo algo = rocblas_gemm_algo_standard);
 #else
                    cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT_TENSOR_OP);
 #endif
 
-int cublas_strided_batched_gemm(
-#ifdef __HIP_PLATFORM_HCC__
-                                rocblas_handle handle,
-#else                            
-                                cublasHandle_t handle,
-#endif                            
+int cublas_strided_batched_gemm(cublasHandle_t handle,
                                 int m,
                                 int n,
                                 int k,
@@ -79,29 +65,20 @@ int cublas_strided_batched_gemm(
                                 const float* A,
                                 const float* B,
                                 float* C,
-#ifdef __HIP_PLATFORM_HCC__                                 
-                                rocblas_operation op_A,
-                                rocblas_operation op_B,
-#else                                
                                 cublasOperation_t op_A,
                                 cublasOperation_t op_B,
-#endif                                
                                 int stride_A,
                                 int stride_B,
                                 int stride_C,
                                 int batch,
-#ifdef __HIP_PLATFORM_HCC__
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
                                 rocblas_gemm_algo algo = rocblas_gemm_algo_standard);
 #else
                                 cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT);
 #endif
 
-int cublas_strided_batched_gemm(
-#ifdef __HIP_PLATFORM_HCC__
-                                rocblas_handle handle,
-#else                   
-                                cublasHandle_t handle,
-#endif                                
+int cublas_strided_batched_gemm(cublasHandle_t handle,
                                 int m,
                                 int n,
                                 int k,
@@ -110,18 +87,14 @@ int cublas_strided_batched_gemm(
                                 const __half* A,
                                 const __half* B,
                                 __half* C,
-#ifdef __HIP_PLATFORM_HCC__                                 
-                                rocblas_operation op_A,
-                                rocblas_operation op_B,
-#else                                
                                 cublasOperation_t op_A,
                                 cublasOperation_t op_B,
-#endif                            
                                 int stride_A,
                                 int stride_B,
                                 int stride_C,
                                 int batch,
-#ifdef __HIP_PLATFORM_HCC__
+#if defined(__HIP_PLATFORM_AMD__) && \
+    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
                                 rocblas_gemm_algo algo = rocblas_gemm_algo_standard);
 #else
                                 cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT_TENSOR_OP);

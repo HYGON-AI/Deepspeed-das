@@ -12,9 +12,7 @@
 #include <vector>
 #include "cublas_v2.h"
 #include "cuda.h"
-#ifdef __HIP_PLATFORM_AMD__
-#include "rocblas/rocblas.h"
-#endif
+
 #define MEGABYTE (1024 * 1024)
 #define GIGABYTE (1024 * 1024 * 1024)
 
@@ -62,13 +60,9 @@ public:
     {
         _workSpaceSize = 0;
         _workspace = 0;
-#ifdef __HIP_PLATFORM_AMD__
-        rocblas_status stat = rocblas_create_handle(&_cublasHandle);
-        if (stat != CUBLAS_STATUS_SUCCESS) {
-#else
+
         cublasStatus_t stat = cublasCreate(&_cublasHandle);
         if (stat != CUBLAS_STATUS_SUCCESS) {
-#endif
             // It would be nice to use cublasGetStatusName and
             // cublasGetStatusString, but they were only added in CUDA 11.4.2.
             auto message = std::string("Failed to create cublas handle: cublasStatus_t was ") +
@@ -77,7 +71,7 @@ public:
             throw std::runtime_error(message);
         }
 #ifndef __HIP_PLATFORM_AMD__
-        rocblas_set_math_mode(_cublasHandle, CUBLAS_TENSOR_OP_MATH);
+        cublasSetMathMode(_cublasHandle, CUBLAS_TENSOR_OP_MATH);
 #endif
         cudaEventCreate(&_comp1_event);
         cudaEventCreate(&_comp2_event);
@@ -87,11 +81,7 @@ public:
 
     virtual ~InferenceContext()
     {
-#ifdef __HIP_PLATFORM_AMD__
-        rocblas_destroy_handle(_cublasHandle);
-#else
         cublasDestroy(_cublasHandle);
-#endif
         cudaFree(_workspace);
         cudaEventDestroy(_comp1_event);
         cudaEventDestroy(_comp2_event);
@@ -245,11 +235,8 @@ public:
         cudaMalloc(&_workspace, _workSpaceSize);
         return _workspace != nullptr;
     }
-#ifdef __HIP_PLATFORM_AMD__
-    rocblas_handle GetCublasHandle() { return _cublasHandle; }
-#else
     cublasHandle_t GetCublasHandle() { return _cublasHandle; }
-#endif
+
     std::pair<uint64_t, uint64_t> IncrementOffset(uint64_t offset_inc)
     {
         uint64_t offset = _curr_offset;
@@ -273,11 +260,8 @@ public:
     }
 
 private:
-#ifdef __HIP_PLATFORM_AMD__
-    rocblas_handle _cublasHandle;
-#else
     cublasHandle_t _cublasHandle;
-#endif
+
     cudaEvent_t _comp_event;
     cudaEvent_t _comm_event;
 

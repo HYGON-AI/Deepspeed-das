@@ -47,7 +47,7 @@ from .runtime.compiler import is_compile_supported
 
 from .pipe import PipelineModule
 
-from .git_version_info import version, git_hash, git_branch, hcu_version
+from .git_version_info import version, git_hash, git_branch
 
 
 def _parse_version(version_str):
@@ -58,7 +58,6 @@ def _parse_version(version_str):
 
 # Export version information
 __version__ = version
-__hcu_version__ = hcu_version
 __version_major__, __version_minor__, __version_patch__ = _parse_version(__version__)
 __git_hash__ = git_hash
 __git_branch__ = git_branch
@@ -78,6 +77,7 @@ def initialize(args=None,
                dist_init_required: Optional[bool] = None,
                collate_fn=None,
                config=None,
+               mesh_param=None,
                config_params=None):
     """Initialize the DeepSpeed Engine.
 
@@ -145,16 +145,28 @@ def initialize(args=None,
                           distributed_port=distributed_port,
                           dist_init_required=dist_init_required)
 
+    ##TODO: combine reuse mpu as mesh device and vice versa
     # Set config using config_params for backwards compat
     if config is None and config_params is not None:
         config = config_params
+
+    mesh_device = None
+    if mesh_param:
+        logger.info(f"mesh_param to Initialize mesh device: {mesh_param}")
+        mesh_device = dist.initialize_mesh_device(mesh_param, ("data_parallel", "sequence_parallel"))
+    #if config file has sequence parallelize and data parallelize, then use them to initialize mesh device
+    elif config is not None:
+        if "sequence_parallel_size" in config and "data_parallel_size" in config:
+            logger.info(f"config to Initialize mesh device: {config}")
+            mesh_device = dist.initialize_mesh_device((config["data_parallel_size"], config["sequence_parallel_size"]), \
+            ("data_parallel", "sequence_parallel"))
 
     # Check for deepscale_config for backwards compat
     if hasattr(args, "deepscale_config") and args.deepscale_config is not None:
         logger.warning("************ --deepscale_config is deprecated, please use --deepspeed_config ************")
         if hasattr(args, "deepspeed_config"):
-            assert (args.deepspeed_config is
-                    None), "Not sure how to proceed, we were given both a deepscale_config and deepspeed_config"
+            assert (args.deepspeed_config
+                    is None), "Not sure how to proceed, we were given both a deepscale_config and deepspeed_config"
         args.deepspeed_config = args.deepscale_config
         args.deepscale_config = None
 
@@ -163,9 +175,8 @@ def initialize(args=None,
         assert config is None, "Not sure how to proceed, we were given deepspeed configs in the deepspeed arguments and deepspeed.initialize() function call"
         config = args.deepspeed_config
     assert config is not None, "DeepSpeed requires --deepspeed_config to specify configuration file"
-
     if not isinstance(model, PipelineModule):
-        config_class = DeepSpeedConfig(config, mpu)
+        config_class = DeepSpeedConfig(config, mpu, mesh_device=mesh_device)
         if config_class.hybrid_engine.enabled:
             engine = DeepSpeedHybridEngine(args=args,
                                            model=model,
@@ -189,6 +200,7 @@ def initialize(args=None,
                                      dist_init_required=dist_init_required,
                                      collate_fn=collate_fn,
                                      config=config,
+                                     mesh_device=mesh_device,
                                      config_class=config_class)
     else:
         assert mpu is None, "mpu must be None with pipeline parallelism"
@@ -209,7 +221,12 @@ def initialize(args=None,
     # Restore zero.Init context if necessary
     zero.partition_parameters.restore_init_context()
 
-    return_items = [engine, engine.optimizer, engine.training_dataloader, engine.lr_scheduler]
+    return_items = [
+        engine,
+        engine.optimizer,
+        engine.training_dataloader,
+        engine.lr_scheduler,
+    ]
     return tuple(return_items)
 
 

@@ -9,28 +9,28 @@ Helper functions and classes from multiple sources.
 """
 
 from collections.abc import Iterable
-from deepspeed.moe.utils import is_moe_param
 import os
 import psutil
 import gc
 from math import sqrt
 
+from numpy import prod
+
 import torch
-from deepspeed import comm as dist
+from torch.nn import functional as F
 try:
     from torch._six import inf
 except ModuleNotFoundError:
     from torch import inf
 
+from deepspeed import comm as dist
+from deepspeed.moe.utils import is_moe_param
 from deepspeed.utils import groups, logger
 from deepspeed.utils.bwc import (bwc_tensor_model_parallel_rank, bwc_pipeline_parallel_world_size,
                                  bwc_pipeline_parallel_group)
 from deepspeed.runtime.constants import PIPE_REPLICATED
-from numpy import prod
 from deepspeed.accelerator import get_accelerator
-
 from deepspeed.module_inject.policy import transpose
-from torch.nn import functional as F
 
 torch_memory_reserved = get_accelerator().memory_reserved
 torch_max_memory_reserved = get_accelerator().max_memory_reserved
@@ -171,7 +171,7 @@ def get_norm_with_moe_layers_fast(all_groups_norm, group):
     # This implementation standardizes the grad_norm across ranks. A more precise implementation can be found in 'get_norm_with_moe_layers'.
     # Need to allreduce (avg) the norms across different ranks because moe params will not be synced during allreduce
     scaled_norm = all_groups_norm * 1.0 / float(dist.get_world_size(group=group))
-    scaled_norm_tensor = torch.tensor(scaled_norm, device=get_accelerator().current_device(), dtype=torch.float)
+    scaled_norm_tensor = torch.tensor(scaled_norm, device=get_accelerator().current_device_name(), dtype=torch.float)
     dist.all_reduce(scaled_norm_tensor, group=group)
     all_groups_norm = scaled_norm_tensor.item()
     #print(f"old = {all_groups_norm_old} and new = {all_groups_norm} at rank: {deepspeed.comm.get_rank()}")
@@ -257,8 +257,8 @@ class CheckOverflow(object):
         elif self.mpu is not None:
             if self.deepspeed is not None:
                 using_pipeline = hasattr(self.deepspeed, 'pipeline_enable_backward_allreduce')
-                if (using_pipeline and self.deepspeed.pipeline_enable_backward_allreduce is False) or (
-                        not using_pipeline and self.deepspeed.enable_backward_allreduce is False):
+                if (using_pipeline and self.deepspeed.pipeline_enable_backward_allreduce
+                        is False) or (not using_pipeline and self.deepspeed.enable_backward_allreduce is False):
                     dist.all_reduce(overflow_gpu, op=dist.ReduceOp.MAX, group=self.mpu.get_data_parallel_group())
             dist.all_reduce(overflow_gpu, op=dist.ReduceOp.MAX, group=self.mpu.get_model_parallel_group())
         elif self.deepspeed is not None and self.deepspeed.enable_backward_allreduce is False:
@@ -424,9 +424,11 @@ def get_flattened_grad_norm(parameters, norm_type=2, mpu=None, grad_norm_mask=No
                 # # mask_tensor_ = torch.zeros_like(p, device=p.device, dtype=bool)
                 # # for mask_idx in grad_norm_mask[idx]:
                 # #   mask_tensor_[mask_idx[0]:mask_idx[1]] = True
-                cum_sum_pairs = torch.tensor([1, -1], device=get_accelerator().current_device(),
+                cum_sum_pairs = torch.tensor([1, -1], device=get_accelerator().current_device_name(),
                                              dtype=p.dtype).repeat(grad_norm_mask[idx].shape[0], 1)
-                mask_tensor = torch.zeros(p.shape[0] + 1, device=get_accelerator().current_device(), dtype=p.dtype)
+                mask_tensor = torch.zeros(p.shape[0] + 1,
+                                          device=get_accelerator().current_device_name(),
+                                          dtype=p.dtype)
                 mask_tensor = mask_tensor.scatter_(0, grad_norm_mask[idx].view(-1),
                                                    cum_sum_pairs.view(-1)).cumsum(0).bool()[:-1]
 
@@ -1063,3 +1065,39 @@ def get_norm_with_moe_layers(non_expert_norm, mpu, expert_tensors, norm_type=2):
             total_norm = -1
 
     return total_norm
+
+
+def _make_offload_state_key(key):
+    return f"{key}_offload_buffer"
+
+
+def offload_adam_states(optimizer, device, pin_memory: bool = False, non_blocking: bool = False):
+    """Move optimizer states to device. Note that this assumes the state structure of DeepSpeed Adam."""
+
+    def move_key(state, key):
+        offload_buf_key = _make_offload_state_key(key)
+        if offload_buf_key not in state:
+            state[offload_buf_key] = torch.empty_like(state[key], device=device)
+            if pin_memory:
+                state[offload_buf_key] = get_accelerator().pin_memory(state[offload_buf_key])
+        state[offload_buf_key].copy_(state[key], non_blocking=non_blocking)
+        state[key].data = state[offload_buf_key]
+
+    for _, state in optimizer.state.items():
+        if "exp_avg" in state:
+            move_key(state, "exp_avg")
+        if "exp_avg_sq" in state:
+            move_key(state, "exp_avg_sq")
+
+
+def reload_adam_states(optimizer, device, non_blocking: bool = False):
+    """Move optimizer states to device. Note that this assumes the state structure of DeepSpeed Adam."""
+
+    def move_back_key(state, key):
+        state[key].data = state[_make_offload_state_key(key)].to(device, non_blocking=non_blocking)
+
+    for _, state in optimizer.state.items():
+        if "exp_avg" in state:
+            move_back_key(state, "exp_avg")
+        if "exp_avg_sq" in state:
+            move_back_key(state, "exp_avg_sq")
