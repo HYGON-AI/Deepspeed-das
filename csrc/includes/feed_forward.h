@@ -32,14 +32,23 @@ public:
                  const T* input_ptr,
                  const T* weights,
                  T* out,
+#ifdef __HIP_PLATFORM_HCC__
+                 rocblas_handle& _cublasHandle)
+#else
                  cublasHandle_t& _cublasHandle)
+#endif
     {
         float alpha = T(1.);
         float beta = T(0.);
 
         cublas_gemm_ex(_cublasHandle,
+#ifdef __HIP_PLATFORM_HCC__
+                       rocblas_operation_transpose,
+                       rocblas_operation_none,
+#else
                        CUBLAS_OP_T,
                        CUBLAS_OP_N,
+#endif
                        config_.outputSize,
                        bsz,
                        config_.inputSize,
@@ -49,8 +58,8 @@ public:
                        input_ptr,
                        out,
 // TODO HIP: Remove backward compatibility for torch<=2.0 in future
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo(config_.gemm_algos[0]));
 #else
                        cublasGemmAlgo_t(config_.gemm_algos[0]));
@@ -62,15 +71,24 @@ public:
                   const T* weights,
                   T* weights_grad,
                   T* bias_grad,
+#ifdef __HIP_PLATFORM_HCC__
+                  rocblas_handle& _cublasHandle,
+#else
                   cublasHandle_t& _cublasHandle,
+#endif
                   cudaStream_t& stream,
                   T* inp_grad_out = nullptr,
                   T* out_grad_trans_out = nullptr)
     {
         float alpha = (T)1.0, beta = (T)0.0;
         cublas_gemm_ex(_cublasHandle,
+#ifdef __HIP_PLATFORM_HCC__
+                       rocblas_operation_none,
+                       rocblas_operation_transpose,
+#else
                        CUBLAS_OP_N,
                        CUBLAS_OP_T,
+#endif
                        config_.inputSize,
                        config_.outputSize,
                        bsz,
@@ -79,16 +97,21 @@ public:
                        input_ptr,
                        out_grad,
                        weights_grad,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo(config_.gemm_algos[1]));
 #else
                        cublasGemmAlgo_t(config_.gemm_algos[1]));
 #endif
 
         cublas_gemm_ex(_cublasHandle,
+#ifdef __HIP_PLATFORM_HCC__
+                       rocblas_operation_none,
+                       rocblas_operation_none,
+#else
                        CUBLAS_OP_N,
                        CUBLAS_OP_N,
+#endif
                        config_.inputSize,
                        bsz,
                        config_.outputSize,
@@ -97,8 +120,8 @@ public:
                        weights,
                        out_grad,
                        inp_grad_out,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo(config_.gemm_algos[2]));
 #else
                        cublasGemmAlgo_t(config_.gemm_algos[2]));

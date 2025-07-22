@@ -153,8 +153,13 @@ at::Tensor einsum_sec_sm_ecm(at::Tensor& Q, at::Tensor& W)
     unsigned n = Q.size(1) * Q.size(2);
     unsigned k = Q.size(0);
     cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_AMD__
+                   rocblas_operation_none,
+                   rocblas_operation_transpose,
+#else
                    CUBLAS_OP_N,
                    CUBLAS_OP_T,
+#endif
                    m,
                    n,
                    k,
@@ -164,8 +169,8 @@ at::Tensor einsum_sec_sm_ecm(at::Tensor& Q, at::Tensor& W)
                    (T*)Q.data_ptr(),
                    (T*)O.data_ptr(),
 // TODO HIP: Remove backward compatibility for torch<=2.0 in future
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                    rocblas_gemm_algo_standard);
 #else
                    CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -212,14 +217,19 @@ void attention_unfused(at::Tensor& prev_key_cont,
                                 (T*)prev_key_cont.data_ptr(),
                                 (T*)query_cont.data_ptr(),
                                 (T*)attn_score.data_ptr(),
+#ifdef __HIP_PLATFORM_AMD__
+                                rocblas_operation_none,
+                                rocblas_operation_none,
+#else
                                 CUBLAS_OP_N,
                                 CUBLAS_OP_N,
+#endif                           
                                 soft_len * k,
                                 seq_len * k,
                                 seq_len * soft_len,
                                 bsz * heads,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                                 rocblas_gemm_algo_standard);
 #else
                                 CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -250,14 +260,19 @@ void attention_unfused(at::Tensor& prev_key_cont,
                                 (T*)prev_value_cont.data_ptr(),
                                 (T*)attn_score.data_ptr(),
                                 (T*)output.data_ptr(),
+#ifdef __HIP_PLATFORM_AMD__
+                   rocblas_operation_none,
+                   rocblas_operation_none,
+#else            
                                 CUBLAS_OP_N,
                                 CUBLAS_OP_N,
+#endif
                                 soft_len * k,
                                 seq_len * soft_len,
                                 seq_len * k,
                                 bsz * heads,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                                 rocblas_gemm_algo_standard);
 #else
                                 CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -386,14 +401,19 @@ void attention_unfused(T* prev_key_cont,
                                 (T*)prev_key_cont,
                                 (T*)query_cont,
                                 workspace,
+#ifdef __HIP_PLATFORM_AMD__
+                                rocblas_operation_transpose,
+                                rocblas_operation_none,
+#else
                                 CUBLAS_OP_T,
                                 CUBLAS_OP_N,
+#endif
                                 InferenceContext::Instance().GetMaxTokenLength() * k,
                                 seq_len * k,
                                 seq_len * soft_len,
                                 bsz * heads,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                                 rocblas_gemm_algo_standard);
 #else
                                 CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -420,14 +440,19 @@ void attention_unfused(T* prev_key_cont,
                                 (T*)prev_value_cont,
                                 workspace,
                                 (T*)output,
+#ifdef __HIP_PLATFORM_AMD__
+                                rocblas_operation_none,
+                                rocblas_operation_none,
+#else                                
                                 CUBLAS_OP_N,
                                 CUBLAS_OP_N,
+#endif
                                 InferenceContext::Instance().GetMaxTokenLength() * k,
                                 seq_len * soft_len,
                                 seq_len * k,
                                 bsz * heads,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                                 rocblas_gemm_algo_standard);
 #else
                                 CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -886,8 +911,13 @@ void quantized_gemm(void* output,
     float alpha = (T)1.0;
     float gemm_beta = (T)0.0;
     cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_AMD__
+                   rocblas_operation_transpose,
+                   rocblas_operation_none,
+#else
                    CUBLAS_OP_T,
                    CUBLAS_OP_N,
+#endif
                    weight.size(0),
                    bsz,
                    weight.size(1),
@@ -896,8 +926,8 @@ void quantized_gemm(void* output,
                    weight16,
                    (T*)input,
                    (T*)output,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                    rocblas_gemm_algo_standard);
 #else
                    CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -932,8 +962,13 @@ at::Tensor qkv_unfused_cublas(at::Tensor& output,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        weight.size(transposed_mode ? 0 : 1),
                        bsz,
                        input.size(2),
@@ -942,8 +977,8 @@ at::Tensor qkv_unfused_cublas(at::Tensor& output,
                        (T*)weight.data_ptr(),
                        workspace,
                        (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1005,8 +1040,13 @@ std::vector<at::Tensor> ds_rms_qkv(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_AMD__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else                       
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        weight.size(transposed_mode ? 0 : 1),
                        bsz,
                        input.size(2),
@@ -1015,8 +1055,8 @@ std::vector<at::Tensor> ds_rms_qkv(at::Tensor& input,
                        (T*)weight.data_ptr(),
                        (T*)rms_norm.data_ptr(),
                        (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1102,8 +1142,8 @@ void quantized_gemm(at::Tensor& output,
                    (T*)weight16.data_ptr(),
                    (T*)input.data_ptr(),
                    (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                    rocblas_gemm_algo_standard);
 #else
                    CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1139,8 +1179,13 @@ at::Tensor ds_linear_layer(at::Tensor& input,
                     InferenceContext::Instance().GetCurrentStream());
 
     cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                   (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                   rocblas_operation_none,
+#else                   
                    (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                    CUBLAS_OP_N,
+#endif
                    weight.size(transposed_mode ? 0 : 1),
                    bsz,
                    input_cont.size(2),
@@ -1149,8 +1194,8 @@ at::Tensor ds_linear_layer(at::Tensor& input,
                    (T*)weight.data_ptr(),
                    (T*)input_cont.data_ptr(),
                    (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                    rocblas_gemm_algo_standard);
 #else
                    CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1358,8 +1403,13 @@ at::Tensor ds_vector_matmul(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream(async_op));
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        weight.size(transposed_mode ? 0 : 1),
                        bsz,
                        input.size(2),
@@ -1368,8 +1418,8 @@ at::Tensor ds_vector_matmul(at::Tensor& input,
                        (T*)weight.data_ptr(),
                        (T*)input.data_ptr(),
                        (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1445,8 +1495,13 @@ at::Tensor mlp_unfused_cublas(at::Tensor& output,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else                       
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        weight.size(transposed_mode ? 0 : 1),
                        bsz,
                        input.size(2),
@@ -1455,8 +1510,8 @@ at::Tensor mlp_unfused_cublas(at::Tensor& output,
                        (T*)weight.data_ptr(),
                        inp_norm,
                        intermediate,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1490,8 +1545,13 @@ at::Tensor mlp_unfused_cublas(at::Tensor& output,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else                       
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        weight1.size(transposed_mode ? 0 : 1),
                        bsz,
                        weight1.size(transposed_mode ? 1 : 0),
@@ -1500,8 +1560,8 @@ at::Tensor mlp_unfused_cublas(at::Tensor& output,
                        (T*)weight1.data_ptr(),
                        intermediate,
                        (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1627,8 +1687,13 @@ std::vector<at::Tensor> ds_rms_mlp_gemm(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        mlp_1_out_neurons,
                        bsz,
                        input_neurons,
@@ -1637,8 +1702,8 @@ std::vector<at::Tensor> ds_rms_mlp_gemm(at::Tensor& input,
                        (T*)weight_interm.data_ptr(),
                        (T*)inp_norm.data_ptr(),
                        intermediate_ptr,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1691,8 +1756,13 @@ std::vector<at::Tensor> ds_rms_mlp_gemm(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        input_neurons,
                        bsz,
                        mlp_2_in_neurons,
@@ -1701,8 +1771,8 @@ std::vector<at::Tensor> ds_rms_mlp_gemm(at::Tensor& input,
                        (T*)weight_out.data_ptr(),
                        intermediate_ptr,
                        (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard,
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP,
@@ -1754,8 +1824,13 @@ at::Tensor fused_gemm_gelu(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        intm_dim,
                        bsz,
                        input.size(2),
@@ -1764,8 +1839,8 @@ at::Tensor fused_gemm_gelu(at::Tensor& input,
                        (T*)weight.data_ptr(),
                        (T*)input.data_ptr(),
                        (T*)intermediate.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);
@@ -1789,8 +1864,13 @@ at::Tensor fused_gemm_gelu(at::Tensor& input,
                           input.size(2));
     } else {
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
+#ifdef __HIP_PLATFORM_HCC__
+                       (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
+                       rocblas_operation_none,
+#else
                        (transposed_mode ? CUBLAS_OP_T : CUBLAS_OP_N),
                        CUBLAS_OP_N,
+#endif
                        out_size,
                        bsz,
                        intm_dim,
@@ -1799,8 +1879,8 @@ at::Tensor fused_gemm_gelu(at::Tensor& input,
                        (T*)weight_out.data_ptr(),
                        (T*)intermediate.data_ptr(),
                        (T*)output.data_ptr(),
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                        rocblas_gemm_algo_standard);
 #else
                        CUBLAS_GEMM_DEFAULT_TENSOR_OP);

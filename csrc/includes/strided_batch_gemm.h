@@ -20,8 +20,13 @@ public:
         int k;
         float alpha;
         float beta;
+#ifdef __HIP_PLATFORM_AMD__
+        rocblas_operation op_A;
+        rocblas_operation op_B;
+#else
         cublasOperation_t op_A;
         cublasOperation_t op_B;
+#endif
         std::array<int, 3> gemm_algos;
 
         Config(int batch,
@@ -30,8 +35,13 @@ public:
                int kk,
                float param_alpha,
                float param_beta,
-               cublasOperation_t opA,
-               cublasOperation_t opB,
+#ifdef __HIP_PLATFORM_AMD__
+        rocblas_operation opA,
+        rocblas_operation opB,
+#else
+        cublasOperation_t opA,
+        cublasOperation_t opB,
+#endif
                const std::array<int, 3>& algos)
             : batch_size(batch),
               m(mm),
@@ -56,7 +66,11 @@ public:
 
     virtual ~StridedBatchGemm() {}
 
+#ifdef __HIP_PLATFORM_HCC__
+    void Forward(int bsz, T* output, const T* _buffer_a, const T* _buffer_b, rocblas_handle handle)
+#else
     void Forward(int bsz, T* output, const T* _buffer_a, const T* _buffer_b, cublasHandle_t handle)
+#endif     
     {
         int stride_a = _config.m * _config.k;
         int stride_b = _config.n * _config.k;
@@ -78,15 +92,20 @@ public:
                                     stride_c,
                                     bsz,
 // TODO HIP: Remove backward compatibility for torch<=2.0 in future
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                                     rocblas_gemm_algo(_config.gemm_algos[0]));
 #else
                                     cublasGemmAlgo_t(_config.gemm_algos[0]));
 #endif
     }
 
-    void ForwardPlusSave(T* output, const T* _buffer_a, const T* _buffer_b, cublasHandle_t handle)
+    void ForwardPlusSave(T* output, const T* _buffer_a, const T* _buffer_b, 
+#ifdef __HIP_PLATFORM_HCC__ 
+rocblas_handle handle)
+#else
+cublasHandle_t handle)
+#endif
     {
         int stride_a = _config.m * _config.k;
         int stride_b = _config.n * _config.k;
@@ -107,8 +126,8 @@ public:
                                     stride_b,
                                     stride_c,
                                     _config.batch_size,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#if defined(__HIP_PLATFORM_AMD__)
+    
                                     rocblas_gemm_algo(_config.gemm_algos[0]));
 #else
                                     cublasGemmAlgo_t(_config.gemm_algos[0]));
@@ -122,20 +141,31 @@ public:
                   const T* d_output,
                   const T* _buffer_a,
                   const T* _buffer_b,
+#ifdef __HIP_PLATFORM_HCC__
+                  rocblas_handle handle,
+#else                                   
                   cublasHandle_t handle,
+#endif
                   T* inpGradA = nullptr,
                   T* inpGradB = nullptr)
     {
+#ifdef __HIP_PLATFORM_HCC__
+        int mb = (_config.op_A == rocblas_operation_transpose ? _config.k : _config.m);
+        int kb = (_config.op_A == rocblas_operation_transpose ? _config.m : _config.k);
+#else
         int mb = (_config.op_A == CUBLAS_OP_T ? _config.k : _config.m);
         int kb = (_config.op_A == CUBLAS_OP_T ? _config.m : _config.k);
-
+#endif
         int stride_a = mb * _config.n;
         int stride_b = _config.n * kb;
         int stride_c = _config.m * _config.k;
 
         // B need to transpose.
+#ifdef __HIP_PLATFORM_HCC__
+        rocblas_operation op_b = (_config.op_B == rocblas_operation_transpose ? rocblas_operation_none : rocblas_operation_transpose);
+#else
         cublasOperation_t op_b = (_config.op_B == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);
-
+#endif
         // Calculate d_A.
         cublas_strided_batched_gemm(handle,
                                     mb,
@@ -143,24 +173,31 @@ public:
                                     _config.n,
                                     &_config.alpha,
                                     &_config.beta,
+#ifdef __HIP_PLATFORM_HCC__                                   
+                                    (_config.op_A == rocblas_operation_transpose ? _buffer_b : d_output),
+                                    (_config.op_A == rocblas_operation_transpose ? d_output : _buffer_b),
+#else
                                     (_config.op_A == CUBLAS_OP_T ? _buffer_b : d_output),
                                     (_config.op_A == CUBLAS_OP_T ? d_output : _buffer_b),
+#endif                                    
                                     inpGradA,
+#ifdef __HIP_PLATFORM_HCC__
+                                    rocblas_operation_none,
+#else                                                                   
                                     CUBLAS_OP_N,
+#endif
                                     op_b,
                                     stride_a,
                                     stride_b,
                                     stride_c,
                                     bsz,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#ifdef __HIP_PLATFORM_AMD__
                                     rocblas_gemm_algo(_config.gemm_algos[1]));
+        rocblas_operation op_a = (_config.op_A == rocblas_operation_transpose ? rocblas_operation_none : rocblas_operation_transpose);                                    
 #else
                                     cublasGemmAlgo_t(_config.gemm_algos[1]));
+        cublasOperation_t op_a = (_config.op_A == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);                                    
 #endif
-
-        // A need to transpose.
-        cublasOperation_t op_a = (_config.op_A == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);
 
         stride_a = _config.m * _config.k;
         stride_b = _config.m * _config.n;
@@ -177,13 +214,17 @@ public:
                                     d_output,
                                     inpGradB,
                                     op_a,
+#ifdef __HIP_PLATFORM_HCC__                                    
+                                    rocblas_operation_none,
+#else                                    
                                     CUBLAS_OP_N,
+#endif
                                     stride_a,
                                     stride_b,
                                     stride_c,
                                     bsz,
-#if defined(__HIP_PLATFORM_AMD__) && \
-    ((TORCH_VERSION_MAJOR < 2) || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR == 0))
+#ifdef __HIP_PLATFORM_HCC__
+    
                                     rocblas_gemm_algo(_config.gemm_algos[2]));
 #else
                                     cublasGemmAlgo_t(_config.gemm_algos[2]));

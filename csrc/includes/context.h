@@ -50,7 +50,11 @@ public:
     {
         curandCreateGenerator(&_gen, CURAND_RNG_PSEUDO_DEFAULT);
         curandSetPseudoRandomGeneratorSeed(_gen, 123);
+#ifdef __HIP_PLATFORM_HCC__
+        rocblas_status stat = rocblas_create_handle(&_cublasHandle);
+#else
         cublasStatus_t stat = cublasCreate(&_cublasHandle);
+#endif
         if (stat != CUBLAS_STATUS_SUCCESS) {
             // It would be nice to use cublasGetStatusName and
             // cublasGetStatusString, but they were only added in CUDA 11.4.2.
@@ -92,8 +96,11 @@ public:
 
     cudaStream_t GetNewStream() { return at::cuda::getStreamFromPool(); }
 
+#ifdef __HIP_PLATFORM_HCC__
+    rocblas_handle GetCublasHandle() { return _cublasHandle; } 
+#else
     cublasHandle_t GetCublasHandle() { return _cublasHandle; }
-
+#endif
     std::pair<uint64_t, uint64_t> IncrementOffset(uint64_t offset_inc)
     {
         uint64_t offset = _curr_offset;
@@ -109,30 +116,33 @@ public:
         if (_gemm_algos.size() > 0) return;
 
         if (test_gemm) {
+#ifdef __HIP_PLATFORM_HCC__
+            rocblas_handle handle = GetCublasHandle();
+#else
             cublasHandle_t handle = GetCublasHandle();
-
+#endif
             std::unique_ptr<GemmTest<__half>> test_qkv_fw(
                 new GemmTest<__half>(batch_size * seq_len,      // M
                                      head_num * size_per_head,  // N
                                      head_num * size_per_head,  // K
-                                     CUBLAS_OP_T,
-                                     CUBLAS_OP_N,
+                                     rocblas_operation_transpose,
+                                     rocblas_operation_none,
                                      handle));
 
             std::unique_ptr<GemmTest<__half>> test_inter(
                 new GemmTest<__half>(batch_size * seq_len,          // M
                                      4 * head_num * size_per_head,  // N
                                      head_num * size_per_head,      // K
-                                     CUBLAS_OP_T,
-                                     CUBLAS_OP_N,
+                                     rocblas_operation_transpose,
+                                     rocblas_operation_none,
                                      handle));
 
             std::unique_ptr<GemmTest<__half>> test_output(
                 new GemmTest<__half>(batch_size * seq_len,          // M
                                      head_num * size_per_head,      // N
                                      4 * head_num * size_per_head,  // K
-                                     CUBLAS_OP_T,
-                                     CUBLAS_OP_N,
+                                     rocblas_operation_transpose,
+                                     rocblas_operation_none,
                                      handle));
 
             std::unique_ptr<StridedGemmTest<__half>> test_attn_scores(
@@ -140,8 +150,8 @@ public:
                                             seq_len,                // M
                                             seq_len,                // N
                                             size_per_head,          // K
-                                            CUBLAS_OP_T,
-                                            CUBLAS_OP_N,
+                                            rocblas_operation_transpose,
+                                            rocblas_operation_none,
                                             handle));
 
             std::unique_ptr<StridedGemmTest<__half>> test_attn_context(
@@ -149,8 +159,8 @@ public:
                                             size_per_head,          // M
                                             seq_len,                // N
                                             seq_len,                // K
-                                            CUBLAS_OP_N,
-                                            CUBLAS_OP_N,
+                                            rocblas_operation_none,
+                                            rocblas_operation_none,
                                             handle));
 
             _gemm_algos.push_back(test_qkv_fw->TestAlgo(100));
@@ -172,7 +182,11 @@ public:
 
 private:
     curandGenerator_t _gen;
-    cublasHandle_t _cublasHandle;
+#ifdef __HIP_PLATFORM_HCC__
+    rocblas_handle _cublasHandle;
+#else
+    hipblasHandle_t _cublasHandle;
+#endif
     void* _workspace;
     uint64_t _seed;
     uint64_t _curr_offset;

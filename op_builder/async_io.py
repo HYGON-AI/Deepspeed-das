@@ -63,11 +63,7 @@ class AsyncIOBuilder(TorchCPUOpBuilder):
         if self.build_for_cpu:
             return ['-fopenmp']
 
-        import torch.utils.cpp_extension
-        CUDA_HOME = torch.utils.cpp_extension.CUDA_HOME
-        CUDA_LIB64 = os.path.join(CUDA_HOME, "lib64")
-        ldflags = [f'-L{CUDA_HOME}', f'-L{CUDA_LIB64}', '-laio', '-lcuda', '-lcudart']
-        return ldflags
+        return ['-laio']
 
     def check_for_libaio_pkg(self):
         libs = dict(
