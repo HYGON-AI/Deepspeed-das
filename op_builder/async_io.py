@@ -46,7 +46,8 @@ class AsyncIOBuilder(TorchCPUOpBuilder):
                 os.path.join(torch.utils.cpp_extension.ROCM_HOME, "include", "rocrand"),
                 os.path.join(torch.utils.cpp_extension.ROCM_HOME, "include", "hiprand"),
             ]
-        return ['csrc/aio/py_lib', 'csrc/aio/common'] + CUDA_INCLUDE
+        return ['csrc/aio/py_lib', 'csrc/aio/common'] + CUDA_INCLUDE + ["third_party/libaio_build/include"]
+
 
     def cxx_args(self):
         # -O0 for improved debugging, since performance is bound by I/O
