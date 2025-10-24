@@ -43,7 +43,7 @@ exp_selection_uniform_map: Dict[torch.device, Callable] = {}
 
 try:
     # To enable Tutel MoE optimizations:
-    #   python3 -m pip install --user --upgrade git+https://github.com/microsoft/tutel@v0.1.x
+    #   python3 -m pip install --user --upgrade git+https://github.com/deepspeedai/tutel@v0.1.x
     from tutel import moe as tutel_moe
     TUTEL_INSTALLED = True
 except:
@@ -400,7 +400,7 @@ def topkgating(
     me = torch.mean(gates, dim=0)
     ce = torch.mean(mask.float(), dim=0)
     l_aux = torch.mean(me * ce) * num_experts * num_experts / k
-
+    locations = None
     if drop_tokens:
         # Calculate configured capacity and remove locations outside capacity from mask
         capacity = _capacity(gates, torch.tensor(capacity_factor * k), torch.tensor(min_capacity))
@@ -429,6 +429,7 @@ def topkgating(
             tp = 1 if groups.mpu is None else bwc_tensor_model_parallel_world_size(mpu=groups.mpu)
             new_capacity = torch.ceil(new_capacity / tp).mul(tp).to(new_capacity.dtype)
         capacity = new_capacity
+        locations = torch.cumsum(mask, dim=0) - 1
 
     # normalize gates
     gates_masked = gates * mask
@@ -436,6 +437,8 @@ def topkgating(
     denom_s = torch.clamp(gates_s, min=torch.finfo(gates_masked.dtype).eps)
     gates_masked = gates_masked / denom_s
 
+    if locations is None:
+        raise ValueError(f"Locations is not set: {locations}")
     # dispatch_mask
     locations_sc = _one_hot_to_float((locations * mask), capacity)
 
@@ -493,7 +496,7 @@ class TopKGate(Module):
         self.top2_2nd_expert_sampling = top2_2nd_expert_sampling
 
     def _set_ep_group(self, ep_group):
-        assert self.ep_group is None, f'Attempting to override an existing ep_group'
+        assert self.ep_group is None, 'Attempting to override an existing ep_group'
         self.ep_group = ep_group
 
     def forward(self,

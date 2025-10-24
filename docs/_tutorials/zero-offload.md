@@ -9,10 +9,10 @@ We recommend that you read the tutorials on [Getting Started](/getting-started/)
 ZeRO-Offload is a ZeRO optimization that offloads the optimizer memory and computation from the GPU to the host CPU. ZeRO-Offload enables large models with up to 13 billion parameters to be efficiently trained on a single GPU. In this tutorial we will use ZeRO-Offload to train a 10-billion parameter GPT-2 model in DeepSpeed. Furthermore, *using ZeRO-Offload in a DeepSpeed model is quick and easy because all you need is to change a few configurations in the DeepSpeed configuration json*. No code changes are needed.
 
 ## ZeRO-Offload Overview
-For large model training, optimizers such as [Adam](https://arxiv.org/abs/1412.6980), can consume a significant amount of GPU compute and memory. ZeRO-Offload reduces the GPU compute and memory requirements of such models by leveraging compute and memory resources on the host CPU  to execute the optimizer. Furthermore, to prevent the optimizer from becoming a bottleneck, ZeRO-Offload uses DeepSpeed's highly optimized CPU implementation of Adam called [DeepSpeedCPUAdam](https://github.com/microsoft/DeepSpeed/tree/master/deepspeed/ops/adam). DeepSpeedCPUAdam is 5X--7X faster than the standard PyTorch implementation. To deep dive into the design and performance of ZeRO-Offload, please see our [blog post](https://www.microsoft.com/en-us/research/blog/deepspeed-extreme-scale-model-training-for-everyone/#toc-heading-3).
+For large model training, optimizers such as [Adam](https://arxiv.org/abs/1412.6980), can consume a significant amount of GPU compute and memory. ZeRO-Offload reduces the GPU compute and memory requirements of such models by leveraging compute and memory resources on the host CPU  to execute the optimizer. Furthermore, to prevent the optimizer from becoming a bottleneck, ZeRO-Offload uses DeepSpeed's highly optimized CPU implementation of Adam called [DeepSpeedCPUAdam](https://github.com/deepspeedai/DeepSpeed/tree/master/deepspeed/ops/adam). DeepSpeedCPUAdam is 5X--7X faster than the standard PyTorch implementation. To deep dive into the design and performance of ZeRO-Offload, please see our [blog post](https://www.microsoft.com/en-us/research/blog/deepspeed-extreme-scale-model-training-for-everyone/#toc-heading-3).
 
 ## Training Environment
-For this tutorial, we will configure a 10 billion parameter GPT-2 model using the DeepSpeed [Megatron-LM](https://github.com/microsoft/DeepSpeedExamples/tree/master/Megatron-LM-v1.1.5-ZeRO3) GPT-2 code. We advise stepping through the Megatron-LM [tutorial](/tutorials/megatron/) if you have not previously done so. We will use a single [NVIDIA Tesla V100-SXM3 Tensor Core GPU](https://www.nvidia.com/en-us/data-center/v100/) with 32GB RAM for this exercise.
+For this tutorial, we will configure a 10 billion parameter GPT-2 model using the DeepSpeed [Megatron-LM](https://github.com/deepspeedai/DeepSpeedExamples/tree/master/Megatron-LM-v1.1.5-ZeRO3) GPT-2 code. We advise stepping through the Megatron-LM [tutorial](/tutorials/megatron/) if you have not previously done so. We will use a single [NVIDIA Tesla V100-SXM3 Tensor Core GPU](https://www.nvidia.com/en-us/data-center/v100/) with 32GB RAM for this exercise.
 
 ## Training a 10B parameter GPT-2 on a single V100 GPU
 We need to make changes to the Megatron-LM launch script and to the DeepSpeed configuration json.
@@ -73,5 +73,12 @@ Finally, here is a screenshot of `htop` showing host CPU and memory activity dur
 <a href="/assets/images/zero_offload_dp1_10B_cpu.png">
 <img src="/assets/images/zero_offload_dp1_10B_cpu.png">
 </a>
+
+### CPU Adam perf tuning
+ZeRO offload already support multi-gpu training.  If the workload is using CPU optimizer, the workload can be further tuned by passing `--bind_cores_to_rank` to the deepspeed launch command. This switch will mainly do two things:
+1. Divide physical CPU cores evenly among ranks, make each rank to have a dedicated set of CPU cores to run CPU optimizer.
+2. Set OMP_NUM_THREADS environment variable to the number of CPU cores assigned to each rank, so OpenMP code in CPU optimizer will have near optimal performance.
+
+ZeRO offload is a hybrid workload that is both heavy on GPU and CPU, and DeepSpeed is optimized for both GPU and CPU performance.  Refer to [How to launch DeepSpeed on Intel Architecture CPU](https://github.com/deepspeedai/DeepSpeed/blob/master/docs/_tutorials/accelerator-setup-guide.md#how-to-launch-deepspeed-on-intel-architecture-cpu) for more details on how to tune core bindings for CPU performance.
 
 Congratulations! You have completed the ZeRO-Offload tutorial.

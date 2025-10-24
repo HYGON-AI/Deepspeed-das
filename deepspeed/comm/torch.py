@@ -5,6 +5,8 @@
 
 import deepspeed
 from deepspeed import utils
+from packaging import version
+import inspect
 
 from .utils import *
 from .backend import *
@@ -18,6 +20,12 @@ DS_COMM_REDUCE_SCATTER_OFF = False
 DS_COMM_BROADCAST_OFF = False
 DS_COMM_ALL_REDUCE_OFF = False
 DS_COMM_REDUCE_OFF = False
+
+
+def disable_compiler_collective(func):
+    if required_torch_version(min_version=2.3):
+        return func
+    return compiler.disable(func)
 
 
 def build_shm_op():
@@ -114,7 +122,7 @@ class TorchBackend(Backend):
             self.shm_comm_op.initialize(self.get_world_size(), self.get_rank())
 
     @classmethod
-    @compiler.disable
+    @disable_compiler_collective
     def get_all_gather_function(self):
         if hasattr(torch.distributed, "all_gather_into_tensor"):
             return torch.distributed.all_gather_into_tensor
@@ -123,7 +131,7 @@ class TorchBackend(Backend):
         return None
 
     @classmethod
-    @compiler.disable
+    @disable_compiler_collective
     def get_reduce_scatter_function(self):
         if hasattr(torch.distributed, "reduce_scatter_tensor"):
             return torch.distributed.reduce_scatter_tensor
@@ -139,14 +147,21 @@ class TorchBackend(Backend):
 
     def init_process_group(self, backend, timeout, init_method, rank, world_size):
         if not torch.distributed.is_initialized():
-            torch.distributed.init_process_group(backend,
-                                                 timeout=timeout,
-                                                 init_method=init_method,
-                                                 rank=rank,
-                                                 world_size=world_size)
+            kwargs = dict(timeout=timeout, init_method=init_method, rank=rank, world_size=world_size)
+
+            # 1. device_id arg was added in torch==2.3
+            # 2. setting device_id leads to hanging in 2.6.0<torch<2.7.1 https://github.com/pytorch/pytorch/issues/153960
+            # 3. device_id works and is needed for `cuda`, other accelerators may have issues at the moment. Therefore only do it for the `cuda` accelerator.
+            if ('device_id' in inspect.signature(torch.distributed.init_process_group).parameters
+                    and not (version.parse("2.6.0") < version.parse(torch.__version__) < version.parse("2.7.1"))
+                    and get_accelerator().device_name() == 'cuda'):
+                local_rank = int(os.environ.get('LOCAL_RANK', 0))
+                kwargs.update(device_id=get_accelerator().device(local_rank))
+            torch.distributed.init_process_group(backend, **kwargs)
+
         self.using_mpi = torch.distributed.get_backend() == 'mpi'
 
-    @compiler.disable
+    @disable_compiler_collective
     def all_reduce(self, tensor, op=torch.distributed.ReduceOp.SUM, group=None, async_op=False):
         op = self._reduce_op(op)
         return torch.distributed.all_reduce(tensor=tensor, op=op, group=group, async_op=async_op)
@@ -158,7 +173,7 @@ class TorchBackend(Backend):
         else:
             return torch.ops.deepspeed.inference_all_reduce_(tensor)
 
-    @compiler.disable
+    @disable_compiler_collective
     def all_reduce_coalesced(self, tensors, op=torch.distributed.ReduceOp.SUM, group=None, async_op=False):
         """ proxy func to torch.distributed.all_reduce_coalesced,
         which is included in PyTorch 1.13 and above
@@ -169,7 +184,7 @@ class TorchBackend(Backend):
         op = self._reduce_op(op)
         return torch.distributed.all_reduce_coalesced(tensors=tensors, op=op, group=group, async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def reduce(self, tensor, dst, op=ReduceOp.SUM, group=None, async_op=False):
         if DS_COMM_REDUCE_OFF:
             if int(os.getenv('RANK', '0')) == 0:
@@ -177,7 +192,7 @@ class TorchBackend(Backend):
             return Noop()
         return torch.distributed.reduce(tensor=tensor, dst=dst, op=self._reduce_op(op), group=group, async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def reduce_scatter(self, output, input_list, op=ReduceOp.SUM, group=None, async_op=False):
         if DS_COMM_REDUCE_SCATTER_OFF:
             if int(os.getenv('RANK', '0')) == 0:
@@ -190,7 +205,7 @@ class TorchBackend(Backend):
                                                     group=group,
                                                     async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def broadcast(self, tensor, src, group=None, async_op=False):
         if DS_COMM_BROADCAST_OFF:
             if int(os.getenv('RANK', '0')) == 0:
@@ -199,7 +214,11 @@ class TorchBackend(Backend):
         else:
             return torch.distributed.broadcast(tensor=tensor, src=src, group=group, async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
+    def broadcast_object_list(self, object_list, src, group=None, device=None):
+        return torch.distributed.broadcast_object_list(object_list=object_list, src=src, group=group, device=device)
+
+    @disable_compiler_collective
     def all_gather(self, tensor_list, tensor, group=None, async_op=False):
         if DS_COMM_ALL_GATHER_OFF:
             if int(os.getenv('RANK', '0')) == 0:
@@ -208,7 +227,7 @@ class TorchBackend(Backend):
         else:
             return torch.distributed.all_gather(tensor_list=tensor_list, tensor=tensor, group=group, async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def all_gather_into_tensor(self, output_tensor, input_tensor, group=None, async_op=False):
         if self.has_all_gather_into_tensor():
             return self.all_gather_function(output_tensor=output_tensor,
@@ -216,7 +235,7 @@ class TorchBackend(Backend):
                                             group=group,
                                             async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def all_gather_base(self, output_tensor, input_tensor, group=None, async_op=False):
         if DS_COMM_ALL_GATHER_OFF:
             if int(os.getenv('RANK', '0')) == 0:
@@ -234,7 +253,7 @@ class TorchBackend(Backend):
                                      "please consider upgrading your pytorch installation.")
                 pass
 
-    @compiler.disable
+    @disable_compiler_collective
     def all_gather_coalesced(self, output_tensors, input_tensors, group=None, async_op=False):
         """"""
         assert len(output_tensors) == len(input_tensors), ""
@@ -258,7 +277,11 @@ class TorchBackend(Backend):
             else:
                 reqs[-1].wait()
 
-    @compiler.disable
+    @disable_compiler_collective
+    def all_gather_object(self, object_list, obj, group=None):
+        return torch.distributed.all_gather_object(object_list=object_list, obj=obj, group=group)
+
+    @disable_compiler_collective
     def reduce_scatter_tensor(self, output_tensor, input_tensor, op=ReduceOp.SUM, group=None, async_op=False):
         if self.has_reduce_scatter_tensor():
             return self.reduce_scatter_function(output_tensor,
@@ -272,7 +295,7 @@ class TorchBackend(Backend):
                                  "please consider upgrading your pytorch installation.")
             pass
 
-    @compiler.disable
+    @disable_compiler_collective
     def all_to_all_single(self,
                           output,
                           input,
@@ -287,27 +310,27 @@ class TorchBackend(Backend):
                                                    group=group,
                                                    async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def all_to_all(self, output_tensor_list, input_tensor_list, group=None, async_op=False):
         return torch.distributed.all_to_all(output_tensor_list, input_tensor_list, group=group, async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def send(self, tensor, dst, group=None, tag=0):
         return torch.distributed.send(tensor=tensor, dst=dst, group=group, tag=tag)
 
-    @compiler.disable
+    @disable_compiler_collective
     def recv(self, tensor, src=None, group=None, tag=0):
         return torch.distributed.recv(tensor=tensor, src=src, group=group, tag=tag)
 
-    @compiler.disable
+    @disable_compiler_collective
     def isend(self, tensor, dst, group=None, tag=0):
         return torch.distributed.isend(tensor=tensor, dst=dst, group=group, tag=tag)
 
-    @compiler.disable
+    @disable_compiler_collective
     def irecv(self, tensor, src=None, group=None, tag=0):
         return torch.distributed.irecv(tensor=tensor, src=src, group=group, tag=tag)
 
-    @compiler.disable
+    @disable_compiler_collective
     def gather(self, tensor, gather_list=None, dst=0, group=None, async_op=False):
         return torch.distributed.gather(tensor=tensor,
                                         gather_list=gather_list,
@@ -315,7 +338,7 @@ class TorchBackend(Backend):
                                         group=group,
                                         async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def scatter(self, tensor, scatter_list=None, src=0, group=None, async_op=False):
         return torch.distributed.scatter(tensor=tensor,
                                          scatter_list=scatter_list,
@@ -323,13 +346,13 @@ class TorchBackend(Backend):
                                          group=group,
                                          async_op=async_op)
 
-    @compiler.disable
+    @disable_compiler_collective
     def barrier(self, group=torch.distributed.GroupMember.WORLD, async_op=False, device_ids=None):
         if group is None:
             group = torch.distributed.GroupMember.WORLD
         return torch.distributed.barrier(group=group, async_op=async_op, device_ids=device_ids)
 
-    @compiler.disable
+    @disable_compiler_collective
     def monitored_barrier(self, group=torch.distributed.GroupMember.WORLD, timeout=None, wait_all_ranks=False):
         if group is None:
             group = torch.distributed.GroupMember.WORLD
@@ -398,6 +421,13 @@ class TorchBackend(Backend):
             return torch.distributed.device_mesh.init_device_mesh(get_accelerator().current_device_name(),
                                                                   mesh_shape,
                                                                   mesh_dim_names=mesh_dim_names)
+
+    def enable_symm_mem_for_group(self, group_name):
+        if not required_torch_version(min_version=2.5):
+            raise RuntimeError(f"Torch version must be 2.5 or higher to use symmetric memory. "
+                               f"Current version: {torch.__version__}")
+        from torch.distributed._symmetric_memory import enable_symm_mem_for_group
+        return enable_symm_mem_for_group(group_name)
 
 
 # This will become a light-weight wrapper around torch.distributed functions

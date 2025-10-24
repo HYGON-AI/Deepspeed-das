@@ -60,8 +60,11 @@ class CUDA_Accelerator(DeepSpeedAccelerator):
             return 'cuda'
         return 'cuda:{}'.format(device_index)
 
+    def communication_backend_version(self):
+        return torch.cuda.nccl.version()
+
     def device(self, device_index=None):
-        return torch.cuda.device(device_index)
+        return torch.device('cuda', device_index)
 
     def set_device(self, device_index):
         torch.cuda.set_device(device_index)
@@ -242,6 +245,8 @@ class CUDA_Accelerator(DeepSpeedAccelerator):
         return self._communication_backend_name
 
     def is_triton_supported(self):
+        if not self.is_available():
+            return False
         major, _ = torch.cuda.get_device_capability()
         if major >= 8:
             return True

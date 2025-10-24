@@ -28,7 +28,7 @@ from .multinode_runner import PDSHRunner, OpenMPIRunner, MVAPICHRunner, SlurmRun
 from .constants import PDSH_LAUNCHER, OPENMPI_LAUNCHER, MVAPICH_LAUNCHER, SLURM_LAUNCHER, MPICH_LAUNCHER, IMPI_LAUNCHER
 from ..constants import TORCH_DISTRIBUTED_DEFAULT_PORT
 from ..nebula.constants import NEBULA_EXPORT_ENVS
-from ..utils import logger
+from ..utils import logger, set_log_level_from_string
 
 from ..autotuning import Autotuner
 from deepspeed.accelerator import get_accelerator
@@ -206,6 +206,23 @@ def parse_args(args=None):
                         "specified, all cores on system would be used rank binding")
 
     parser.add_argument("--ssh_port", type=int, default=None, help="SSH port to use for remote connections")
+
+    parser.add_argument("--venv_script",
+                        type=str,
+                        default=None,
+                        help="Python virtual environment activation script for job.")
+
+    # TODOV1: change the default to 'warning'
+    parser.add_argument("--log_level",
+                        type=str,
+                        default="info",
+                        choices=['debug', 'info', 'warning', 'error', 'critical'],
+                        help="Set runner loglevel. The default is 'info'")
+
+    parser.add_argument("-q",
+                        "--quiet",
+                        action="store_true",
+                        help="Try to be as quiet as possible. Aliases to `--log_level error`")
 
     return parser.parse_args(args=args)
 
@@ -419,6 +436,10 @@ def parse_num_nodes(str_num_nodes: str, elastic_training: bool):
 def main(args=None):
     args = parse_args(args)
 
+    if args.quiet:
+        args.log_level = "error"
+    set_log_level_from_string(args.log_level)
+
     if args.elastic_training:
         assert args.master_addr != "", "Master Addr is required when elastic training is enabled"
 
@@ -462,10 +483,8 @@ def main(args=None):
     if multi_node_exec and not args.no_ssh_check and not args.no_ssh:
         first_host = list(active_resources.keys())[0]
         try:
-            ssh_check_cmd = "ssh -o PasswordAuthentication=no "
-            if args.ssh_port is not None:
-                ssh_check_cmd += f"-p {args.ssh_port} "
-            ssh_check_cmd += f"{first_host} hostname"
+            ssh_check_cmd = ("ssh -o PasswordAuthentication=no " +
+                             (f"-p {args.ssh_port} " if args.ssh_port is not None else "") + f"{first_host} hostname")
             safe_ssh_cmd = shlex.split(ssh_check_cmd)
             subprocess.check_call(safe_ssh_cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
@@ -485,13 +504,13 @@ def main(args=None):
             result = subprocess.check_output(hostname_cmd)
         except subprocess.CalledProcessError as err:
             logger.error(
-                "Unable to detect suitable master address via `hostname -I`, please manually specify one via --master_addr"
+                "Unable to detect suitable master address via 'hostname -I', please manually specify one via --master_addr"
             )
             raise err
         args.master_addr = result.decode('utf-8').split()[0]
         if not args.master_addr:
             raise RuntimeError(
-                f"Unable to detect suitable master address via `hostname -I`, please manually specify one via --master_addr"
+                "Unable to detect suitable master address via `hostname -I`, please manually specify one via --master_addr"
             )
         logger.info(f"Using IP address of {args.master_addr} for node {first_host}")
 
@@ -550,6 +569,10 @@ def main(args=None):
             deepspeed_launch.append("--bind_cores_to_rank")
         if args.bind_core_list is not None:
             deepspeed_launch.append(f"--bind_core_list={args.bind_core_list}")
+        if args.quiet:
+            deepspeed_launch.append("--quiet")
+        deepspeed_launch.append(f"--log_level={args.log_level}")
+
         cmd = deepspeed_launch + [args.user_script] + args.user_args
     else:
         args.launcher = args.launcher.lower()

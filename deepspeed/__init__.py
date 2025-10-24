@@ -28,7 +28,7 @@ from . import module_inject
 from .accelerator import get_accelerator
 from .constants import TORCH_DISTRIBUTED_DEFAULT_PORT
 from .runtime.engine import DeepSpeedEngine, DeepSpeedOptimizerCallable, DeepSpeedSchedulerCallable
-from .runtime.engine import ADAM_OPTIMIZER, LAMB_OPTIMIZER
+from .runtime.engine import ADAM_OPTIMIZER, LAMB_OPTIMIZER, MUON_OPTIMIZER
 from .runtime.hybrid_engine import DeepSpeedHybridEngine
 from .runtime.pipe.engine import PipelineEngine
 from .inference.engine import InferenceEngine
@@ -37,12 +37,12 @@ from .runtime.lr_schedules import add_tuning_arguments
 from .runtime.config import DeepSpeedConfig, DeepSpeedConfigError
 from .runtime.activation_checkpointing import checkpointing
 from .ops.transformer import DeepSpeedTransformerLayer, DeepSpeedTransformerConfig
-from .module_inject import replace_transformer_layer, revert_transformer_layer
+from .module_inject import replace_transformer_layer, revert_transformer_layer, set_autotp_mode
 
 from .utils import log_dist, OnDevice, logger
 from .comm.comm import init_distributed
 
-from .runtime import zero
+from .runtime import zero, domino
 from .runtime.compiler import is_compile_supported
 
 from .pipe import PipelineModule
@@ -64,6 +64,15 @@ __git_branch__ = git_branch
 
 # Set to torch's distributed package or deepspeed.comm based inside DeepSpeedEngine init
 dist = None
+
+
+def set_optimizer_flags(config_class, model):
+    if config_class.optimizer_name == MUON_OPTIMIZER:
+        for p in model.parameters():
+            if p.ndim >= 2:
+                setattr(p, "use_muon", True)
+            else:
+                setattr(p, "use_muon", False)
 
 
 def initialize(args=None,
@@ -177,6 +186,7 @@ def initialize(args=None,
     assert config is not None, "DeepSpeed requires --deepspeed_config to specify configuration file"
     if not isinstance(model, PipelineModule):
         config_class = DeepSpeedConfig(config, mpu, mesh_device=mesh_device)
+        set_optimizer_flags(config_class, model)
         if config_class.hybrid_engine.enabled:
             engine = DeepSpeedHybridEngine(args=args,
                                            model=model,
@@ -206,6 +216,7 @@ def initialize(args=None,
         assert mpu is None, "mpu must be None with pipeline parallelism"
         mpu = model.mpu()
         config_class = DeepSpeedConfig(config, mpu)
+        set_optimizer_flags(config_class, model)
         engine = PipelineEngine(args=args,
                                 model=model,
                                 optimizer=optimizer,
@@ -364,3 +375,35 @@ def init_inference(model, config=None, **kwargs):
     engine = InferenceEngine(model, config=ds_inference_config)
 
     return engine
+
+
+def tp_model_init(model, tp_size, dtype, config=None, **kwargs):
+    """
+    Initialize the model for tensor parallelism.
+
+    Args:
+        model (torch.nn.Module): The model to be initialized.
+        tp_size (int): The tensor parallelism size.
+        dtype (torch.dtype): The data type to be used for the model.
+
+    Returns:
+        torch.nn.Module: The initialized model with tensor parallelism.
+    """
+    # avoid re-entry
+    if hasattr(model, 'ds_autotp_parsed'):
+        logger.warning("ds_autotp_parsed' attribute already exists in the model, re-entry is not allowed.")
+        return
+
+    set_autotp_mode(training=True)
+
+    from deepspeed.runtime.tensor_parallel import TpTrainingManager
+    # The expected usage here is for it to be invoked by transformers package.
+
+    #TODO: We should provide a custom TP mapping solution without using autoTP
+    #as modifying the autoTP logic may be more difficult for users compared to configuring it
+
+    model = TpTrainingManager(model=model, tp_size=tp_size, dtype=dtype).module
+
+    setattr(model, 'ds_autotp_parsed', True)
+
+    return model

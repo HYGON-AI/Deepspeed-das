@@ -38,7 +38,7 @@ class MiCS_AllGatherCoalescedHandle(AllGatherCoalescedHandle):
     def __init__(self, allgather_handle, params: List[Parameter], partitions: List[Tensor], world_size: int) -> None:
         super().__init__(allgather_handle, params, partitions, world_size)
 
-    def wait(self) -> None:
+    def wait(self, **kwargs) -> None:
         """
         """
         # let the current stream to op
@@ -47,7 +47,7 @@ class MiCS_AllGatherCoalescedHandle(AllGatherCoalescedHandle):
             instrument_w_nvtx(self.allgather_handle.wait)()
         except (ValueError, RuntimeError) as e:
             log_dist(
-                f"WARNING: Runtime Error while waiting the collective all-gather, possibly due to the _IllegalWork",
+                "WARNING: Runtime Error while waiting the collective all-gather, possibly due to the _IllegalWork",
                 ranks=[0])
             log_dist(f"Error message: {e}", ranks=[0])
 
@@ -158,7 +158,7 @@ class MiCS_Init(Init):
 
         if sequence_data_parallel_group is not None:
             logger.warning(
-                f"sequence_data_parallel_group' is deprecated and will be removed. Use 'data_parallel_group' instead.")
+                "sequence_data_parallel_group' is deprecated and will be removed. Use 'data_parallel_group' instead.")
             if data_parallel_group is not None:
                 raise ValueError(
                     "Both 'data_parallel_group' and 'sequence_data_parallel_group' were specified. Please provide only one of these arguments."
@@ -339,7 +339,7 @@ class MiCS_Offload(DeepSpeedZeRoOffload):
         """ overload the parent class function for convert the parameters
 
         """
-        log_dist(f'Convert to zero parameters from MiCS Offload manager', ranks=[0])
+        log_dist('Convert to zero parameters from MiCS Offload manager', ranks=[0])
         non_zero_params = [p for p in module.parameters() if not is_zero_param(p)]
         if non_zero_params:
             zero_params = [p for p in module.parameters() if is_zero_param(p)]
@@ -367,6 +367,7 @@ class MiCS_Optimizer(DeepSpeedZeroOptimizer_Stage3):
     def __init__(self,
                  module,
                  init_optimizer,
+                 param_names,
                  timers,
                  ds_config,
                  static_loss_scale=1,
@@ -398,7 +399,7 @@ class MiCS_Optimizer(DeepSpeedZeroOptimizer_Stage3):
                  aio_config=None):
 
         log_dist("Init MiCS optimizer", ranks=[0])
-        super().__init__(module, init_optimizer, timers, ds_config, static_loss_scale, dynamic_loss_scale,
+        super().__init__(module, init_optimizer, param_names, timers, ds_config, static_loss_scale, dynamic_loss_scale,
                          dynamic_loss_args, verbose, contiguous_gradients, reduce_bucket_size, prefetch_bucket_size,
                          max_reuse_distance, max_live_parameters, param_persistence_threshold,
                          model_persistence_threshold, dp_process_group, reduce_scatter, overlap_comm,

@@ -4,7 +4,7 @@
 # DeepSpeed Team
 
 import os
-import distutils.spawn
+import shutil
 import subprocess
 
 from .builder import TorchCPUOpBuilder
@@ -64,7 +64,14 @@ class AsyncIOBuilder(TorchCPUOpBuilder):
         if self.build_for_cpu:
             return ['-fopenmp']
 
-        return ['-laio']
+        import torch.utils.cpp_extension
+        CUDA_HOME = torch.utils.cpp_extension.CUDA_HOME
+        if CUDA_HOME is None:
+            ldflags = ['-laio']  # the ROCM case
+        else:
+            CUDA_LIB64 = os.path.join(CUDA_HOME, "lib64")
+            ldflags = [f'-L{CUDA_HOME}', f'-L{CUDA_LIB64}', '-laio', '-lcuda', '-lcudart']
+        return ldflags
 
     def check_for_libaio_pkg(self):
         libs = dict(
@@ -76,7 +83,7 @@ class AsyncIOBuilder(TorchCPUOpBuilder):
         found = False
         for pkgmgr, data in libs.items():
             flag, lib, tool = data
-            path = distutils.spawn.find_executable(pkgmgr)
+            path = shutil.which(pkgmgr)
             if path is not None:
                 cmd = [pkgmgr, flag, lib]
                 result = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

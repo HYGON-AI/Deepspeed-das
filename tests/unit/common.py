@@ -11,12 +11,17 @@ import socket
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
+import random
+import numpy as np
+from typing import Callable, Any
 
 import torch
 import torch.multiprocessing as mp
 import deepspeed
 from deepspeed.accelerator import get_accelerator
 import deepspeed.comm as dist
+
+from .util import torch_assert_close
 
 import pytest
 from _pytest.outcomes import Skipped
@@ -497,11 +502,95 @@ def get_test_path(filename):
     return str(curr_path.joinpath(filename))
 
 
-# fp16 > bf16 > fp32
+# bf16 > fp16 > fp32
 def preferred_dtype():
-    if get_accelerator().is_fp16_supported():
-        return torch.float16
-    elif get_accelerator().is_bf16_supported():
+    if get_accelerator().is_bf16_supported():
         return torch.bfloat16
+    elif get_accelerator().is_fp16_supported():
+        return torch.float16
     else:
         return torch.float32
+
+
+class EnableDeterminism:
+
+    def __init__(self, seed: int):
+        local_rank = int(os.getenv("LOCAL_RANK", "0"))
+
+        self.seed = seed + local_rank
+        self.saved_random_state = None
+        self.saved_np_random_state = None
+        self.saved_cuda_launch_blocking = None
+        self.saved_cublas_workspace_config = None
+        self.saved_deterministic_algorithms = None
+
+    def __enter__(self):
+        self.saved_random_state = random.getstate()
+        self.saved_np_random_state = np.random.get_state()
+        self.saved_acc_rng_state = get_accelerator().get_rng_state()
+        self.saved_cuda_launch_blocking = os.environ.get("CUDA_LAUNCH_BLOCKING", "")
+        self.saved_cublas_workspace_config = os.environ.get("CUBLAS_WORKSPACE_CONFIG", "")
+        self.saved_deterministic_algorithms = torch.are_deterministic_algorithms_enabled()
+
+        random.seed(self.seed)
+        np.random.seed(self.seed)
+        get_accelerator().manual_seed(self.seed)
+        get_accelerator().manual_seed_all(self.seed)
+
+        os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
+        torch.use_deterministic_algorithms(True)
+
+    def __exit__(self, type, value, traceback):
+        random.setstate(self.saved_random_state)
+        np.random.set_state(self.saved_np_random_state)
+        get_accelerator().set_rng_state(self.saved_acc_rng_state)
+        os.environ["CUDA_LAUNCH_BLOCKING"] = self.saved_cuda_launch_blocking
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = self.saved_cublas_workspace_config
+        torch.use_deterministic_algorithms(self.saved_deterministic_algorithms)
+
+
+def enable_determinism(seed: int):
+
+    def decorator(func: Callable) -> Callable:
+
+        def wrapper(*args: Any, **kwargs: Any):
+            with EnableDeterminism(seed):
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def reduce_boolean_flags(flag: bool, op=all) -> bool:
+    if not dist.is_initialized():
+        return flag
+    device = get_accelerator().current_device()
+    tensor_flag = torch.tensor(1 if flag else 0, dtype=torch.int, device=device)
+    world_size = dist.get_world_size()
+    tensor_flag_buf = torch.zeros(world_size, dtype=torch.int, device=device)
+    dist.all_gather_into_tensor(tensor_flag_buf, tensor_flag)
+    list_flags = [bool(f) for f in tensor_flag_buf.tolist()]
+    return op(list_flags)
+
+
+def allclose_on_all_ranks(actual, expected, assert_message=None, **kwargs) -> None:
+    """
+    Compare two tensors across all ranks.
+    We want to make sure that all ranks succeed or fail together.
+    """
+    allclose_local = False
+    allclose_global = False
+    mismatch_msg = ""
+    try:
+        torch_assert_close(actual, expected, **kwargs)
+        allclose_local = True
+        allclose_global = reduce_boolean_flags(allclose_local, all)
+    except AssertionError:
+        allclose_global = reduce_boolean_flags(allclose_local, all)
+        mismatch_msg = f"Tensors are not close: {actual=}, {expected=} {kwargs=}"
+
+    if not allclose_global:
+        message = "Tensors are not close on all ranks." if assert_message is None else assert_message
+        raise AssertionError(f"{message} {mismatch_msg}")

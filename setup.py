@@ -5,8 +5,8 @@
 """
 DeepSpeed library
 
-To build wheel on Windows:
-1. Install pytorch, such as pytorch 1.12 + cuda 11.6.
+To build wheels on Windows:
+1. Install pytorch, such as pytorch 2.3 + cuda 12.1.
 2. Install visual cpp build tool.
 3. Include cuda toolkit.
 4. Launch cmd console with Administrator privilege for creating required symlink folders.
@@ -91,6 +91,7 @@ extras_require = {
     'inf': fetch_requirements('requirements/requirements-inf.txt'),
     'sd': fetch_requirements('requirements/requirements-sd.txt'),
     'triton': fetch_requirements('requirements/requirements-triton.txt'),
+    'deepcompile': fetch_requirements('requirements/requirements-deepcompile.txt'),
 }
 
 # Only install pynvml on nvidia gpus.
@@ -102,8 +103,8 @@ if torch_available and get_accelerator().device_name() == 'cuda':
     cupy = None
     if is_rocm_pytorch:
         rocm_major, rocm_minor = rocm_version
-        # XXX cupy support for rocm 5 is not available yet.
-        if rocm_major <= 4:
+        # cupy support for rocm>5.0 is not available yet.
+        if (rocm_major == 5 and rocm_minor == 0) or rocm_major <= 4:
             cupy = f"cupy-rocm-{rocm_major}-{rocm_minor}"
     else:
         cuda_major_ver, cuda_minor_ver = installed_cuda_version()
@@ -335,11 +336,11 @@ setup(name='deepspeed',
       long_description=readme_text,
       long_description_content_type='text/markdown',
       author='DeepSpeed Team',
-      author_email='deepspeed-info@microsoft.com',
+      author_email='info@deepspeedai.com',
       url='http://deepspeed.ai',
       project_urls={
           'Documentation': 'https://deepspeed.readthedocs.io',
-          'Source': 'https://github.com/microsoft/DeepSpeed',
+          'Source': 'https://github.com/deepspeedai/DeepSpeed',
       },
       install_requires=install_requires,
       extras_require=extras_require,
@@ -350,9 +351,9 @@ setup(name='deepspeed',
           'bin/ds_elastic'
       ],
       classifiers=[
-          'Programming Language :: Python :: 3.6', 'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8', 'Programming Language :: Python :: 3.9',
-          'Programming Language :: Python :: 3.10'
+          'Programming Language :: Python :: 3.10', 'Programming Language :: Python :: 3.11',
+          'Programming Language :: Python :: 3.12'
       ],
       license='Apache Software License 2.0',
       ext_modules=ext_modules,

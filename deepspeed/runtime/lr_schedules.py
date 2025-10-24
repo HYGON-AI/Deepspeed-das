@@ -209,7 +209,7 @@ def get_config_from_args(args):
     if not hasattr(args, LR_SCHEDULE) or args.lr_schedule is None:
         return None, '--{} not specified on command line'.format(LR_SCHEDULE)
 
-    if not args.lr_schedule in VALID_LR_SCHEDULES:
+    if args.lr_schedule not in VALID_LR_SCHEDULES:
         return None, '{} is not supported LR schedule'.format(args.lr_schedule)
 
     config = {}
@@ -227,16 +227,16 @@ def get_config_from_args(args):
 
 
 def get_lr_from_config(config):
-    if not 'type' in config:
+    if 'type' not in config:
         return None, 'LR schedule type not defined in config'
 
-    if not 'params' in config:
+    if 'params' not in config:
         return None, 'LR schedule params not defined in config'
 
     lr_schedule = config['type']
     lr_params = config['params']
 
-    if not lr_schedule in VALID_LR_SCHEDULES:
+    if lr_schedule not in VALID_LR_SCHEDULES:
         return None, '{} is not a valid LR schedule'.format(lr_schedule)
 
     if lr_schedule == LR_RANGE_TEST:
@@ -274,7 +274,7 @@ class LRRangeTest(object):
     """Sets the learning rate of each parameter group according to
     learning rate range test (LRRT) policy. The policy increases learning
     rate starting from a base value with a constant frequency, as detailed in
-    the paper `A disciplined approach to neural network hyper-parameters: Part1`_.
+    the paper `A disciplined approach to neural network hyper-parameters: Part 1 <https://arxiv.org/abs/1803.09820>`_
 
     LRRT policy is used for finding maximum LR that trains a model without divergence, and can be used to
     configure the LR boundaries for Cyclic LR schedules.
@@ -379,7 +379,7 @@ class OneCycle(object):
     1CLR policy changes the learning rate after every batch.
     `step` should be called after a batch has been used for training.
 
-    This implementation was adapted from the github repo: `pytorch/pytorch`_
+    This implementation was adapted from the github repo: `PyTorch <https://github.com/pytorch/pytorch>`_.
 
     Args:
         optimizer (Optimizer): Wrapped optimizer.
@@ -508,7 +508,7 @@ class OneCycle(object):
     def _initialize_momentum(self, optimizer, cycle_min_mom, cycle_max_mom, decay_mom_rate, last_batch_iteration):
         if 'betas' not in optimizer.defaults:
             optimizer_name = type(optimizer).__name__
-            logger.warn(
+            logger.warning(
                 f"cycle_momentum is disabled because optimizer {optimizer_name} does not support momentum, no betas attribute in defaults"
             )
             self.cycle_momentum = False
@@ -655,12 +655,15 @@ class WarmupLR(object):
     def __init__(self,
                  optimizer: Optimizer,
                  warmup_min_lr: float = 0.0,
-                 warmup_max_lr: float = 0.001,
+                 warmup_max_lr: float = None,
                  warmup_num_steps: int = 1000,
                  warmup_type: str = WARMUP_LOG_RATE,
                  last_batch_iteration: int = -1):
 
         self.optimizer = get_torch_optimizer(optimizer)
+
+        if warmup_max_lr is None:
+            warmup_max_lr = [group['lr'] for group in self.optimizer.param_groups][0]
 
         self.min_lrs = self._format_param(self.optimizer, warmup_min_lr, "min_lr")
         self.max_lrs = self._format_param(self.optimizer, warmup_max_lr, "max_lr")

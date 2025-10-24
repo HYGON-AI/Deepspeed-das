@@ -50,11 +50,11 @@ class FPQuantizerBuilder(CUDAOpBuilder):
         except ImportError:
             if verbose:
                 self.warning(
-                    f"please install triton==2.3.0, 2.3.1 or 3.0.0 if you want to use the FP Quantizer Kernels")
+                    "please install triton==2.3.0, 2.3.1 or 3.0.0 if you want to use the FP Quantizer Kernels")
             return False
 
         # triton 2.3.{0,1} and 3.0.0 are ok.
-        allowed_versions = ("2.3", "3.0")
+        allowed_versions = ("2.3", "3.0", "3.1", "3.2")
         if pkg_version:
             allowed = (pkg_version.parse(v) for v in allowed_versions)
             installed_triton = pkg_version.parse(triton.__version__)
@@ -78,7 +78,7 @@ class FPQuantizerBuilder(CUDAOpBuilder):
     def filter_ccs(self, ccs):
         ccs_retained = []
         ccs_pruned = []
-        for cc in ccs:
+        for cc in [cc.split('.') for cc in ccs]:
             if int(cc[0]) >= 8:
                 ccs_retained.append(cc)
             else:
@@ -94,7 +94,27 @@ class FPQuantizerBuilder(CUDAOpBuilder):
         ]
 
     def extra_ldflags(self):
-        return ['-lcurand']
+        if not self.is_rocm_pytorch():
+            return ['-lcurand']
+        else:
+            return []
 
     def include_paths(self):
         return ['csrc/fp_quantizer/includes', 'csrc/includes']
+
+    @staticmethod
+    def get_default_quant_dtype():
+        import torch
+        return torch.uint8
+
+    @staticmethod
+    def get_quant_range(q_bits=None):
+        if q_bits == 8:
+            return 480
+        elif q_bits == 6:
+            return 28.
+        elif q_bits == 12:
+            return 510.
+        else:
+            assert (0), \
+                "Please specify the right quantization range for the selected precision!"

@@ -133,7 +133,11 @@ class TestOneBitAdamExpAvgMask(DistributedTest):
             model=model,
             model_parameters=optimizer_grouped_parameters,
         )
-        data_loader = random_dataloader(model=model, total_samples=50, hidden_dim=hidden_dim, device=model.device)
+        data_loader = random_dataloader(model=model,
+                                        total_samples=50,
+                                        hidden_dim=hidden_dim,
+                                        device=model.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model(batch[0], batch[1])
             model.backward(loss)
@@ -145,7 +149,7 @@ class TestOneBitAdamExpAvgMask(DistributedTest):
                     v["exp_avg"],
                     v["exp_avg"].mul_(mask1.to(device=v["exp_avg"].device)),
                     atol=1e-07,
-                ), f"Momentum mask is not working properly"
+                ), "Momentum mask is not working properly"
 
 
 class TestOneBitAdamCheckpointing(DistributedTest):
@@ -221,17 +225,14 @@ class TestOneBitAdamCheckpointing(DistributedTest):
             },
         ]
 
-        model_1, optimizer_1, _, _ = deepspeed.initialize(
-            config=config_dict,
-            model=model,
-            model_parameters=optimizer_grouped_parameters_1,
-        )
-        data_loader = random_dataloader(
-            model=model_1,
-            total_samples=10,
-            hidden_dim=hidden_dim,
-            device=model_1.device,
-        )
+        model_1, optimizer_1, _, _ = deepspeed.initialize(config=config_dict,
+                                                          model=model,
+                                                          model_parameters=optimizer_grouped_parameters_1)
+        data_loader = random_dataloader(model=model_1,
+                                        total_samples=10,
+                                        hidden_dim=hidden_dim,
+                                        device=model_1.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model_1(batch[0], batch[1])
             model_1.backward(loss)
@@ -240,11 +241,11 @@ class TestOneBitAdamCheckpointing(DistributedTest):
         assert optimizer_1.optimizer.adam_freeze_key is True
         mask1 = mask1.to(device=optimizer_1.param_groups[0]["exp_avg_mask"].device)
         assert torch.allclose(optimizer_1.param_groups[0]["exp_avg_mask"], mask1,
-                              atol=1e-07), f"Incorrect momentum mask"
+                              atol=1e-07), "Incorrect momentum mask"
         save_folder = os.path.join(tmpdir, "saved_checkpoint")
         model_1.save_checkpoint(save_folder, tag=None)
         assert torch.allclose(optimizer_1.param_groups[0]["exp_avg_mask"], mask1,
-                              atol=1e-07), f"Momentum mask should not change after saving checkpoint"
+                              atol=1e-07), "Momentum mask should not change after saving checkpoint"
 
         model_2, optimizer_2, _, _ = deepspeed.initialize(
             config=config_dict,
@@ -254,7 +255,7 @@ class TestOneBitAdamCheckpointing(DistributedTest):
         # Test whether momentum mask stays the same after loading checkpoint
         mask2 = mask2.to(device=optimizer_2.param_groups[0]["exp_avg_mask"].device)
         assert torch.allclose(optimizer_2.param_groups[0]["exp_avg_mask"], mask2,
-                              atol=1e-07), f"Incorrect momentum mask"
+                              atol=1e-07), "Incorrect momentum mask"
         model_2.load_checkpoint(
             save_folder,
             tag=None,
@@ -262,11 +263,11 @@ class TestOneBitAdamCheckpointing(DistributedTest):
             load_lr_scheduler_states=True,
         )
         assert torch.allclose(optimizer_2.param_groups[0]["exp_avg_mask"], mask2,
-                              atol=1e-07), f"Momentum mask should not change after loading checkpoint"
+                              atol=1e-07), "Momentum mask should not change after loading checkpoint"
         # Test whether worker&server error is reset
         for v in optimizer_2.state.values():
-            assert "worker_error" not in v, f"Incorrect worker error"
-            assert "server_error" not in v, f"Incorrect server error"
+            assert "worker_error" not in v, "Incorrect worker error"
+            assert "server_error" not in v, "Incorrect server error"
         assert optimizer_2.optimizer.adam_freeze_key is True
 
         model_3, optimizer_3, _, _ = deepspeed.initialize(
@@ -275,19 +276,18 @@ class TestOneBitAdamCheckpointing(DistributedTest):
             model_parameters=optimizer_grouped_parameters_3,
         )
         optimizer_3.optimizer.freeze_step = 20
-        data_loader = random_dataloader(
-            model=model_3,
-            total_samples=50,
-            hidden_dim=hidden_dim,
-            device=model_3.device,
-        )
+        data_loader = random_dataloader(model=model_3,
+                                        total_samples=50,
+                                        hidden_dim=hidden_dim,
+                                        device=model_3.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model_3(batch[0], batch[1])
             model_3.backward(loss)
             model_3.step()
         assert optimizer_3.optimizer.adam_freeze_key is True
         # Test whether momentum mask stays the same after loading checkpoint
-        assert ("exp_avg_mask" not in optimizer_3.param_groups[0]), f"Incorrect momentum mask"
+        assert ("exp_avg_mask" not in optimizer_3.param_groups[0]), "Incorrect momentum mask"
         model_3.load_checkpoint(
             save_folder,
             tag=None,
@@ -295,11 +295,11 @@ class TestOneBitAdamCheckpointing(DistributedTest):
             load_lr_scheduler_states=True,
         )
         assert ("exp_avg_mask"
-                not in optimizer_3.param_groups[0]), f"Momentum mask should not change after loading checkpoint"
+                not in optimizer_3.param_groups[0]), "Momentum mask should not change after loading checkpoint"
         # Test whether worker&server error is reset
         for v in optimizer_3.state.values():
-            assert "worker_error" not in v, f"Incorrect worker error"
-            assert "server_error" not in v, f"Incorrect server error"
+            assert "worker_error" not in v, "Incorrect worker error"
+            assert "server_error" not in v, "Incorrect server error"
         assert optimizer_3.optimizer.adam_freeze_key is False
 
     def test_overflow(self, tmpdir):
@@ -329,7 +329,11 @@ class TestOneBitAdamCheckpointing(DistributedTest):
 
         model = SimpleModel(hidden_dim)
         model, _, _, _ = deepspeed.initialize(config=config_dict, model=model, model_parameters=model.parameters())
-        data_loader = random_dataloader(model=model, total_samples=100, hidden_dim=hidden_dim, device=model.device)
+        data_loader = random_dataloader(model=model,
+                                        total_samples=100,
+                                        hidden_dim=hidden_dim,
+                                        device=model.device,
+                                        dtype=torch.float16)
         save_folder = os.path.join(tmpdir, "saved_checkpoint")
         for n, batch in enumerate(data_loader):
             loss = model(batch[0], batch[1])
@@ -498,7 +502,11 @@ class TestZeroOneAdamExpAvgMask(DistributedTest):
             model=model,
             model_parameters=optimizer_grouped_parameters,
         )
-        data_loader = random_dataloader(model=model, total_samples=50, hidden_dim=hidden_dim, device=model.device)
+        data_loader = random_dataloader(model=model,
+                                        total_samples=50,
+                                        hidden_dim=hidden_dim,
+                                        device=model.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model(batch[0], batch[1])
             model.backward(loss)
@@ -510,7 +518,7 @@ class TestZeroOneAdamExpAvgMask(DistributedTest):
                     v["exp_avg"],
                     v["exp_avg"].mul_(mask1.to(device=v["exp_avg"].device)),
                     atol=1e-07,
-                ), f"Momentum mask is not working properly"
+                ), "Momentum mask is not working properly"
 
 
 class TestZeroOneAdamCheckpointing(DistributedTest):
@@ -594,12 +602,11 @@ class TestZeroOneAdamCheckpointing(DistributedTest):
             model=model,
             model_parameters=optimizer_grouped_parameters_1,
         )
-        data_loader = random_dataloader(
-            model=model_1,
-            total_samples=10,
-            hidden_dim=hidden_dim,
-            device=model_1.device,
-        )
+        data_loader = random_dataloader(model=model_1,
+                                        total_samples=10,
+                                        hidden_dim=hidden_dim,
+                                        device=model_1.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model_1(batch[0], batch[1])
             model_1.backward(loss)
@@ -607,11 +614,11 @@ class TestZeroOneAdamCheckpointing(DistributedTest):
         # Test whether momentum mask still exist after saving checkpoint
         mask1 = mask1.to(device=optimizer_1.param_groups[0]["exp_avg_mask"].device)
         assert torch.allclose(optimizer_1.param_groups[0]["exp_avg_mask"], mask1,
-                              atol=1e-07), f"Incorrect momentum mask"
+                              atol=1e-07), "Incorrect momentum mask"
         save_folder = os.path.join(tmpdir, "saved_checkpoint")
         model_1.save_checkpoint(save_folder, tag=None)
         assert torch.allclose(optimizer_1.param_groups[0]["exp_avg_mask"], mask1,
-                              atol=1e-07), f"Momentum mask should not change after saving checkpoint"
+                              atol=1e-07), "Momentum mask should not change after saving checkpoint"
 
         model_2, optimizer_2, _, _ = deepspeed.initialize(
             config=config_dict,
@@ -621,7 +628,7 @@ class TestZeroOneAdamCheckpointing(DistributedTest):
         # Test whether momentum mask stays the same after loading checkpoint
         mask2 = mask2.to(device=optimizer_2.param_groups[0]["exp_avg_mask"].device)
         assert torch.allclose(optimizer_2.param_groups[0]["exp_avg_mask"], mask2,
-                              atol=1e-07), f"Incorrect momentum mask"
+                              atol=1e-07), "Incorrect momentum mask"
         model_2.load_checkpoint(
             save_folder,
             tag=None,
@@ -629,11 +636,11 @@ class TestZeroOneAdamCheckpointing(DistributedTest):
             load_lr_scheduler_states=True,
         )
         assert torch.allclose(optimizer_2.param_groups[0]["exp_avg_mask"], mask2,
-                              atol=1e-07), f"Momentum mask should not change after loading checkpoint"
+                              atol=1e-07), "Momentum mask should not change after loading checkpoint"
         # Test whether worker&server error is reset
         for v in optimizer_2.state.values():
-            assert "worker_error" not in v, f"Incorrect worker error"
-            assert "server_error" not in v, f"Incorrect server error"
+            assert "worker_error" not in v, "Incorrect worker error"
+            assert "server_error" not in v, "Incorrect server error"
 
         model_3, optimizer_3, _, _ = deepspeed.initialize(
             config=config_dict,
@@ -641,18 +648,17 @@ class TestZeroOneAdamCheckpointing(DistributedTest):
             model_parameters=optimizer_grouped_parameters_3,
         )
         optimizer_3.optimizer.freeze_step = 20
-        data_loader = random_dataloader(
-            model=model_3,
-            total_samples=50,
-            hidden_dim=hidden_dim,
-            device=model_3.device,
-        )
+        data_loader = random_dataloader(model=model_3,
+                                        total_samples=50,
+                                        hidden_dim=hidden_dim,
+                                        device=model_3.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model_3(batch[0], batch[1])
             model_3.backward(loss)
             model_3.step()
         # Test whether momentum mask stays the same after loading checkpoint
-        assert ("exp_avg_mask" not in optimizer_3.param_groups[0]), f"Incorrect momentum mask"
+        assert ("exp_avg_mask" not in optimizer_3.param_groups[0]), "Incorrect momentum mask"
         model_3.load_checkpoint(
             save_folder,
             tag=None,
@@ -660,11 +666,11 @@ class TestZeroOneAdamCheckpointing(DistributedTest):
             load_lr_scheduler_states=True,
         )
         assert ("exp_avg_mask"
-                not in optimizer_3.param_groups[0]), f"Momentum mask should not change after loading checkpoint"
+                not in optimizer_3.param_groups[0]), "Momentum mask should not change after loading checkpoint"
         # Test whether worker&server error is reset
         for v in optimizer_3.state.values():
-            assert "worker_error" not in v, f"Incorrect worker error"
-            assert "server_error" not in v, f"Incorrect server error"
+            assert "worker_error" not in v, "Incorrect worker error"
+            assert "server_error" not in v, "Incorrect server error"
 
     def test_overflow(self, tmpdir):
         if not get_accelerator().is_fp16_supported():
@@ -696,7 +702,11 @@ class TestZeroOneAdamCheckpointing(DistributedTest):
 
         model = SimpleModel(hidden_dim)
         model, _, _, _ = deepspeed.initialize(config=config_dict, model=model, model_parameters=model.parameters())
-        data_loader = random_dataloader(model=model, total_samples=100, hidden_dim=hidden_dim, device=model.device)
+        data_loader = random_dataloader(model=model,
+                                        total_samples=100,
+                                        hidden_dim=hidden_dim,
+                                        device=model.device,
+                                        dtype=torch.float16)
         save_folder = os.path.join(tmpdir, "saved_checkpoint")
         for n, batch in enumerate(data_loader):
             loss = model(batch[0], batch[1])
@@ -873,7 +883,11 @@ class TestOneBitLampExpAvgMask(DistributedTest):
             model=model,
             model_parameters=optimizer_grouped_parameters,
         )
-        data_loader = random_dataloader(model=model, total_samples=50, hidden_dim=hidden_dim, device=model.device)
+        data_loader = random_dataloader(model=model,
+                                        total_samples=50,
+                                        hidden_dim=hidden_dim,
+                                        device=model.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model(batch[0], batch[1])
             model.backward(loss)
@@ -885,7 +899,7 @@ class TestOneBitLampExpAvgMask(DistributedTest):
                     v["exp_avg"],
                     v["exp_avg"].mul_(mask1.to(device=v["exp_avg"].device)),
                     atol=1e-07,
-                ), f"Momentum mask is not working properly"
+                ), "Momentum mask is not working properly"
 
 
 class TestOneBitLambCheckpointing(DistributedTest):
@@ -970,12 +984,11 @@ class TestOneBitLambCheckpointing(DistributedTest):
             model=model,
             model_parameters=optimizer_grouped_parameters_1,
         )
-        data_loader = random_dataloader(
-            model=model_1,
-            total_samples=10,
-            hidden_dim=hidden_dim,
-            device=model_1.device,
-        )
+        data_loader = random_dataloader(model=model_1,
+                                        total_samples=10,
+                                        hidden_dim=hidden_dim,
+                                        device=model_1.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model_1(batch[0], batch[1])
             model_1.backward(loss)
@@ -984,15 +997,15 @@ class TestOneBitLambCheckpointing(DistributedTest):
         assert optimizer_1.optimizer.lamb_freeze_key is True
         mask1 = mask1.to(device=optimizer_1.param_groups[0]["exp_avg_mask"].device)
         assert torch.allclose(optimizer_1.param_groups[0]["exp_avg_mask"], mask1,
-                              atol=1e-07), f"Incorrect momentum mask"
+                              atol=1e-07), "Incorrect momentum mask"
         scaling_coeff_1 = []
         for v in optimizer_1.state.values():
-            assert "scaling_coeff" in v, f"Incorrect scaling_coeff"
+            assert "scaling_coeff" in v, "Incorrect scaling_coeff"
             scaling_coeff_1.append(v["scaling_coeff"])
         save_folder = os.path.join(tmpdir, "saved_checkpoint")
         model_1.save_checkpoint(save_folder, tag=None)
         assert torch.allclose(optimizer_1.param_groups[0]["exp_avg_mask"], mask1,
-                              atol=1e-07), f"Momentum mask should not change after saving checkpoint"
+                              atol=1e-07), "Momentum mask should not change after saving checkpoint"
 
         model_2, optimizer_2, _, _ = deepspeed.initialize(
             config=config_dict,
@@ -1002,7 +1015,7 @@ class TestOneBitLambCheckpointing(DistributedTest):
         # Test whether momentum mask stays the same after loading checkpoint
         mask2 = mask2.to(device=optimizer_2.param_groups[0]["exp_avg_mask"].device)
         assert torch.allclose(optimizer_2.param_groups[0]["exp_avg_mask"], mask2,
-                              atol=1e-07), f"Incorrect momentum mask"
+                              atol=1e-07), "Incorrect momentum mask"
         model_2.load_checkpoint(
             save_folder,
             tag=None,
@@ -1010,16 +1023,16 @@ class TestOneBitLambCheckpointing(DistributedTest):
             load_lr_scheduler_states=True,
         )
         assert torch.allclose(optimizer_2.param_groups[0]["exp_avg_mask"], mask2,
-                              atol=1e-07), f"Momentum mask should not change after loading checkpoint"
+                              atol=1e-07), "Momentum mask should not change after loading checkpoint"
         # Test whether worker&server error is reset
-        assert len(optimizer_2.optimizer.worker_errors) == 0, f"Incorrect worker error"
-        assert len(optimizer_2.optimizer.server_errors) == 0, f"Incorrect server error"
+        assert len(optimizer_2.optimizer.worker_errors) == 0, "Incorrect worker error"
+        assert len(optimizer_2.optimizer.server_errors) == 0, "Incorrect server error"
         # Test whether scaling_coeffs is loaded correctly
         scaling_coeff_2 = []
         for v in optimizer_2.state.values():
-            assert "scaling_coeff" in v, f"Incorrect scaling_coeff"
+            assert "scaling_coeff" in v, "Incorrect scaling_coeff"
             scaling_coeff_2.append(v["scaling_coeff"])
-        assert list(sorted(scaling_coeff_2)) == list(sorted(scaling_coeff_1)), f"Incorrect scaling_coeffs"
+        assert list(sorted(scaling_coeff_2)) == list(sorted(scaling_coeff_1)), "Incorrect scaling_coeffs"
         assert optimizer_2.optimizer.lamb_freeze_key is True
 
         model_3, optimizer_3, _, _ = deepspeed.initialize(
@@ -1028,19 +1041,18 @@ class TestOneBitLambCheckpointing(DistributedTest):
             model_parameters=optimizer_grouped_parameters_3,
         )
         optimizer_3.optimizer.freeze_step = 20
-        data_loader = random_dataloader(
-            model=model_3,
-            total_samples=50,
-            hidden_dim=hidden_dim,
-            device=model_3.device,
-        )
+        data_loader = random_dataloader(model=model_3,
+                                        total_samples=50,
+                                        hidden_dim=hidden_dim,
+                                        device=model_3.device,
+                                        dtype=torch.float16)
         for n, batch in enumerate(data_loader):
             loss = model_3(batch[0], batch[1])
             model_3.backward(loss)
             model_3.step()
         assert optimizer_3.optimizer.lamb_freeze_key is True
         # Test whether momentum mask stays the same after loading checkpoint
-        assert ("exp_avg_mask" not in optimizer_3.param_groups[0]), f"Incorrect momentum mask"
+        assert ("exp_avg_mask" not in optimizer_3.param_groups[0]), "Incorrect momentum mask"
         model_3.load_checkpoint(
             save_folder,
             tag=None,
@@ -1048,15 +1060,15 @@ class TestOneBitLambCheckpointing(DistributedTest):
             load_lr_scheduler_states=True,
         )
         assert ("exp_avg_mask"
-                not in optimizer_3.param_groups[0]), f"Momentum mask should not change after loading checkpoint"
+                not in optimizer_3.param_groups[0]), "Momentum mask should not change after loading checkpoint"
         # Test whether worker&server error is reset
-        assert len(optimizer_3.optimizer.worker_errors) == 0, f"Incorrect worker error"
-        assert len(optimizer_3.optimizer.server_errors) == 0, f"Incorrect server error"
+        assert len(optimizer_3.optimizer.worker_errors) == 0, "Incorrect worker error"
+        assert len(optimizer_3.optimizer.server_errors) == 0, "Incorrect server error"
         # Test whether scaling_coeffs, lamb_coeff_freeze, last_factor are reset
         for v in optimizer_3.state.values():
-            assert v["lamb_coeff_freeze"] == 0.0, f"Incorrect lamb_coeff_freeze"
-            assert v["last_factor"] == 1.0, f"Incorrect last_factor"
-            assert "scaling_coeff" not in v, f"Incorrect scaling_coeff"
+            assert v["lamb_coeff_freeze"] == 0.0, "Incorrect lamb_coeff_freeze"
+            assert v["last_factor"] == 1.0, "Incorrect last_factor"
+            assert "scaling_coeff" not in v, "Incorrect scaling_coeff"
         assert optimizer_3.optimizer.lamb_freeze_key is False
 
     def test_overflow(self, tmpdir):
@@ -1092,7 +1104,11 @@ class TestOneBitLambCheckpointing(DistributedTest):
 
         model = SimpleModel(hidden_dim)
         model, _, _, _ = deepspeed.initialize(config=config_dict, model=model, model_parameters=model.parameters())
-        data_loader = random_dataloader(model=model, total_samples=100, hidden_dim=hidden_dim, device=model.device)
+        data_loader = random_dataloader(model=model,
+                                        total_samples=100,
+                                        hidden_dim=hidden_dim,
+                                        device=model.device,
+                                        dtype=torch.float16)
         save_folder = os.path.join(tmpdir, "saved_checkpoint")
         for n, batch in enumerate(data_loader):
             loss = model(batch[0], batch[1])

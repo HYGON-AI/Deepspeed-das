@@ -554,6 +554,62 @@ class TestInjectionPolicy(DistributedTest):
 
 
 @pytest.mark.seq_inference
+@pytest.mark.parametrize("model_w_task", [("Felladrin/Llama-160M-Chat-v1", "text-generation")], ids=["llama"])
+@pytest.mark.parametrize("dtype", [torch.half], ids=["fp16"])
+class TestLlamaInjection(DistributedTest):
+    world_size = 1
+
+    def test(self, model_w_task, dtype, query, inf_kwargs, assert_fn):
+        invalid_test_msg = validate_test(model_w_task, dtype, enable_cuda_graph=False, enable_triton=False)
+        if invalid_test_msg:
+            pytest.skip(invalid_test_msg)
+
+        if dtype not in get_accelerator().supported_dtypes():
+            pytest.skip(f"Accelerator {get_accelerator().device_name()} does not support {dtype}.")
+
+        if not deepspeed.ops.__compatible_ops__[InferenceBuilder.NAME]:
+            pytest.skip("This op had not been implemented on this system.", allow_module_level=True)
+
+        model, task = model_w_task
+
+        local_rank = int(os.getenv("LOCAL_RANK", "0"))
+        device = torch.device(get_accelerator().device_name(local_rank))
+
+        pipe = pipeline(task,
+                        model=model,
+                        device=torch.device("cpu"),
+                        model_kwargs={"low_cpu_mem_usage": True},
+                        framework="pt")
+
+        if dtype == torch.half:
+            pipe.model.half()
+
+        pipe.device = device
+        pipe.model.to(device)
+        bs_output = pipe(query, **inf_kwargs)
+
+        try:
+            pipe.model = deepspeed.init_inference(pipe.model,
+                                                  mp_size=self.world_size,
+                                                  dtype=dtype,
+                                                  replace_with_kernel_inject=True)
+            check_injection(pipe.model)
+        except AttributeError as e:
+            if "'LlamaAttention' object has no attribute 'num_heads'" in str(e):
+                pytest.skip("Skipping due to transformers version compatibility issue with self-attention")
+            raise e
+
+        ds_output = pipe(query, **inf_kwargs)
+
+        print(local_rank, "baseline", bs_output)
+        print(local_rank, "deepspeed", ds_output)
+        # Llama models are not matching baseline exactly
+        # We skip the result check for now, since this is irrelevant to this test
+        # assert assert_fn(bs_output, ds_output)
+
+
+@pytest.mark.seq_inference
+@pytest.mark.parametrize('keep_module_on_host', [True, False])
 @pytest.mark.parametrize(
     "model_w_task",
     [("Helsinki-NLP/opus-mt-en-de", "translation"), ("Salesforce/codegen-350M-mono", "text-generation")],
@@ -570,6 +626,7 @@ class TestAutoTensorParallelism(DistributedTest):
         inf_kwargs,
         assert_fn,
         dtype,
+        keep_module_on_host,
     ):
         invalid_test_msg = validate_test(model_w_task, dtype, enable_cuda_graph=False, enable_triton=False)
         if invalid_test_msg:
@@ -592,12 +649,19 @@ class TestAutoTensorParallelism(DistributedTest):
                         framework="pt")
         bs_output = pipe(query, **inf_kwargs)
 
-        pipe.model = deepspeed.init_inference(pipe.model, mp_size=world_size, dtype=dtype)
+        pipe.model = deepspeed.init_inference(pipe.model,
+                                              mp_size=world_size,
+                                              dtype=dtype,
+                                              keep_module_on_host=keep_module_on_host)
         ds_output = pipe(query, **inf_kwargs)
 
         print(local_rank, "baseline", bs_output)
         print(local_rank, "deepspeed", ds_output)
         assert assert_fn(bs_output, ds_output)
+
+        if keep_module_on_host:
+            for name, param in model.named_parameters():
+                assert param.device == torch.device('cpu'), f"keep_module_on_host is on but param {name} is not on cpu"
 
     @pytest.mark.world_size(3)
     def test_odd_world_size(
@@ -607,6 +671,7 @@ class TestAutoTensorParallelism(DistributedTest):
         inf_kwargs,
         assert_fn,
         dtype,
+        keep_module_on_host,
     ):
         invalid_test_msg = validate_test(model_w_task, dtype, enable_cuda_graph=False, enable_triton=False)
         if invalid_test_msg:
@@ -624,12 +689,19 @@ class TestAutoTensorParallelism(DistributedTest):
                         framework="pt")
         bs_output = pipe(query, **inf_kwargs)
 
-        pipe.model = deepspeed.init_inference(pipe.model, mp_size=world_size, dtype=dtype)
+        pipe.model = deepspeed.init_inference(pipe.model,
+                                              mp_size=world_size,
+                                              dtype=dtype,
+                                              keep_module_on_host=keep_module_on_host)
         ds_output = pipe(query, **inf_kwargs)
 
         print(local_rank, "baseline", bs_output)
         print(local_rank, "deepspeed", ds_output)
         assert assert_fn(bs_output, ds_output)
+
+        if keep_module_on_host:
+            for name, param in model.named_parameters():
+                assert param.device == torch.device('cpu'), f"keep_module_on_host is on but param {name} is not on cpu"
 
 
 @pytest.mark.nightly

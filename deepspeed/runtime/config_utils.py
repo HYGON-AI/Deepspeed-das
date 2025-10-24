@@ -61,7 +61,7 @@ class DeepSpeedConfigModel(BaseModel):
         # Get information about the deprecated field
         pydantic_config = self
         fields_set = pydantic_config.model_fields_set
-        kwargs = pydantic_config.model_fields[dep_field].json_schema_extra
+        kwargs = type(pydantic_config).model_fields[dep_field].json_schema_extra
         new_param_fn = kwargs.get("new_param_fn", lambda x: x)
         param_value = new_param_fn(getattr(pydantic_config, dep_field))
         new_field = kwargs.get("new_param", "")
@@ -97,7 +97,7 @@ class DeepSpeedConfigModel(BaseModel):
                     raise e
 
     def _deprecated_fields_check(self):
-        fields = self.model_fields
+        fields = type(self).model_fields
         for field_name, field_info in fields.items():
             if field_info.json_schema_extra and field_info.json_schema_extra.get("deprecated", False):
                 self._process_deprecated_field(field_name)
@@ -137,7 +137,7 @@ class pp_int(int):
         return inst
 
     def __repr__(self):
-        if self.custom_print_str:
+        if hasattr(self, "custom_print_str") and self.custom_print_str:
             return self.custom_print_str
         return f"{self.real:,}"
 
@@ -169,7 +169,7 @@ class ScientificNotationEncoder(json.JSONEncoder):
             x = [f'\n{prefix}"{k}": {self.iterencode(v, level=level)}' for k, v in o.items()]
             return "{" + ", ".join(x) + f"\n{prefix_close}" + "}"
         elif isinstance(o, collections.abc.Sequence) and not isinstance(o, str):
-            return f"[{ f', '.join(map(self.iterencode, o)) }]"
+            return f"[{ ', '.join(map(self.iterencode, o)) }]"
         return "\n, ".join(super().iterencode(o, _one_shot))
 
 
