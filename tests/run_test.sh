@@ -2,145 +2,145 @@
 cd ./accelerator
 pytest ./
 cd ..
-pytest ./model/BingBertSquad/test_e2e_squad.py
-pytest ./model/Megatron_GPT2/test_common.py
-pytest ./unit/pipe/test_pipe_module.py
-pytest ./unit/runtime/half_precision/test_fp16.py
-pytest ./unit/runtime/half_precision/test_bf16.py
-pytest ./unit/runtime/half_precision/onebit/test_onebit.py
-pytest ./unit/runtime/half_precision/test_fp8.py
-pytest ./unit/runtime/half_precision/test_dynamic_loss_scale.py
-pytest ./unit/runtime/test_ds_config_model.py
-pytest ./unit/runtime/pipe/test_topology.py
-pytest ./unit/runtime/pipe/test_pipe.py
-pytest ./unit/runtime/pipe/test_pipe_schedule.py
-pytest ./unit/runtime/test_lr_schedulers.py
-pytest ./unit/runtime/test_ds_initialize.py
-pytest ./unit/runtime/test_pld.py
-pytest ./unit/runtime/test_data_efficiency.py
-pytest ./unit/runtime/test_multi_output_model.py
-pytest ./unit/runtime/comm/test_coalesced_collectives.py
-pytest ./unit/runtime/test_autocast.py
-pytest ./unit/runtime/utils/test_partition.py
-pytest ./unit/runtime/test_mup_optimizers.py
-pytest ./unit/runtime/test_ds_config_dict.py
-pytest ./unit/runtime/activation_checkpointing/test_activation_checkpointing.py
-pytest ./unit/runtime/activation_checkpointing/test_activation_checkpointing_non_reentrant.py
-pytest ./unit/runtime/test_runtime_utils.py
-pytest ./unit/runtime/zero/test_zero_nesting_init.py
-pytest ./unit/runtime/zero/test_zero_context_ancestry.py
-pytest ./unit/runtime/zero/test_zero_context_return.py
-pytest ./unit/runtime/zero/test_zero.py
-pytest ./unit/runtime/zero/test_zero_context.py
-pytest ./unit/runtime/zero/test_zeropp.py
-pytest ./unit/runtime/zero/test_zero_dynamic_class.py
-pytest ./unit/runtime/zero/test_ignore_unused_parameters.py
-pytest ./unit/runtime/zero/test_zero_tensor_fragment.py
-pytest ./unit/runtime/zero/test_zero_config.py
-pytest ./unit/runtime/zero/test_zero_tiled.py
-pytest ./unit/runtime/zero/test_zero_offloadpp.py
-pytest ./unit/runtime/sparse_tensor/test_csr.py
-pytest ./unit/runtime/sparse_tensor/test_averaging_sparse_gradients.py
-pytest ./unit/runtime/sparse_tensor/test_sparse_grads.py
-pytest ./unit/runtime/test_data.py
-pytest ./unit/monitor/test_monitor.py
-pytest ./unit/utils/test_get_optim_files.py
-pytest ./unit/utils/test_groups.py
-pytest ./unit/utils/test_init_on_device.py
-pytest ./unit/launcher/test_multinode_runner.py
-pytest ./unit/launcher/test_run.py
-pytest ./unit/launcher/test_ds_arguments.py
-pytest ./unit/profiling/flops_profiler/test_flops_profiler.py
-pytest ./unit/autotuning/test_autotuning.py
-pytest ./unit/compression/test_dequantization.py
-pytest ./unit/compression/test_compression.py
-pytest ./unit/model_parallelism/test_configurable_parallel_mp.py
-pytest ./unit/model_parallelism/test_configurable_parallel_pp.py
-pytest ./unit/comm/test_dist.py
-pytest ./unit/moe/test_moe_tp.py
-pytest ./unit/moe/test_moe.py
-pytest ./unit/checkpoint/test_mics_optimizer.py
-pytest ./unit/checkpoint/test_pipeline.py
-pytest ./unit/checkpoint/test_latest_checkpoint.py
-pytest ./unit/checkpoint/test_shared_weights.py
-pytest ./unit/checkpoint/test_tag_validation.py
-pytest ./unit/checkpoint/test_reshape_checkpoint.py
-pytest ./unit/checkpoint/test_sparse.py
-pytest ./unit/checkpoint/test_zero_optimizer.py
-pytest ./unit/checkpoint/test_other_optimizer.py
-pytest ./unit/checkpoint/test_moe_checkpoint.py
-pytest ./unit/checkpoint/test_lr_scheduler.py
-pytest ./unit/ops/accelerators/test_accelerator_backward.py
-pytest ./unit/ops/accelerators/test_accelerator_forward.py
-pytest ./unit/ops/aio/test_aio.py
-pytest ./unit/ops/adagrad/test_cpu_adagrad.py
-pytest ./unit/ops/spatial/test_nhwc_bias_add.py
-pytest ./unit/ops/deepspeed4science/test_DS4Sci_EvoformerAttention.py
-pytest ./unit/ops/sparse_attention/test_sparse_attention.py
-pytest ./unit/ops/quantizer/test_fake_quantization.py
-pytest ./unit/ops/quantizer/test_quantize.py
-pytest ./unit/ops/lion/test_cpu_lion.py
-pytest ./unit/ops/lion/test_lion.py
-pytest ./unit/ops/adam/test_adamw.py
-pytest ./unit/ops/adam/test_cpu_adam.py
-pytest ./unit/ops/adam/test_hybrid_adam.py
-pytest ./unit/ops/transformer/inference/test_attention.py
-pytest ./unit/ops/transformer/inference/test_softmax.py
-pytest ./unit/ops/transformer/inference/test_moe_res_matmult.py
-pytest ./unit/ops/transformer/inference/test_bias_gelu.py
-pytest ./unit/ops/transformer/inference/test_layer_norm.py
-pytest ./unit/ops/transformer/inference/test_bias_geglu.py
-pytest ./unit/ops/transformer/inference/test_bias_relu.py
-pytest ./unit/ops/transformer/inference/test_bias_add.py
-pytest ./unit/ops/transformer/inference/test_residual_add.py
-pytest ./unit/ops/transformer/inference/test_gelu.py
-pytest ./unit/ops/transformer/inference/test_matmul.py
-pytest ./unit/ops/transformer/inference/test_rms_norm.py
-pytest ./unit/hybrid_engine/test_he_all.py
-pytest ./unit/hybrid_engine/test_he_lora.py
-pytest ./unit/hybrid_engine/test_he_llama.py
-pytest ./unit/inference/test_checkpoint_sharding.py
-pytest ./unit/inference/test_model_profiling.py
-pytest ./unit/inference/v2/kernels/core_ops/test_pre_ln.py
-pytest ./unit/inference/v2/kernels/core_ops/test_post_ln.py
-pytest ./unit/inference/v2/kernels/core_ops/test_blas_linear.py
-pytest ./unit/inference/v2/kernels/core_ops/test_gated_activation.py
-pytest ./unit/inference/v2/kernels/core_ops/test_bias_activation.py
-pytest ./unit/inference/v2/kernels/core_ops/test_rms_norm.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_atom_builder.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_moe_scatter.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_logits_gather.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_ragged_embed.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_blocked_kv_copy.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_blocked_rotary_emb.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_blocked_flash.py
-pytest ./unit/inference/v2/kernels/ragged_ops/test_moe_gather.py
-pytest ./unit/inference/v2/kernels/cutlass_ops/test_moe_gemm.py
-pytest ./unit/inference/v2/modules/test_cuda_pre_ln_module.py
-pytest ./unit/inference/v2/modules/test_cutlass_moe.py
-pytest ./unit/inference/v2/modules/test_blas_linear_module.py
-pytest ./unit/inference/v2/modules/test_custom_module.py
-pytest ./unit/inference/v2/modules/test_pre_rms_module.py
-pytest ./unit/inference/v2/modules/test_post_ln_module.py
-pytest ./unit/inference/v2/modules/test_blocked_attn.py
-pytest ./unit/inference/v2/model_implementations/parameters/test_parameter_list.py
-pytest ./unit/inference/v2/model_implementations/parameters/test_mapping.py
-pytest ./unit/inference/v2/model_implementations/parameters/test_multi_parameter_layer.py
-pytest ./unit/inference/v2/model_implementations/parameters/test_layer_inheritance.py
-pytest ./unit/inference/v2/model_implementations/sharding/test_mlp_sharding.py
-pytest ./unit/inference/v2/model_implementations/sharding/test_qkv_sharding.py
-pytest ./unit/inference/v2/model_implementations/sharding/test_attn_out_sharding.py
-pytest ./unit/inference/v2/ragged/test_manager_configs.py
-pytest ./unit/inference/v2/ragged/test_ragged_wrapper.py
-pytest ./unit/inference/v2/ragged/test_blocked_allocator.py
-pytest ./unit/inference/test_inference.py
-pytest ./unit/inference/test_inference_config.py
-pytest ./unit/inference/quantization/test_intX_quantization.py
-pytest ./unit/inference/kernels/cutlass_ops/test_moe_gemm.py
-pytest ./unit/elasticity/test_elastic.py
-pytest ./onebit/test_mpi_perf.py
-pytest ./onebit/test_nccl_backend.py
-pytest ./onebit/test_mpi_backend.py
-pytest ./onebit/test_nccl_perf.py
-pytest ./small_model_debugging/test_model.py
-pytest ./small_model_debugging/test_mics_config.py
+pytest --timeout=1200 ./model/BingBertSquad/test_e2e_squad.py
+pytest --timeout=1200 ./model/Megatron_GPT2/test_common.py
+pytest --timeout=1200 ./unit/pipe/test_pipe_module.py
+pytest --timeout=1200 ./unit/runtime/half_precision/test_fp16.py
+pytest --timeout=1200 ./unit/runtime/half_precision/test_bf16.py
+pytest --timeout=1200 ./unit/runtime/half_precision/onebit/test_onebit.py
+pytest --timeout=1200 ./unit/runtime/half_precision/test_fp8.py
+pytest --timeout=1200 ./unit/runtime/half_precision/test_dynamic_loss_scale.py
+pytest --timeout=1200 ./unit/runtime/test_ds_config_model.py
+pytest --timeout=1200 ./unit/runtime/pipe/test_topology.py
+pytest --timeout=1200 ./unit/runtime/pipe/test_pipe.py
+pytest --timeout=1200 ./unit/runtime/pipe/test_pipe_schedule.py
+pytest --timeout=1200 ./unit/runtime/test_lr_schedulers.py
+pytest --timeout=1200 ./unit/runtime/test_ds_initialize.py
+pytest --timeout=1200 ./unit/runtime/test_pld.py
+pytest --timeout=1200 ./unit/runtime/test_data_efficiency.py
+pytest --timeout=1200 ./unit/runtime/test_multi_output_model.py
+pytest --timeout=1200 ./unit/runtime/comm/test_coalesced_collectives.py
+pytest --timeout=1200 ./unit/runtime/test_autocast.py
+pytest --timeout=1200 ./unit/runtime/utils/test_partition.py
+pytest --timeout=1200 ./unit/runtime/test_mup_optimizers.py
+pytest --timeout=1200 ./unit/runtime/test_ds_config_dict.py
+pytest --timeout=1200 ./unit/runtime/activation_checkpointing/test_activation_checkpointing.py
+pytest --timeout=1200 ./unit/runtime/activation_checkpointing/test_activation_checkpointing_non_reentrant.py
+pytest --timeout=1200 ./unit/runtime/test_runtime_utils.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_nesting_init.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_context_ancestry.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_context_return.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_context.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zeropp.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_dynamic_class.py
+pytest --timeout=1200 ./unit/runtime/zero/test_ignore_unused_parameters.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_tensor_fragment.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_config.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_tiled.py
+pytest --timeout=1200 ./unit/runtime/zero/test_zero_offloadpp.py
+pytest --timeout=1200 ./unit/runtime/sparse_tensor/test_csr.py
+pytest --timeout=1200 ./unit/runtime/sparse_tensor/test_averaging_sparse_gradients.py
+pytest --timeout=1200 ./unit/runtime/sparse_tensor/test_sparse_grads.py
+pytest --timeout=1200 ./unit/runtime/test_data.py
+pytest --timeout=1200 ./unit/monitor/test_monitor.py
+pytest --timeout=1200 ./unit/utils/test_get_optim_files.py
+pytest --timeout=1200 ./unit/utils/test_groups.py
+pytest --timeout=1200 ./unit/utils/test_init_on_device.py
+pytest --timeout=1200 ./unit/launcher/test_multinode_runner.py
+pytest --timeout=1200 ./unit/launcher/test_run.py
+pytest --timeout=1200 ./unit/launcher/test_ds_arguments.py
+pytest --timeout=1200 ./unit/profiling/flops_profiler/test_flops_profiler.py
+pytest --timeout=1200 ./unit/autotuning/test_autotuning.py
+pytest --timeout=1200 ./unit/compression/test_dequantization.py
+pytest --timeout=1200 ./unit/compression/test_compression.py
+pytest --timeout=1200 ./unit/model_parallelism/test_configurable_parallel_mp.py
+pytest --timeout=1200 ./unit/model_parallelism/test_configurable_parallel_pp.py
+pytest --timeout=1200 ./unit/comm/test_dist.py
+pytest --timeout=1200 ./unit/moe/test_moe_tp.py
+pytest --timeout=1200 ./unit/moe/test_moe.py
+pytest --timeout=1200 ./unit/checkpoint/test_mics_optimizer.py
+pytest --timeout=1200 ./unit/checkpoint/test_pipeline.py
+pytest --timeout=1200 ./unit/checkpoint/test_latest_checkpoint.py
+pytest --timeout=1200 ./unit/checkpoint/test_shared_weights.py
+pytest --timeout=1200 ./unit/checkpoint/test_tag_validation.py
+pytest --timeout=1200 ./unit/checkpoint/test_reshape_checkpoint.py
+pytest --timeout=1200 ./unit/checkpoint/test_sparse.py
+pytest --timeout=1200 ./unit/checkpoint/test_zero_optimizer.py
+pytest --timeout=1200 ./unit/checkpoint/test_other_optimizer.py
+pytest --timeout=1200 ./unit/checkpoint/test_moe_checkpoint.py
+pytest --timeout=1200 ./unit/checkpoint/test_lr_scheduler.py
+pytest --timeout=1200 ./unit/ops/accelerators/test_accelerator_backward.py
+pytest --timeout=1200 ./unit/ops/accelerators/test_accelerator_forward.py
+pytest --timeout=1200 ./unit/ops/aio/test_aio.py
+pytest --timeout=1200 ./unit/ops/adagrad/test_cpu_adagrad.py
+pytest --timeout=1200 ./unit/ops/spatial/test_nhwc_bias_add.py
+pytest --timeout=1200 ./unit/ops/deepspeed4science/test_DS4Sci_EvoformerAttention.py
+pytest --timeout=1200 ./unit/ops/sparse_attention/test_sparse_attention.py
+pytest --timeout=1200 ./unit/ops/quantizer/test_fake_quantization.py
+pytest --timeout=1200 ./unit/ops/quantizer/test_quantize.py
+pytest --timeout=1200 ./unit/ops/lion/test_cpu_lion.py
+pytest --timeout=1200 ./unit/ops/lion/test_lion.py
+pytest --timeout=1200 ./unit/ops/adam/test_adamw.py
+pytest --timeout=1200 ./unit/ops/adam/test_cpu_adam.py
+pytest --timeout=1200 ./unit/ops/adam/test_hybrid_adam.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_attention.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_softmax.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_moe_res_matmult.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_bias_gelu.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_layer_norm.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_bias_geglu.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_bias_relu.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_bias_add.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_residual_add.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_gelu.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_matmul.py
+pytest --timeout=1200 ./unit/ops/transformer/inference/test_rms_norm.py
+pytest --timeout=1200 ./unit/hybrid_engine/test_he_all.py
+pytest --timeout=1200 ./unit/hybrid_engine/test_he_lora.py
+pytest --timeout=1200 ./unit/hybrid_engine/test_he_llama.py
+pytest --timeout=1200 ./unit/inference/test_checkpoint_sharding.py
+pytest --timeout=1200 ./unit/inference/test_model_profiling.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/core_ops/test_pre_ln.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/core_ops/test_post_ln.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/core_ops/test_blas_linear.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/core_ops/test_gated_activation.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/core_ops/test_bias_activation.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/core_ops/test_rms_norm.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_atom_builder.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_moe_scatter.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_logits_gather.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_ragged_embed.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_blocked_kv_copy.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_blocked_rotary_emb.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_blocked_flash.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/ragged_ops/test_moe_gather.py
+pytest --timeout=1200 ./unit/inference/v2/kernels/cutlass_ops/test_moe_gemm.py
+pytest --timeout=1200 ./unit/inference/v2/modules/test_cuda_pre_ln_module.py
+pytest --timeout=1200 ./unit/inference/v2/modules/test_cutlass_moe.py
+pytest --timeout=1200 ./unit/inference/v2/modules/test_blas_linear_module.py
+pytest --timeout=1200 ./unit/inference/v2/modules/test_custom_module.py
+pytest --timeout=1200 ./unit/inference/v2/modules/test_pre_rms_module.py
+pytest --timeout=1200 ./unit/inference/v2/modules/test_post_ln_module.py
+pytest --timeout=1200 ./unit/inference/v2/modules/test_blocked_attn.py
+pytest --timeout=1200 ./unit/inference/v2/model_implementations/parameters/test_parameter_list.py
+pytest --timeout=1200 ./unit/inference/v2/model_implementations/parameters/test_mapping.py
+pytest --timeout=1200 ./unit/inference/v2/model_implementations/parameters/test_multi_parameter_layer.py
+pytest --timeout=1200 ./unit/inference/v2/model_implementations/parameters/test_layer_inheritance.py
+pytest --timeout=1200 ./unit/inference/v2/model_implementations/sharding/test_mlp_sharding.py
+pytest --timeout=1200 ./unit/inference/v2/model_implementations/sharding/test_qkv_sharding.py
+pytest --timeout=1200 ./unit/inference/v2/model_implementations/sharding/test_attn_out_sharding.py
+pytest --timeout=1200 ./unit/inference/v2/ragged/test_manager_configs.py
+pytest --timeout=1200 ./unit/inference/v2/ragged/test_ragged_wrapper.py
+pytest --timeout=1200 ./unit/inference/v2/ragged/test_blocked_allocator.py
+pytest --timeout=1200 ./unit/inference/test_inference.py
+pytest --timeout=1200 ./unit/inference/test_inference_config.py
+pytest --timeout=1200 ./unit/inference/quantization/test_intX_quantization.py
+pytest --timeout=1200 ./unit/inference/kernels/cutlass_ops/test_moe_gemm.py
+pytest --timeout=1200 ./unit/elasticity/test_elastic.py
+pytest --timeout=1200 ./onebit/test_mpi_perf.py
+pytest --timeout=1200 ./onebit/test_nccl_backend.py
+pytest --timeout=1200 ./onebit/test_mpi_backend.py
+pytest --timeout=1200 ./onebit/test_nccl_perf.py
+pytest --timeout=1200 ./small_model_debugging/test_model.py
+pytest --timeout=1200 ./small_model_debugging/test_mics_config.py
