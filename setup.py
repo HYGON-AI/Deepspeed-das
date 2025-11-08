@@ -178,7 +178,6 @@ def op_enabled(op_name):
     env_var = op_envvar(op_name)
     return int(get_env_if_set(env_var, BUILD_OP_DEFAULT))
 
-
 compatible_ops = dict.fromkeys(ALL_OPS.keys(), False)
 install_ops = dict.fromkeys(ALL_OPS.keys(), False)
 for op_name, builder in ALL_OPS.items():
@@ -330,8 +329,8 @@ with open(os.path.join(thisdir, 'README.md'), encoding='utf-8') as fin:
 start_time = time.time()
 
 setup(name='deepspeed',
-      version=hcu_version_str,
-      hcu_version=hcu_version_str,
+      version=version_str,
+      hcu_version=version_str,
       description='DeepSpeed library',
       long_description=readme_text,
       long_description_content_type='text/markdown',

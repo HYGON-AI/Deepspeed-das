@@ -158,7 +158,7 @@ private:
     unsigned _seq_length;
 
     bool _pre_or_postLayerNorm;
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     rocblas_handle _cublasHandle;
 #else
     cublasHandle_t _cublasHandle;

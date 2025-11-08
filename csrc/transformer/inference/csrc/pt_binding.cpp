@@ -962,7 +962,7 @@ at::Tensor qkv_unfused_cublas(at::Tensor& output,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else
@@ -1179,7 +1179,7 @@ at::Tensor ds_linear_layer(at::Tensor& input,
                     InferenceContext::Instance().GetCurrentStream());
 
     cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                    (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                    rocblas_operation_none,
 #else                   
@@ -1403,7 +1403,7 @@ at::Tensor ds_vector_matmul(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream(async_op));
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else
@@ -1495,7 +1495,7 @@ at::Tensor mlp_unfused_cublas(at::Tensor& output,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else                       
@@ -1545,7 +1545,7 @@ at::Tensor mlp_unfused_cublas(at::Tensor& output,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else                       
@@ -1687,7 +1687,7 @@ std::vector<at::Tensor> ds_rms_mlp_gemm(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else
@@ -1756,7 +1756,7 @@ std::vector<at::Tensor> ds_rms_mlp_gemm(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else
@@ -1824,7 +1824,7 @@ at::Tensor fused_gemm_gelu(at::Tensor& input,
         cublasSetStream(InferenceContext::Instance().GetCublasHandle(),
                         InferenceContext::Instance().GetCurrentStream());
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else
@@ -1864,7 +1864,7 @@ at::Tensor fused_gemm_gelu(at::Tensor& input,
                           input.size(2));
     } else {
         cublas_gemm_ex(InferenceContext::Instance().GetCublasHandle(),
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        (transposed_mode ? rocblas_operation_transpose : rocblas_operation_none),
                        rocblas_operation_none,
 #else

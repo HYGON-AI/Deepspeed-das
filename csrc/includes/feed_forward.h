@@ -32,7 +32,7 @@ public:
                  const T* input_ptr,
                  const T* weights,
                  T* out,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                  rocblas_handle& _cublasHandle)
 #else
                  cublasHandle_t& _cublasHandle)
@@ -42,7 +42,7 @@ public:
         float beta = T(0.);
 
         cublas_gemm_ex(_cublasHandle,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        rocblas_operation_transpose,
                        rocblas_operation_none,
 #else
@@ -71,7 +71,7 @@ public:
                   const T* weights,
                   T* weights_grad,
                   T* bias_grad,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                   rocblas_handle& _cublasHandle,
 #else
                   cublasHandle_t& _cublasHandle,
@@ -82,7 +82,7 @@ public:
     {
         float alpha = (T)1.0, beta = (T)0.0;
         cublas_gemm_ex(_cublasHandle,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        rocblas_operation_none,
                        rocblas_operation_transpose,
 #else
@@ -105,7 +105,7 @@ public:
 #endif
 
         cublas_gemm_ex(_cublasHandle,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                        rocblas_operation_none,
                        rocblas_operation_none,
 #else

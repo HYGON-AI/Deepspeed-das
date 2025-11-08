@@ -119,7 +119,7 @@ BertTransformerLayer<T>::BertTransformerLayer(unsigned layer_id,
                                                         _hidden_size / _heads,
                                                         (T(1.0 / (sqrt(_hidden_size / _heads)))),
                                                         T(0.0),
-#ifdef __HIP_PLATFORM_HCC__                                                        
+#ifdef __HIP_PLATFORM_AMD__                                                        
                                                         rocblas_operation_transpose,
                                                         rocblas_operation_none,
 #else 
@@ -133,7 +133,7 @@ BertTransformerLayer<T>::BertTransformerLayer(unsigned layer_id,
                                                          _seq_length,
                                                          T(1.0),
                                                          T(0.0),
-#ifdef __HIP_PLATFORM_HCC__  
+#ifdef __HIP_PLATFORM_AMD__  
                                                          rocblas_operation_none,
                                                          rocblas_operation_none, 
 #else                                                                                                                

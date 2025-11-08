@@ -14,8 +14,13 @@
 #include "deepspeed_gds_utils.h"
 
 struct gds_op_desc_t : io_op_desc_t {
+    #ifdef __HIP_PLATFORM_AMD__
+    HIPfileDescr_t _cf_descr;
+    HIPfileHandle_t _cf_handle;
+    #else
     CUfileDescr_t _cf_descr;
     CUfileHandle_t _cf_handle;
+    #endif
     void* _base_ptr;
 
     gds_op_desc_t(const bool read_op,

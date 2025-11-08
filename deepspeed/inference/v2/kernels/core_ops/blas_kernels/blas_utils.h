@@ -16,7 +16,7 @@
 #ifndef __HIP_PLATFORM_AMD__
 #include <mma.h>
 #endif
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
 #include <rocblas/rocblas.h>
 #endif
 #include <stdio.h>
@@ -31,7 +31,7 @@ class BlasContext {
 public:
     BlasContext()
     {
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
         if (rocblas_create_handle(&_handle) != rocblas_status_success) {
 #else
         if (cublasCreate(&_handle) != CUBLAS_STATUS_SUCCESS) {
@@ -45,7 +45,7 @@ public:
 #endif
     }
 
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     virtual ~BlasContext() { rocblas_destroy_handle(_handle); }
 #else
     virtual ~BlasContext() { cublasDestroy(_handle); }
@@ -58,13 +58,13 @@ public:
         return _instance;
     }
 
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     rocblas_handle get_handle() const { return _handle; }
 #else
     cublasHandle_t get_handle() const { return _handle; }
 #endif
 private:
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     rocblas_handle _handle;
 #else
     cublasHandle_t _handle;

@@ -14,6 +14,20 @@ using namespace std;
 // For when there is more than 1 device
 static std::map<const int64_t, std::set<void*>> base_ptr_registry;
 
+#ifdef __HIP_PLATFORM_AMD__
+static void _safe_handle_register(const int fd, HIPfileDescr_t& cf_descr, HIPfileHandle_t& cf_handle)
+{
+    memset((void*)&cf_descr, 0, sizeof(HIPfileDescr_t));
+    cf_descr.handle.fd = fd;
+    cf_descr.type = HIP_FILE_HANDLE_TYPE_OPAQUE_FD;
+    HIPfileError_t status = hipFileHandleRegister(&cf_handle, &cf_descr);
+    if (status.err != HIP_FILE_SUCCESS) {
+        std::cerr << "file register error:" << cuFileGetErrorString(status) << std::endl;
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+}
+#else
 static void _safe_handle_register(const int fd, CUfileDescr_t& cf_descr, CUfileHandle_t& cf_handle)
 {
     memset((void*)&cf_descr, 0, sizeof(CUfileDescr_t));
@@ -26,6 +40,7 @@ static void _safe_handle_register(const int fd, CUfileDescr_t& cf_descr, CUfileH
         exit(EXIT_FAILURE);
     }
 }
+#endif
 
 static void* _find_base_ptr(const int64_t device, char* buf_ptr)
 {
@@ -69,11 +84,19 @@ void gds_op_desc_t::add_buffer_to_registry(const torch::Tensor& buffer)
     }
 
     check_cudaruntimecall(cudaSetDevice(device));
+    #ifdef __HIP_PLATFORM_AMD__
+    HIPfileError_t status = hipFileBufRegister(reg_ptr, buffer.nbytes(), 0);
+    if (status.err != HIP_FILE_SUCCESS) {
+        std::cerr << "buffer register failed:" << cuFileGetErrorString(status) << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    #else
     CUfileError_t status = cuFileBufRegister(reg_ptr, buffer.nbytes(), 0);
     if (status.err != CU_FILE_SUCCESS) {
         std::cerr << "buffer register failed:" << cuFileGetErrorString(status) << std::endl;
         exit(EXIT_FAILURE);
     }
+    #endif
 }
 
 void gds_op_desc_t::remove_buffer_from_registry(const torch::Tensor& buffer)
@@ -83,7 +106,11 @@ void gds_op_desc_t::remove_buffer_from_registry(const torch::Tensor& buffer)
 
     // std::cout << "DEREG PTR " <<  reg_ptr << std::endl;
     check_cudaruntimecall(cudaSetDevice(device));
+    #ifdef __HIP_PLATFORM_AMD__
+    hipFileBufDeregister(reg_ptr);
+    #else
     cuFileBufDeregister(reg_ptr);
+    #endif
 
     // Remove from tracked registry
     base_ptr_registry[device].erase(reg_ptr);
@@ -108,7 +135,13 @@ gds_op_desc_t::gds_op_desc_t(const bool read_op,
 
 char* gds_op_desc_t::data_ptr() const { return (char*)_contiguous_buffer.data_ptr(); }
 
-void gds_op_desc_t::finish() { cuFileHandleDeregister(_cf_handle); }
+void gds_op_desc_t::finish() { 
+    #ifdef __HIP_PLATFORM_AMD__
+    hipFileHandleDeregister(_cf_handle);
+    #else
+    cuFileHandleDeregister(_cf_handle); 
+    #endif
+}
 
 void gds_op_desc_t::validate()
 {
@@ -129,12 +162,19 @@ void gds_op_desc_t::run(const int tid,
     const auto tid_file_offset = _file_offset + (_num_bytes_per_thread * tid);
 
     if (_read_op) {
-        auto ret =
-            cuFileRead(_cf_handle, _base_ptr, _num_bytes_per_thread, tid_file_offset, buf_offset);
+        #ifdef __HIP_PLATFORM_AMD__
+        auto ret = hipFileRead(_cf_handle, _base_ptr, _num_bytes_per_thread, tid_file_offset, buf_offset);
+        #else
+        auto ret = cuFileRead(_cf_handle, _base_ptr, _num_bytes_per_thread, tid_file_offset, buf_offset);
+        #endif
         if (ret < 0) { _report_error(ret, errno, tid_file_offset); }
     } else {
-        auto ret =
-            cuFileWrite(_cf_handle, _base_ptr, _num_bytes_per_thread, tid_file_offset, buf_offset);
+        #ifdef __HIP_PLATFORM_AMD__
+        auto ret = hipFileWrite(_cf_handle, _base_ptr, _num_bytes_per_thread, tid_file_offset, buf_offset);
+        #else
+        auto ret = cuFileWrite(_cf_handle, _base_ptr, _num_bytes_per_thread, tid_file_offset, buf_offset);
+        #endif
+
         if (ret < 0) { _report_error(ret, errno, tid_file_offset); }
     }
 }
@@ -144,9 +184,15 @@ void gds_op_desc_t::_report_error(const ssize_t return_code,
                                   const off_t offset)
 {
     const auto op_string = _read_op ? "read failed with " : "write failed with ";
+    #ifdef __HIP_PLATFORM_AMD__
+    const auto error_string = IS_HIPFILE_ERR(return_code) ? "cuFile error: " : "posix error: ";
+    const auto error_code = IS_HIPFILE_ERR(return_code) ? cuFileGetErrorString(return_code)
+                                                       : cuFileGetErrorString(error_num);
+    #else
     const auto error_string = IS_CUFILE_ERR(return_code) ? "cuFile error: " : "posix error: ";
     const auto error_code = IS_CUFILE_ERR(return_code) ? cuFileGetErrorString(return_code)
                                                        : cuFileGetErrorString(error_num);
+    #endif
     std::cerr << op_string << error_string << error_code << " return code = " << return_code
               << " filename = " << _filename << " num bytes = " << _num_bytes_per_thread
               << " offset = " << offset << std::endl;

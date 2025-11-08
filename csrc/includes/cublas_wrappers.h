@@ -20,7 +20,7 @@
 #include <torch/version.h>
 
 int cublas_gemm_ex(
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                    rocblas_handle handle,
                    rocblas_operation transa,
                    rocblas_operation transb,
@@ -46,7 +46,7 @@ int cublas_gemm_ex(
 #endif
 
 int cublas_gemm_ex(
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                    rocblas_handle handle,
                    rocblas_operation transa,
                    rocblas_operation transb,
@@ -70,7 +70,7 @@ int cublas_gemm_ex(
 #endif
 
 int cublas_strided_batched_gemm(
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                                 rocblas_handle handle,
 #else                            
                                 cublasHandle_t handle,
@@ -83,7 +83,7 @@ int cublas_strided_batched_gemm(
                                 const float* A,
                                 const float* B,
                                 float* C,
-#ifdef __HIP_PLATFORM_HCC__                                 
+#ifdef __HIP_PLATFORM_AMD__                                 
                                 rocblas_operation op_A,
                                 rocblas_operation op_B,
 #else                                
@@ -102,7 +102,7 @@ int cublas_strided_batched_gemm(
 #endif
 
 int cublas_strided_batched_gemm(
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                                 rocblas_handle handle,
 #else                   
                                 cublasHandle_t handle,
@@ -115,7 +115,7 @@ int cublas_strided_batched_gemm(
                                 const __half* A,
                                 const __half* B,
                                 __half* C,
-#ifdef __HIP_PLATFORM_HCC__                                 
+#ifdef __HIP_PLATFORM_AMD__                                 
                                 rocblas_operation op_A,
                                 rocblas_operation op_B,
 #else                                
@@ -126,7 +126,7 @@ int cublas_strided_batched_gemm(
                                 int stride_B,
                                 int stride_C,
                                 int batch,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                                 rocblas_gemm_algo algo = rocblas_gemm_algo_standard);
 #else
                                 cublasGemmAlgo_t algo = CUBLAS_GEMM_DEFAULT_TENSOR_OP);

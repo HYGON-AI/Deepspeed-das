@@ -56,14 +56,26 @@ void deepspeed_gds_handle_t::_init_cuFile(const int block_size, const int queue_
         // (3) Handle multi-GPU/multi-rank scenarios: should cufile be shared, is per-rank cufile
         // safe?
         putenv("CUFILE_ENV_PATH_JSON=$PWD/local_cufile.json");
+        #ifdef __HIP_PLATFORM_AMD__
+        hipFileDriverOpen();
+        #else
         cuFileDriverOpen();
+        #endif
         cudaCheckError();
         size_t direct_io_size = (size_t)block_size / 1024;
+        #ifdef __HIP_PLATFORM_AMD__
+        HIPfileError_t status = hipFileDriverSetMaxDirectIOSize(direct_io_size);
+        if (status.err != HIP_FILE_SUCCESS) {
+            std::cerr << "file register error:" << cuFileGetErrorString(status) << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        #else
         CUfileError_t status = cuFileDriverSetMaxDirectIOSize(direct_io_size);
         if (status.err != CU_FILE_SUCCESS) {
             std::cerr << "file register error:" << cuFileGetErrorString(status) << std::endl;
             exit(EXIT_FAILURE);
         }
+        #endif
     }
     deepspeed_gds_handle_t::s_cuFile_init++;
 }
@@ -71,7 +83,13 @@ void deepspeed_gds_handle_t::_init_cuFile(const int block_size, const int queue_
 void deepspeed_gds_handle_t::_close_cuFile()
 {
     deepspeed_gds_handle_t::s_cuFile_init--;
-    if (deepspeed_gds_handle_t::s_cuFile_init == 0) { cuFileDriverClose(); }
+    if (deepspeed_gds_handle_t::s_cuFile_init == 0) { 
+        #ifdef __HIP_PLATFORM_AMD__
+        hipFileDriverClose();
+        #else
+        cuFileDriverClose(); 
+        #endif
+    }
 }
 
 torch::Tensor deepspeed_gds_handle_t::new_pinned_device_tensor(const size_t num_elem,

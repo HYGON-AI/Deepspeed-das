@@ -35,7 +35,7 @@ void check(T result, char const* const func, const char* const file, int const l
 template <typename T>
 class GemmTest {
 public:
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     GemmTest(int m, int n, int k, rocblas_operation ta, rocblas_operation tb, rocblas_handle h)
 #else
     GemmTest(int m, int n, int k, cublasOperation_t ta, cublasOperation_t tb, cublasHandle_t h)
@@ -61,7 +61,7 @@ public:
 
         int algo_fw = Run(loops, [=](int algo) {
             cublas_gemm_ex(handle,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                            rocblas_operation_transpose,
                            rocblas_operation_none,
 #else                           
@@ -87,7 +87,7 @@ public:
 
         int algo_bw1 = Run(loops, [=](int algo) {
             cublas_gemm_ex(handle,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                            rocblas_operation_none,
                            rocblas_operation_transpose,
 #else                           
@@ -112,7 +112,7 @@ public:
 
         int algo_bw2 = Run(loops, [=](int algo) {
             cublas_gemm_ex(handle,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                            rocblas_operation_none,
                            rocblas_operation_none,
 #else 
@@ -180,7 +180,7 @@ public:
 
 private:
     int M, N, K;
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     rocblas_handle handle;
     rocblas_operation transa, transb;
 #else
@@ -197,7 +197,7 @@ public:
                     int m,
                     int n,
                     int k,
-#ifdef __HIP_PLATFORM_HCC__                           
+#ifdef __HIP_PLATFORM_AMD__                           
                     rocblas_operation ta,
                     rocblas_operation tb,
                     rocblas_handle h)
@@ -254,7 +254,7 @@ public:
         });
 
         int algo_bw1 = Run(loops, [=](int algo) {
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
             int mb = (transa == rocblas_operation_transpose ? K : M);
             int kb = (transa == rocblas_operation_transpose ? M : K);
 #else
@@ -267,7 +267,7 @@ public:
             int stride_c = M * K;
 
             // B need to transpose.
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
             rocblas_operation op_b = (transb == rocblas_operation_transpose ? rocblas_operation_none : rocblas_operation_transpose);
 #else
             cublasOperation_t op_b = (transb == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);
@@ -279,7 +279,7 @@ public:
                                         N,
                                         &alpha,
                                         &beta,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                                         (transa == rocblas_operation_transpose ? B : C),
                                         (transa == rocblas_operation_transpose ? C : B),
 #else   
@@ -287,7 +287,7 @@ public:
                                         (transa == CUBLAS_OP_T ? C : B),
 #endif                                                                         
                                         A,
-#ifdef __HIP_PLATFORM_HCC__                                        
+#ifdef __HIP_PLATFORM_AMD__                                        
                                         rocblas_operation_none,
 #else     
                                         CUBLAS_OP_N,  
@@ -307,7 +307,7 @@ public:
 
         int algo_bw2 = Run(loops, [=](int algo) {
             // A need to transpose.
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
             rocblas_operation op_a = (transa == rocblas_operation_transpose ? rocblas_operation_none : rocblas_operation_transpose);
 #else
             cublasOperation_t op_a = (transa == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);
@@ -327,7 +327,7 @@ public:
                                         C,
                                         B,
                                         op_a,
-#ifdef __HIP_PLATFORM_HCC__                                        
+#ifdef __HIP_PLATFORM_AMD__                                        
                                         rocblas_operation_none,
 #else     
                                         CUBLAS_OP_N,  
@@ -390,7 +390,7 @@ public:
 
 private:
     int bsz, M, N, K;
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     rocblas_handle handle;
     rocblas_operation transa, transb;
 #else

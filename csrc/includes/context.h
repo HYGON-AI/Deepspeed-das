@@ -50,7 +50,7 @@ public:
     {
         curandCreateGenerator(&_gen, CURAND_RNG_PSEUDO_DEFAULT);
         curandSetPseudoRandomGeneratorSeed(_gen, 123);
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
         rocblas_status stat = rocblas_create_handle(&_cublasHandle);
 #else
         cublasStatus_t stat = cublasCreate(&_cublasHandle);
@@ -96,7 +96,7 @@ public:
 
     cudaStream_t GetNewStream() { return at::cuda::getStreamFromPool(); }
 
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     rocblas_handle GetCublasHandle() { return _cublasHandle; } 
 #else
     cublasHandle_t GetCublasHandle() { return _cublasHandle; }
@@ -116,7 +116,7 @@ public:
         if (_gemm_algos.size() > 0) return;
 
         if (test_gemm) {
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
             rocblas_handle handle = GetCublasHandle();
 #else
             cublasHandle_t handle = GetCublasHandle();
@@ -182,7 +182,7 @@ public:
 
 private:
     curandGenerator_t _gen;
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     rocblas_handle _cublasHandle;
 #else
     hipblasHandle_t _cublasHandle;

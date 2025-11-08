@@ -66,7 +66,7 @@ public:
 
     virtual ~StridedBatchGemm() {}
 
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     void Forward(int bsz, T* output, const T* _buffer_a, const T* _buffer_b, rocblas_handle handle)
 #else
     void Forward(int bsz, T* output, const T* _buffer_a, const T* _buffer_b, cublasHandle_t handle)
@@ -101,7 +101,7 @@ public:
     }
 
     void ForwardPlusSave(T* output, const T* _buffer_a, const T* _buffer_b, 
-#ifdef __HIP_PLATFORM_HCC__ 
+#ifdef __HIP_PLATFORM_AMD__ 
 rocblas_handle handle)
 #else
 cublasHandle_t handle)
@@ -141,7 +141,7 @@ cublasHandle_t handle)
                   const T* d_output,
                   const T* _buffer_a,
                   const T* _buffer_b,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                   rocblas_handle handle,
 #else                                   
                   cublasHandle_t handle,
@@ -149,7 +149,7 @@ cublasHandle_t handle)
                   T* inpGradA = nullptr,
                   T* inpGradB = nullptr)
     {
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
         int mb = (_config.op_A == rocblas_operation_transpose ? _config.k : _config.m);
         int kb = (_config.op_A == rocblas_operation_transpose ? _config.m : _config.k);
 #else
@@ -161,7 +161,7 @@ cublasHandle_t handle)
         int stride_c = _config.m * _config.k;
 
         // B need to transpose.
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
         rocblas_operation op_b = (_config.op_B == rocblas_operation_transpose ? rocblas_operation_none : rocblas_operation_transpose);
 #else
         cublasOperation_t op_b = (_config.op_B == CUBLAS_OP_T ? CUBLAS_OP_N : CUBLAS_OP_T);
@@ -173,7 +173,7 @@ cublasHandle_t handle)
                                     _config.n,
                                     &_config.alpha,
                                     &_config.beta,
-#ifdef __HIP_PLATFORM_HCC__                                   
+#ifdef __HIP_PLATFORM_AMD__                                   
                                     (_config.op_A == rocblas_operation_transpose ? _buffer_b : d_output),
                                     (_config.op_A == rocblas_operation_transpose ? d_output : _buffer_b),
 #else
@@ -181,7 +181,7 @@ cublasHandle_t handle)
                                     (_config.op_A == CUBLAS_OP_T ? d_output : _buffer_b),
 #endif                                    
                                     inpGradA,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
                                     rocblas_operation_none,
 #else                                                                   
                                     CUBLAS_OP_N,
@@ -214,7 +214,7 @@ cublasHandle_t handle)
                                     d_output,
                                     inpGradB,
                                     op_a,
-#ifdef __HIP_PLATFORM_HCC__                                    
+#ifdef __HIP_PLATFORM_AMD__                                    
                                     rocblas_operation_none,
 #else                                    
                                     CUBLAS_OP_N,
@@ -223,7 +223,7 @@ cublasHandle_t handle)
                                     stride_b,
                                     stride_c,
                                     bsz,
-#ifdef __HIP_PLATFORM_HCC__
+#ifdef __HIP_PLATFORM_AMD__
     
                                     rocblas_gemm_algo(_config.gemm_algos[2]));
 #else
