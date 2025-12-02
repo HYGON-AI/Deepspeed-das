@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # DeepSpeed Team
-
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -18,6 +18,8 @@ import pytest
 from collections import OrderedDict
 from typing import Dict
 from deepspeed.ops.aio import AsyncIOBuilder
+
+os.environ['HF_ENDPOINT']='https://hf-mirror.com'
 
 device = get_accelerator().device_name() if get_accelerator().is_available() else 'cpu'
 

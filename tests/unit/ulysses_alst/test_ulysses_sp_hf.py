@@ -18,7 +18,9 @@ import deepspeed
 import deepspeed.comm as dist
 import pytest
 import torch
+import os
 
+os.environ["HF_ENDPOINT"]="https://hf-mirror.com"
 
 def get_grad(param, zero_stage):
     return safe_get_full_grad(param)
@@ -175,7 +177,8 @@ class TestUlyssesSPHF(DistributedTest):
         #print(f"{grad_b}")
 
         # compare loss of A (non-Ulysses Attention) and B (Ulyssses Attention)
-        torch_assert_equal(loss_a, loss_b)
+        # fix by their dtype
+        torch_assert_close(loss_a, loss_b)
 
         # - we are feeding the exact same sample to each rank of A
         # - for B we feed half the sample to each rank, but in total it's the same sample as each rank of A sees

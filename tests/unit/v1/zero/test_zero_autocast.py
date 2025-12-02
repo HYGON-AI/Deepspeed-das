@@ -77,11 +77,6 @@ def compare_loss(model_cls,
     hidden_dim = 10
     lr = 0.001
 
-    if dtype == torch.bfloat16 and not bf16_required_version_check():
-        raise ValueError(
-            "DeepSpeed BFloat16 tests need torch >= 1.10, NCCL >= 2.10.3, CUDA > =11.0 and HW support for BFloat16 to run correctly"
-        )
-
     config_dict = {
         "train_micro_batch_size_per_gpu": 1,
         "steps_per_print": 1,

@@ -1871,11 +1871,13 @@ class DeepSpeedZeroOptimizer(ZeROOptimizer):
         current_size = 0
         # find the flatten copy in the optimizer's state
         flatten_copy = self.optimizer.param_groups[param_group_idx]['params'][0]
-        if (not self.optimizer.state[flatten_copy]) and getattr(
-                tensor_list[0], 'use_muon', False) and 'muon' in self.optimizer.__class__.__name__.lower():
+        if len(tensor_list) > 0 and tensor_list[0] is not None:
+            gtlu = getattr(tensor_list[0], 'use_muon', False)
+        else:
+            gtlu = False
+        if (not self.optimizer.state[flatten_copy]) and gtlu and 'muon' in self.optimizer.__class__.__name__.lower():
             self.optimizer.state[flatten_copy] = {}
-        if "momentum_buffer" not in self.optimizer.state[flatten_copy] and getattr(
-                tensor_list[0], 'use_muon', False) and 'muon' in self.optimizer.__class__.__name__.lower():
+        if "momentum_buffer" not in self.optimizer.state[flatten_copy] and gtlu and 'muon' in self.optimizer.__class__.__name__.lower():
             # need to check the total # of elements in the parameters in this group and this partition
             total_size = sum([t.numel() for t in tensor_list])
             flatten_bf_list = [torch.zeros([total_size], dtype=dtype)]  # put on cpu to save space

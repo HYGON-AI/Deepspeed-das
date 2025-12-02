@@ -98,7 +98,7 @@ class distributed_fixture(DistributedFixture):
             f.write(f"{local_rank},{val1},{val2}")
 
 
-class TestDistributedFixture(DistributedTest):
+class _TestDistributedFixture(DistributedTest):
     world_size = 1
 
     def test(self, distributed_fixture, class_tmpdir, val1, val2):

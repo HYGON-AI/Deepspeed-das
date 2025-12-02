@@ -17,8 +17,13 @@ os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
 
 # allow having multiple repository checkouts and not needing to remember to rerun
 # 'pip install -e .[dev]' when switching between checkouts and running tests.
-git_repo_path = abspath(dirname(dirname(__file__)))
-sys.path.insert(1, git_repo_path)
+try:
+    # if there is deepspeed then we don't need to insert current repo
+    import deepspeed
+except ImportError:
+    print("not found deepspeed, allow having multiple repository checkouts")
+    git_repo_path = abspath(dirname(dirname(__file__)))
+    sys.path.insert(1, git_repo_path)
 
 
 def pytest_configure(config):
