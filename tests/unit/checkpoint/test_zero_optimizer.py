@@ -178,39 +178,68 @@ class TestZeROCheckpoint(DistributedTest):
 
         checkpoint_correctness_verification(config_dict, models, hidden_dim, tmpdir, load_module_only=True)
 
+#class ws4_model_checkpoint(DistributedFixture):
+#    world_size = 4
+#
+#    def run(self, class_tmpdir, elastic_save, load_optim):
+#        config_dict = {
+#            "train_batch_size": 4,
+#            "optimizer": {
+#                "type": 'Adam'
+#            },
+#            "zero_optimization": {
+#                "stage": 2,
+#                "elastic_checkpoint": elastic_save
+#            }
+#        }
+#        if get_accelerator().is_bf16_supported():
+#            config_dict["bf16"] = {"enabled": True}
+#        elif get_accelerator().is_fp16_supported():
+#            config_dict["fp16"] = {"enabled": True, "initial_scale_power": 8}
+#        hidden_dim = 10
+#        model = SimpleModel(hidden_dim)
+#
+#        model, _, _, _ = deepspeed.initialize(config=config_dict, model=model, model_parameters=model.parameters())
+#        data_loader = random_dataloader(model=model, total_samples=8, hidden_dim=hidden_dim, device=model.device)
+#        for n, batch in enumerate(data_loader):
+#            loss = model(batch[0], batch[1])
+#            model.backward(loss)
+#            model.step()
+#
+#        if load_optim:
+#            torch.save(model.optimizer.optimizer.state_dict(), os.path.join(class_tmpdir, 'opt-state-dict'))
+#        model.save_checkpoint(class_tmpdir)
+#"""
 
-class ws4_model_checkpoint(DistributedFixture):
+@pytest.fixture
+def ws4_model_checkpoint(class_tmpdir, elastic_save, load_optim):
     world_size = 4
 
-    def run(self, class_tmpdir, elastic_save, load_optim):
-        config_dict = {
-            "train_batch_size": 4,
-            "optimizer": {
-                "type": 'Adam'
-            },
-            "zero_optimization": {
-                "stage": 2,
-                "elastic_checkpoint": elastic_save
-            }
+    config_dict = {
+        "train_batch_size": 4,
+        "optimizer": {
+            "type": 'Adam'
+        },
+        "zero_optimization": {
+            "stage": 2,
+            "elastic_checkpoint": elastic_save
         }
-        if get_accelerator().is_bf16_supported():
-            config_dict["bf16"] = {"enabled": True}
-        elif get_accelerator().is_fp16_supported():
-            config_dict["fp16"] = {"enabled": True, "initial_scale_power": 8}
-        hidden_dim = 10
-        model = SimpleModel(hidden_dim)
-
-        model, _, _, _ = deepspeed.initialize(config=config_dict, model=model, model_parameters=model.parameters())
-        data_loader = random_dataloader(model=model, total_samples=8, hidden_dim=hidden_dim, device=model.device)
-        for n, batch in enumerate(data_loader):
-            loss = model(batch[0], batch[1])
-            model.backward(loss)
-            model.step()
-
-        if load_optim:
-            torch.save(model.optimizer.optimizer.state_dict(), os.path.join(class_tmpdir, 'opt-state-dict'))
-        model.save_checkpoint(class_tmpdir)
-
+    }
+    if get_accelerator().is_bf16_supported():
+        config_dict["bf16"] = {"enabled": True}
+    elif get_accelerator().is_fp16_supported():
+        config_dict["fp16"] = {"enabled": True, "initial_scale_power": 8}
+    hidden_dim = 10
+    model = SimpleModel(hidden_dim)
+    model, _, _, _ = deepspeed.initialize(config=config_dict, model=model, model_parameters=model.parameters())
+    data_loader = random_dataloader(model=model, total_samples=8, hidden_dim=hidden_dim, device=model.device)
+    for n, batch in enumerate(data_loader):
+        loss = model(batch[0], batch[1])
+        model.backward(loss)
+        model.step()
+    if load_optim:
+        torch.save(model.optimizer.optimizer.state_dict(), os.path.join(class_tmpdir, 'opt-state-dict'))
+    model.save_checkpoint(class_tmpdir)
 
 @pytest.mark.parametrize("elastic_save", [True, False])
 @pytest.mark.parametrize("elastic_load", [True, False])

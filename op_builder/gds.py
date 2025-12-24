@@ -42,6 +42,12 @@ class GDSBuilder(AsyncIOBuilder):
             return super().extra_ldflags() + ['-L/opt/hyhal/lib','-lhyfile']
         return super().extra_ldflags() + ['-lcufile']
 
+    def exist_hyfile(self):
+        if os.path.exists("/opt/hyhal/include/hipfile.h"):
+            return True
+        self.warning("Not exist hyfile.h, ignore gds compile")
+        return False
+    
     def is_compatible(self, verbose=False):
         # if self.is_rocm_pytorch():
         #     if verbose:
@@ -65,5 +71,5 @@ class GDSBuilder(AsyncIOBuilder):
         # gds_compatible = self.has_function(funcname="cuFileDriverOpen",libraries=("cufile", ),library_dirs=(CUDA_HOME,CUDA_LIB64),
         #                                    verbose=verbose)
 
-        cp = super().is_compatible(verbose)
+        cp = super().is_compatible(verbose) and self.exist_hyfile()
         return cp
