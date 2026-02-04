@@ -264,7 +264,7 @@ class OpBuilder(ABC):
             rocm_gpu_arch = result.decode('utf-8').strip()
         except subprocess.CalledProcessError:
             rocm_gpu_arch = ""
-        OpBuilder._rocm_gpu_arch = "gfx928,gfx936" 
+        OpBuilder._rocm_gpu_arch = "gfx928,gfx936,gfx938" 
         return OpBuilder._rocm_gpu_arch
 
     @staticmethod
