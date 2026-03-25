@@ -194,7 +194,7 @@ class TestFPDTAttention(DistributedTest):
         #3D tensor : l, b, d
         dim = head_dim * num_heads
 
-        seed = 42
+        seed = 64
         torch.manual_seed(seed)
         get_accelerator().manual_seed_all(seed)
 
