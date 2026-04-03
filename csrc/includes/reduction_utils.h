@@ -9,7 +9,7 @@
 #include "ds_kernel_utils.h"
 #include "memory_access_utils.h"
 
-#if defined(BF16_AVAILABLE) && defined(__HIP_PLATFORM_AMD__)
+#if defined(BF16_AVAILABLE)
 #include <hip/hip_bfloat16.h>
 #endif
 

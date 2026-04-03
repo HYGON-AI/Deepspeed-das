@@ -64,7 +64,7 @@ void deepspeed_gds_handle_t::_init_cuFile(const int block_size, const int queue_
         cudaCheckError();
         size_t direct_io_size = (size_t)block_size / 1024;
         #ifdef __HIP_PLATFORM_AMD__
-	/*
+        /*
         HIPfileError_t status = hipFileDriverSetMaxDirectIOSize(direct_io_size);
         if (status.err != HIP_FILE_SUCCESS) {
             std::cerr << "file register error:" << cuFileGetErrorString(status) << std::endl;

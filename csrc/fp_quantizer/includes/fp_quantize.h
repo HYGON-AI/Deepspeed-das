@@ -14,7 +14,6 @@
 // that are compiled by a host-only compiler, which triggers build errors. Added forward declaration
 // instead, see code block below
 #if defined(BF16_AVAILABLE)
-#if !defined(__HIP_PLATFORM_AMD__)
 #include <cuda_bf16.h>
 #else
 struct __hip_bfloat16;

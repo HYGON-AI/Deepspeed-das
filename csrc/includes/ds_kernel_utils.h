@@ -17,7 +17,7 @@ used throughout the codebase.
 // <hip/hip_bfloat16.h> after hipifying), because this header is pulled into .cpp translation units
 // that are compiled by a host-only compiler, which triggers build errors. Added forward declaration
 // instead, see code block below
-#if defined(BF16_AVAILABLE) && !defined(__HIP_PLATFORM_AMD__)
+#if defined(BF16_AVAILABLE)
 #include <cuda_bf16.h>
 #endif
 
