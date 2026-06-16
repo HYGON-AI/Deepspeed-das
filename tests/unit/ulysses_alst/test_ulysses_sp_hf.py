@@ -205,6 +205,26 @@ class TestUlyssesSPHFPEFT(DistributedTest):
         micro_batch_size = 1
 
         # Create a mock PEFT model object that has config but doesn't inherit from PreTrainedModel
+        config_dict = {
+            "train_micro_batch_size_per_gpu": 1,
+            "zero_optimization": {
+                "stage": 2,
+            },
+            "optimizer": {
+                "type": "Adam",
+                "params": {
+                    "lr": 1e-3
+                }
+            },
+            "sequence_parallel_size": sequence_parallel_size,
+        }
+
+        dtype = preferred_dtype()
+        if dtype == torch.bfloat16:
+            config_dict["bf16"] = {"enabled": True}
+        elif dtype == torch.float16:
+            config_dict["fp16"] = {"enabled": True, "loss_scale": 1.0}
+            
         from transformers import AutoConfig
         hf_config = AutoConfig.from_pretrained(model_name_or_path)
 
@@ -231,6 +251,16 @@ class TestUlyssesSPHFPEFT(DistributedTest):
         assert mpu is not None
 
         # Verify that the sequence parallel groups are initialized
+        model = AutoModelForCausalLM.from_pretrained(model_name_or_path)
+        model, _, _, _ = deepspeed.initialize(
+            config=config_dict,
+            model=model,
+            model_parameters=model.parameters(),
+            mpu=mpu,
+        )
+
+        # Sequence parallel groups become available after DeepSpeed initialization
+        # with the returned mpu, consistent with the non-PEFT Ulysses test.
         sp_group = groups._get_sequence_parallel_group()
         assert sp_group is not None
         sp_world_size = groups._get_sequence_parallel_world_size()

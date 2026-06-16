@@ -246,7 +246,7 @@ if sys.platform == "win32":
 
 # Parse the DeepSpeed version string from version.txt.
 version_str = open('version.txt', 'r').read().strip()
-hcu_version_str = version_str
+dcu_version_str = version_str
 # # Build specifiers like .devX can be added at install time. Otherwise, add the git hash.
 # # Example: DS_BUILD_STRING=".dev20201022" python setup.py sdist bdist_wheel.
 
@@ -277,7 +277,7 @@ with open("{0}/.info/rocm_version".format(dtk_version_path), 'r') as fd:
 torch_version = "torch"+ subprocess.getoutput("python3 -c \"import torch;print(torch.__version__)\"")
 #print(torch_version)
 
-hcu_version_str  = git_tag #+= f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
+dcu_version_str  = git_tag #+= f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
 
 
 torch_version = ".".join([TORCH_MAJOR, TORCH_MINOR])
@@ -310,7 +310,7 @@ torch_info = {
 print(f"version={version_str}, git_hash={git_hash}, git_branch={git_branch}")
 with open('deepspeed/git_version_info_installed.py', 'w') as fd:
     fd.write(f"version='{version_str}'\n")
-    fd.write(f"hcu_version='{hcu_version_str}'\n")
+    fd.write(f"dcu_version='{dcu_version_str}'\n")
     fd.write(f"git_hash='{git_hash}'\n")
     fd.write(f"git_branch='{git_branch}'\n")
     fd.write(f"installed_ops={install_ops}\n")
@@ -330,7 +330,7 @@ start_time = time.time()
 
 setup(name='deepspeed',
       version=version_str,
-      hcu_version=version_str,
+      dcu_version=version_str,
       description='DeepSpeed library',
       long_description=readme_text,
       long_description_content_type='text/markdown',

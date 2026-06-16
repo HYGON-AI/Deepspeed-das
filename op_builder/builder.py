@@ -778,7 +778,7 @@ class CUDAOpBuilder(OpBuilder):
                 '-U__HIP_NO_HALF2_OPERATORS__',
                 '-DROCM_VERSION_MAJOR=%s' % ROCM_MAJOR,
                 '-DROCM_VERSION_MINOR=%s' % ROCM_MINOR,
-                '--offload-arch=gfx936,gfx928'
+                '--offload-arch=gfx936,gfx928,gfx938'
             ]
             self.enable_bf16 = True
         else:

@@ -54,7 +54,7 @@ pip3 install ./dist/deepspeed*.whl
 
 ## 版本号查询
 - python -c "import deepspeed; print(deepspeed.\_\_version__)"，查询软件版本，版本号与官方版本同步；
-- python -c "import deepspeed; print(deepspeed.\_\_hcu_version__)"，查询基于hcu的内部版本号；
+- python -c "import deepspeed; print(deepspeed.\_\_dcu_version__)"，查询基于dcu的内部版本号；
 
 ## Known Issue
 - 无
