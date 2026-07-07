@@ -63,3 +63,8 @@ tests/unit/saved_checkpoint/
 
 # virtual env directory for format
 venv
+
+# build output
+hip_layer_norm
+hip_linear
+hip_rms_norm
