@@ -53,20 +53,29 @@ class LinearStack(torch.nn.Module):
 def test_driver():
     print()
     print('BUILDING MODEL')
-    with deepspeed.zero.Init():
+    dtype = torch.float16
+    with deepspeed.zero.Init(dtype=dtype):
         model = LinearStack()
+
     print()
 
-    # parted = [name for (name, p) in model.named_parameters() if p._partitioned]
-    # not_parted = [name for (name, p) in model.named_parameters() if not p._partitioned]
-    # print('partitioned: ', parted)
-    # print('full: ', not_parted)
-    # print()
-
     model.train()
+    ds_config = {
+      "train_batch_size": 1,
+      "zero_optimization": {"stage": 3},
+      "fp16": {"enabled": True},
+      "optimizer": {
+          "type": "Adam",
+          "params": {"lr": 1e-3},
+      },
 
-    test_input = torch.rand(1, model.input_dim)
-    grad_output = torch.rand(1, model.output_dim)
+      "steps_per_print": 1,
+    }
+
+    model_engine, _, _, _ = deepspeed.initialize(model=model, model_parameters=model.parameters(),config=ds_config)
+
+    test_input = torch.rand(1, model.input_dim).to(dtype).cuda()
+    grad_output = torch.rand(1, model.output_dim).to(dtype).cuda()
 
     grad_output.requires_grad = False
     test_input.requires_grad = False
@@ -75,8 +84,12 @@ def test_driver():
     print('BEGINNING FORWARD')
     print()
 
-    output = model(test_input)
-    output.backward(grad_output)
+
+    output = model_engine(test_input)
+
+    loss = (output * grad_output).sum()
+
+    model_engine.backward(loss)
 
     # parted = [name for (name, p) in model.named_parameters() if p._partitioned]
     # not_parted = [name for (name, p) in model.named_parameters() if not p._partitioned]
