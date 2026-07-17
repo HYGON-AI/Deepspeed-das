@@ -45,7 +45,8 @@ class TestZeROCheckpoint(DistributedTest):
 
         checkpoint_correctness_verification(config_dict, models, hidden_dim, tmpdir, load_module_only=True)
 
-    @pytest.mark.parametrize('zero_stage, use_cpu_offload, adam_optimizer', [(1, False, 'Adam'), (2, False, 'Adam'),
+    @pytest.mark.parametrize('zero_stage, use_cpu_offload, adam_optimizer', [(0, False, 'Adam'), (1, False, 'Adam'),
+                                                                             (2, False, 'Adam'),
                                                                              (2, True, 'deepspeed_adam'),
                                                                              (3, False, 'Adam'),
                                                                              (3, True, 'deepspeed_adam')])
@@ -681,7 +682,9 @@ class TestSaveTensorClone(DistributedTest):
 
 class TestZeRONonDistributed(DistributedTest):
     world_size = 1
-    init_distributed = False
+    # This test calls deepspeed.initialize(), so use the harness' file-store
+    # initialization instead of env:// TCP rendezvous ports under xdist.
+    init_distributed = True
 
     @pytest.mark.parametrize('zero_stage', [1, 2, 3])
     def test_chmod_exception_handling(self, monkeypatch, zero_stage):

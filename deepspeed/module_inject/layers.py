@@ -4,6 +4,7 @@
 # DeepSpeed Team
 
 import torch
+import re
 from deepspeed import comm as dist
 from torch import nn
 from torch.nn import functional as F
@@ -12,20 +13,95 @@ from deepspeed.accelerator import get_accelerator
 from deepspeed.module_inject.tp_shard import get_shard_size, get_shard_size_list
 from deepspeed.runtime.zero.utils import is_zero_param
 from abc import ABC, abstractmethod
-from typing import Iterable, Any, Optional, List, Tuple
+from typing import Iterable, Any, Optional, List, Tuple, Dict
 from .fusedqkv_utils import shard_value_with_share_qk, shard_chunk_mlp, prepare_tp_fused_qkvw
 from deepspeed.runtime.tensor_parallel import AUTOTP_MODE
+from deepspeed.checkpoint.constants import DS_AUTOTP_UC_META
 from copy import deepcopy
 from typing import Union
 
 __all__ = [
     "TensorParallel_Layer", "LinearAllreduce", "LinearLayer", "LmHeadLinearAllreduce", "Yuan_LinearAllreduce",
-    "Yuan_LinearLayer", "GateUpPack_LinearLayer", "Conv_LinearALlreduce", "fused_LinearLayer", "conv_LinearLayer"
+    "Yuan_LinearLayer", "GateUpPack_LinearLayer", "Conv_LinearALlreduce", "fused_LinearLayer", "conv_LinearLayer",
+    "SubParamLinearLayer", "SubParamLinearAllreduce"
 ]
 
 DEEPSPEED_AUTOTP_MODE = AUTOTP_MODE.INFERENCE
 DS_IS_REPLACED_MODULE = 'ds_is_replaced_module'
 DS_TENSOR_MODEL_PARALLEL = 'tensor_model_parallel'
+
+
+def _normalize_uc_shape(value):
+    return tuple(value) if value is not None else None
+
+
+def _build_param_uc_conversion_meta(*,
+                                    partition_type,
+                                    partition_dim=None,
+                                    sub_param_shape=None,
+                                    original_shape=None,
+                                    is_bias=False,
+                                    replicated=False):
+    """Build the conversion-facing subset of parameter UC metadata.
+
+    This is the only schema that should flow into model-level
+    `UNIVERSAL_CHECKPOINT_INFO` via `collect_autotp_universal_checkpoint_info()`.
+    """
+    return {
+        'partition_type': partition_type,
+        'partition_dim': partition_dim,
+        'sub_param_shape': _normalize_uc_shape(sub_param_shape),
+        'original_shape': _normalize_uc_shape(original_shape),
+        'is_bias': is_bias,
+        'replicated': replicated,
+    }
+
+
+def _build_param_uc_restore_meta(*,
+                                 partition_type,
+                                 partition_dim=None,
+                                 logical_shape=None,
+                                 output_shape=None,
+                                 sub_param_shape=None,
+                                 sub_param_sizes=None,
+                                 target_partition_shape=None,
+                                 original_shape=None,
+                                 is_bias=False,
+                                 replicated=False):
+    """Build the restore-facing parameter UC metadata.
+
+    Restore metadata stays on the parameter object and may include details that
+    are intentionally omitted from model-level conversion schema.
+    """
+    return {
+        'partition_type':
+        partition_type,
+        'partition_dim':
+        partition_dim,
+        'logical_shape':
+        _normalize_uc_shape(logical_shape),
+        'output_shape':
+        _normalize_uc_shape(output_shape),
+        'sub_param_shape':
+        _normalize_uc_shape(sub_param_shape),
+        'sub_param_sizes':
+        _normalize_uc_shape(sub_param_sizes),
+        'target_partition_shape':
+        _normalize_uc_shape(target_partition_shape),
+        'original_shape':
+        _normalize_uc_shape(original_shape),
+        'is_bias':
+        is_bias,
+        'replicated':
+        replicated,
+        'conversion':
+        _build_param_uc_conversion_meta(partition_type=partition_type,
+                                        partition_dim=partition_dim,
+                                        sub_param_shape=sub_param_shape,
+                                        original_shape=original_shape,
+                                        is_bias=is_bias,
+                                        replicated=replicated),
+    }
 
 
 def get_auto_tp_mode():
@@ -262,6 +338,43 @@ class TensorParallel_Layer(nn.Module, ABC):
             setattr(weight, DS_TENSOR_MODEL_PARALLEL, True)
             setattr(weight, DS_IS_REPLACED_MODULE, True)
 
+    def _set_param_uc_meta(self,
+                           param,
+                           *,
+                           partition_type,
+                           partition_dim=None,
+                           logical_shape=None,
+                           output_shape=None,
+                           sub_param_shape=None,
+                           sub_param_sizes=None,
+                           target_partition_shape=None,
+                           original_shape=None,
+                           is_bias=False,
+                           replicated=False):
+        if param is None:
+            return
+        setattr(
+            param, DS_AUTOTP_UC_META,
+            _build_param_uc_restore_meta(partition_type=partition_type,
+                                         partition_dim=partition_dim,
+                                         logical_shape=logical_shape,
+                                         output_shape=output_shape,
+                                         sub_param_shape=sub_param_shape,
+                                         sub_param_sizes=sub_param_sizes,
+                                         target_partition_shape=target_partition_shape,
+                                         original_shape=original_shape,
+                                         is_bias=is_bias,
+                                         replicated=replicated))
+
+    def _mark_uc_metadata(self):
+        return
+
+    def _should_materialize_tp_partition(self):
+        # AutoTP partitioning should only materialize parameters when an actual
+        # TP process group is present. Metadata-only construction with
+        # mp_group=None should not touch device placement.
+        return self.mp_group is not None
+
     def is_training_mode(self):
         global DEEPSPEED_AUTOTP_MODE
         return DEEPSPEED_AUTOTP_MODE == AUTOTP_MODE.TRAINING
@@ -321,6 +434,86 @@ def configure_tensor_parallel_runtime(config):
     for key in runtime_keys:
         if hasattr(config, key):
             setattr(TensorParallel_Layer, key, getattr(config, key))
+
+
+def _get_param_uc_conversion_meta(param: torch.Tensor) -> Optional[Dict[str, Any]]:
+    """Return the conversion-facing view of AutoTP UC metadata for a parameter.
+
+    AutoTP keeps a single parameter-level metadata object with two roles:
+    - top-level fields: restore-time details consumed by `universal_checkpoint.py`
+    - `conversion`: conversion-time details consumed by
+      `collect_autotp_universal_checkpoint_info()` and then aggregated into
+      model-level `UNIVERSAL_CHECKPOINT_INFO` for `ds_to_universal.py`
+    """
+    meta = getattr(param, DS_AUTOTP_UC_META, None)
+    if not meta:
+        return None
+    return meta.get('conversion', None)
+
+
+def collect_autotp_universal_checkpoint_info(model: nn.Module) -> Dict[str, Any]:
+    """Collect the model-level conversion schema for AutoTP universal checkpoints.
+
+    The returned `UNIVERSAL_CHECKPOINT_INFO` is intentionally limited to the
+    pattern/schema data needed during checkpoint conversion. It does not include
+    restore-time per-parameter details such as `sub_param_sizes` or
+    `target_partition_shape`, which stay on the parameter metadata object.
+    """
+    from deepspeed.checkpoint.constants import (ORIGINAL_VOCAB_SIZE, PARAMETER_WITH_ROW_PARALLELISM_PATTERNS,
+                                                PARAMETER_WITH_SUB_PARAMS, TP_REPLICATED_PARAMETER_PATTERNS,
+                                                UNIVERSAL_CHECKPOINT_VERSION_KEY, UNIVERSAL_CHECKPOINT_VERSION_VALUE,
+                                                VOCABULARY_PARAMETER_PATTERNS)
+
+    row_parallel_patterns = []
+    replicated_patterns = []
+    vocabulary_patterns = []
+    parameter_with_sub_params = []
+    original_vocab_size = None
+
+    for module_name, module in model.named_modules():
+        marker = getattr(module, "_mark_uc_metadata", None)
+        if marker is not None:
+            marker()
+
+        for param_name, param in module.named_parameters(recurse=False):
+            conversion_meta = _get_param_uc_conversion_meta(param)
+            if not conversion_meta:
+                continue
+
+            full_name = f"{module_name}.{param_name}" if module_name else param_name
+            pattern = rf"^{re.escape(full_name)}$"
+
+            if conversion_meta.get('replicated'):
+                replicated_patterns.append(pattern)
+
+            if conversion_meta.get('partition_type') == 'row' and not conversion_meta.get('is_bias', False):
+                row_parallel_patterns.append(pattern)
+
+            original_shape = conversion_meta.get('original_shape')
+            if original_shape and len(original_shape) == 2 and ('embed' in full_name or 'lm_head' in full_name):
+                vocabulary_patterns.append(pattern)
+                if original_vocab_size is None:
+                    original_vocab_size = original_shape[0]
+
+            sub_param_shape = conversion_meta.get('sub_param_shape')
+            partition_dim = conversion_meta.get('partition_dim')
+            if sub_param_shape is not None and partition_dim is not None and not conversion_meta.get('is_bias', False):
+                parameter_with_sub_params.append({
+                    'patterns': [pattern],
+                    'shape': list(sub_param_shape),
+                    'partition_dim': partition_dim,
+                })
+
+    uc_info = {
+        UNIVERSAL_CHECKPOINT_VERSION_KEY: UNIVERSAL_CHECKPOINT_VERSION_VALUE,
+        PARAMETER_WITH_ROW_PARALLELISM_PATTERNS: sorted(set(row_parallel_patterns)),
+        TP_REPLICATED_PARAMETER_PATTERNS: sorted(set(replicated_patterns)),
+        VOCABULARY_PARAMETER_PATTERNS: sorted(set(vocabulary_patterns)),
+        PARAMETER_WITH_SUB_PARAMS: parameter_with_sub_params,
+    }
+    if original_vocab_size is not None:
+        uc_info[ORIGINAL_VOCAB_SIZE] = original_vocab_size
+    return uc_info
 
 
 class GatherReplacedLayerParams:
@@ -392,12 +585,14 @@ class LinearAllreduce(TensorParallel_Layer):
         self.weight = module.weight
         self.bias = module.bias
 
-        self._tp_partition([self.weight, self.bias])
+        if self._should_materialize_tp_partition():
+            self._tp_partition([self.weight, self.bias])
         self.support_training = True
         self.config_tp_params(self.weight)
         if self.bias is not None:
             # bias here is not tp params
             self.config_requires_grad(self.bias)
+        self._mark_uc_metadata()
 
     def forward(self, input):
         output = torch.matmul(input, self.weight.transpose(-1, -2))
@@ -460,6 +655,24 @@ class LinearAllreduce(TensorParallel_Layer):
             _partition = self.move(_partition).detach()
             params_list[idx].data = _partition
 
+    def _mark_uc_metadata(self):
+        original_weight_shape = (self.weight.shape[0], self.weight.shape[1] * self.tp_world_size)
+        self._set_param_uc_meta(self.weight,
+                                partition_type='row',
+                                partition_dim=1,
+                                logical_shape=original_weight_shape,
+                                output_shape=(original_weight_shape[0], ),
+                                original_shape=original_weight_shape)
+        if self.bias is not None:
+            self._set_param_uc_meta(self.bias,
+                                    partition_type='row',
+                                    partition_dim=None,
+                                    logical_shape=tuple(self.bias.shape),
+                                    output_shape=tuple(self.bias.shape),
+                                    original_shape=tuple(self.bias.shape),
+                                    is_bias=True,
+                                    replicated=True)
+
 
 #remove kwargs from partition.
 class LinearLayer(TensorParallel_Layer):
@@ -468,12 +681,13 @@ class LinearLayer(TensorParallel_Layer):
         super(LinearLayer, self).__init__(mp_group, **kwargs)
         self.weight = module.weight
         self.bias = module.bias
-        if not skip_partition:
+        if not skip_partition and self._should_materialize_tp_partition():
             self._tp_partition([self.weight, self.bias])
         self.support_training = True
         self.config_tp_params(self.weight)
         if self.bias is not None:
             self.config_tp_params(self.bias)
+        self._mark_uc_metadata()
 
     def forward(self, input):
         if not self.__class__.tp_overlap_comm:
@@ -529,6 +743,25 @@ class LinearLayer(TensorParallel_Layer):
             _partition = self.move(_partition).detach()
 
             params_list[idx].data = _partition
+
+    def _mark_uc_metadata(self):
+        original_out_dim = self.weight.shape[0] * self.tp_world_size
+        original_weight_shape = (original_out_dim, self.weight.shape[1])
+        self._set_param_uc_meta(self.weight,
+                                partition_type='column',
+                                partition_dim=0,
+                                logical_shape=original_weight_shape,
+                                output_shape=(original_out_dim, ),
+                                original_shape=original_weight_shape)
+        if self.bias is not None:
+            original_bias_shape = (self.bias.shape[0] * self.tp_world_size, )
+            self._set_param_uc_meta(self.bias,
+                                    partition_type='column',
+                                    partition_dim=0,
+                                    logical_shape=original_bias_shape,
+                                    output_shape=original_bias_shape,
+                                    original_shape=original_bias_shape,
+                                    is_bias=True)
 
     # for bwc
     @classmethod
@@ -799,6 +1032,405 @@ class OPTEmbedding(EmbeddingLayer):
         positions = positions[:, past_key_values_length:]
 
         return super().forward(positions + self.offset)
+
+
+def _shape_prod(values):
+    result = 1
+    for val in values:
+        result *= val
+    return result
+
+
+def _normalize_shape_spec(shape):
+    if isinstance(shape, list):
+        return tuple(_normalize_shape_spec(item) for item in shape)
+    if isinstance(shape, tuple):
+        return tuple(_normalize_shape_spec(item) if isinstance(item, list) else item for item in shape)
+    return shape
+
+
+def _infer_subparam_logical_shapes(weight_shape, shape, partition_dim, name=None):
+    shape = _normalize_shape_spec(shape)
+    if not isinstance(shape, tuple):
+        raise ValueError("AutoTP shape must be a tuple for sub-parameter partitioning.")
+    if partition_dim < 0 or partition_dim >= len(shape):
+        raise ValueError(f"AutoTP partition_dim {partition_dim} is out of range for shape length {len(shape)}.")
+
+    layer_label = f"AutoTP layer '{name}'" if name else "AutoTP layer"
+    partition_elem = shape[partition_dim]
+    subparam_sizes = None
+    num_subparams = None
+
+    if isinstance(partition_elem, tuple):
+        if len(partition_elem) == 0:
+            raise ValueError(f"{layer_label} sub-parameter size tuple cannot be empty.")
+        if any(isinstance(val, tuple) for val in partition_elem):
+            raise ValueError(f"{layer_label} supports only 1-level nesting at partition_dim.")
+        if any((not isinstance(val, int)) or val <= 0 for val in partition_elem):
+            raise ValueError(f"{layer_label} sub-parameter sizes must be positive integers.")
+        subparam_sizes = tuple(int(val) for val in partition_elem)
+        partition_dim_size = sum(subparam_sizes)
+    elif isinstance(partition_elem, int):
+        if partition_elem == -1:
+            partition_dim_size = None
+        elif partition_elem > 0:
+            num_subparams = partition_elem
+            partition_dim_size = None
+        else:
+            raise ValueError(f"{layer_label} partition_dim spec must be positive integer or -1.")
+    else:
+        raise ValueError(f"{layer_label} partition_dim spec must be int or tuple.")
+
+    logical_dims = []
+    for idx, dim in enumerate(shape):
+        if idx == partition_dim:
+            logical_dims.append(partition_dim_size)
+            continue
+        if isinstance(dim, tuple):
+            raise ValueError(f"{layer_label} nested tuple only allowed at partition_dim={partition_dim}.")
+        if isinstance(dim, int):
+            if dim == -1:
+                logical_dims.append(None)
+            elif dim > 0:
+                logical_dims.append(dim)
+            else:
+                raise ValueError(f"{layer_label} shape dimensions must be positive integers or -1.")
+        else:
+            raise ValueError(f"{layer_label} shape dimensions must be integers.")
+
+    total_numel = _shape_prod(weight_shape)
+    known_product = _shape_prod([dim for dim in logical_dims if dim is not None])
+    unknown_indices = [idx for idx, dim in enumerate(logical_dims) if dim is None]
+
+    if len(unknown_indices) == 0:
+        if known_product != total_numel:
+            raise ValueError(f"{layer_label} shape product {known_product} != weight numel {total_numel}.")
+    elif len(unknown_indices) == 1:
+        inferred = total_numel // known_product
+        if inferred * known_product != total_numel:
+            raise ValueError(f"{layer_label} cannot infer shape for weight with numel {total_numel}.")
+        logical_dims[unknown_indices[0]] = inferred
+    else:
+        if len(shape) == len(weight_shape):
+            for idx in unknown_indices:
+                logical_dims[idx] = weight_shape[idx]
+            if _shape_prod(logical_dims) != total_numel:
+                raise ValueError(
+                    f"{layer_label} shape product {_shape_prod(logical_dims)} != weight numel {total_numel}.")
+        else:
+            raise ValueError(f"{layer_label} shape has multiple inferred dims and is ambiguous for weight.")
+
+    logical_shape = tuple(logical_dims)
+    if logical_shape[-1] != weight_shape[-1]:
+        raise ValueError(
+            f"{layer_label} shape last dim {logical_shape[-1]} must match weight input dim {weight_shape[-1]}.")
+
+    output_shape = logical_shape[:-1]
+    if len(output_shape) == 0:
+        raise ValueError(f"{layer_label} shape must include at least one output dimension.")
+    if _shape_prod(output_shape) != weight_shape[0]:
+        raise ValueError(
+            f"{layer_label} output shape product {_shape_prod(output_shape)} != weight output dim {weight_shape[0]}.")
+
+    partition_dim_size = logical_shape[partition_dim]
+    if partition_dim_size is None or partition_dim_size <= 0:
+        raise ValueError(f"{layer_label} partition_dim size must be a positive integer.")
+
+    if num_subparams is not None:
+        if partition_dim_size % num_subparams != 0:
+            raise ValueError(
+                f"{layer_label} partition_dim size {partition_dim_size} not divisible by sub-param count {num_subparams}."
+            )
+        subparam_sizes = tuple([partition_dim_size // num_subparams] * num_subparams)
+
+    if subparam_sizes is not None and sum(subparam_sizes) != partition_dim_size:
+        raise ValueError(
+            f"{layer_label} sub-parameter sizes sum {sum(subparam_sizes)} != partition_dim size {partition_dim_size}.")
+
+    bias_partition_dim = partition_dim if partition_dim < len(output_shape) else None
+    return logical_shape, output_shape, subparam_sizes, bias_partition_dim
+
+
+def _partition_logical_tensor(tensor, partition_dim, tp_world_size, tp_index, name=None, subparam_sizes=None):
+    if tp_world_size == 1:
+        return tensor
+    layer_label = f"AutoTP layer '{name}'" if name else "AutoTP layer"
+    if subparam_sizes:
+        for size in subparam_sizes:
+            if size % tp_world_size != 0:
+                raise ValueError(f"{layer_label} sub-parameter size {size} not divisible by tp_size {tp_world_size}.")
+        sub_params = torch.split(tensor, subparam_sizes, dim=partition_dim)
+        partitioned_sub_params = [torch.chunk(sp, tp_world_size, dim=partition_dim)[tp_index] for sp in sub_params]
+        return torch.cat(partitioned_sub_params, dim=partition_dim)
+    if tensor.shape[partition_dim] % tp_world_size != 0:
+        raise ValueError(
+            f"{layer_label} partition_dim size {tensor.shape[partition_dim]} not divisible by tp_size {tp_world_size}."
+        )
+    return torch.chunk(tensor, tp_world_size, dim=partition_dim)[tp_index]
+
+
+def _all_gather_along_dim(tensor, partition_dim, mp_group, tp_world_size):
+    if mp_group is None or tp_world_size == 1:
+        return tensor
+    perm = [partition_dim] + [idx for idx in range(tensor.dim()) if idx != partition_dim]
+    inv_perm = [0] * len(perm)
+    for idx, dim in enumerate(perm):
+        inv_perm[dim] = idx
+    tensor_perm = tensor.permute(perm).contiguous()
+    output = torch.empty((tp_world_size * tensor_perm.shape[0], *tensor_perm.shape[1:]),
+                         dtype=tensor.dtype,
+                         device=tensor.device)
+    dist.all_gather_into_tensor(output, tensor_perm, group=mp_group)
+    return output.permute(inv_perm).contiguous()
+
+
+def _gather_logical_tensor(tensor,
+                           logical_shape,
+                           partition_dim,
+                           mp_group,
+                           tp_world_size,
+                           name=None,
+                           subparam_sizes=None):
+    if mp_group is None or tp_world_size == 1:
+        return tensor.reshape(logical_shape)
+    layer_label = f"AutoTP layer '{name}'" if name else "AutoTP layer"
+    if logical_shape[partition_dim] % tp_world_size != 0:
+        raise ValueError(
+            f"{layer_label} partition_dim size {logical_shape[partition_dim]} not divisible by tp_size {tp_world_size}."
+        )
+    partitioned_shape = list(logical_shape)
+    partitioned_shape[partition_dim] = logical_shape[partition_dim] // tp_world_size
+    tensor_view = tensor.reshape(partitioned_shape)
+
+    if subparam_sizes:
+        for size in subparam_sizes:
+            if size % tp_world_size != 0:
+                raise ValueError(f"{layer_label} sub-parameter size {size} not divisible by tp_size {tp_world_size}.")
+        partitioned_sizes = [size // tp_world_size for size in subparam_sizes]
+        sub_params = torch.split(tensor_view, partitioned_sizes, dim=partition_dim)
+        gathered_sub_params = [_all_gather_along_dim(sp, partition_dim, mp_group, tp_world_size) for sp in sub_params]
+        return torch.cat(gathered_sub_params, dim=partition_dim)
+    return _all_gather_along_dim(tensor_view, partition_dim, mp_group, tp_world_size)
+
+
+class SubParamLinearLayer(TensorParallel_Layer):
+    """
+    Column-parallel linear layer with sub-parameter support.
+
+    Handles cases where weights contain multiple logical sub-parameters
+    that need to be partitioned separately (e.g., fused QKV, chunked MLP, GQA).
+
+    The `shape` parameter controls how the weight is viewed and partitioned:
+    - (3, -1) with partition_dim=0: 3 equal sub-params, partition each at dim 0
+    - ((q, k, v), -1) with partition_dim=0: 3 unequal sub-params (1-level nesting)
+    """
+
+    def __init__(self, module, mp_group, shape, partition_dim=0, **kwargs):
+        super(SubParamLinearLayer, self).__init__(mp_group, **kwargs)
+        self.weight = module.weight
+        self.bias = module.bias
+        self.shape = shape
+        self.partition_dim = partition_dim
+
+        self._orig_weight_shape = tuple(module.weight.shape)
+        self._orig_bias_shape = tuple(module.bias.shape) if self.bias is not None else None
+        (self._logical_shape, self._output_shape, self._subparam_sizes,
+         self._bias_partition_dim) = _infer_subparam_logical_shapes(self._orig_weight_shape, self.shape,
+                                                                    self.partition_dim, self.name)
+        if self.bias is not None and self.bias.numel() != _shape_prod(self._output_shape):
+            raise ValueError(f"AutoTP layer '{self.name}' bias size {self.bias.numel()} does not match output shape "
+                             f"{self._output_shape}.")
+
+        if self._should_materialize_tp_partition():
+            self._tp_partition([self.weight, self.bias])
+        self.support_training = True
+        self.config_tp_params(self.weight)
+        if self.bias is not None:
+            self.config_tp_params(self.bias)
+        self._mark_uc_metadata()
+
+    def forward(self, input):
+        if getattr(self, 'mp_group', None) is not None:
+            input = ColumnParallel.apply(self.mp_group, input)
+        output = torch.matmul(input, self.weight.transpose(-1, -2))
+        if self.bias is not None:
+            output = add_bias(output, self.bias)
+        return output
+
+    @torch.no_grad()
+    def gather_params(self, params_list):
+        """Gather partitioned parameters back to full size."""
+        for idx, param in enumerate(params_list):
+            if param is None:
+                continue
+            params_list[idx].data_partition = param.data
+            if idx == 0:
+                full_view = _gather_logical_tensor(param,
+                                                   self._logical_shape,
+                                                   self.partition_dim,
+                                                   self.mp_group,
+                                                   self.tp_world_size,
+                                                   name=self.name,
+                                                   subparam_sizes=self._subparam_sizes)
+                params_list[idx].data = full_view.reshape(self._orig_weight_shape)
+            else:
+                if self._bias_partition_dim is None:
+                    params_list[idx].data = param.data
+                else:
+                    full_bias_view = _gather_logical_tensor(param,
+                                                            self._output_shape,
+                                                            self._bias_partition_dim,
+                                                            self.mp_group,
+                                                            self.tp_world_size,
+                                                            name=self.name,
+                                                            subparam_sizes=self._subparam_sizes)
+                    params_list[idx].data = full_bias_view.reshape(self._orig_bias_shape)
+
+    @torch.no_grad()
+    def _tp_partition(self, params_list):
+        weight = params_list[0]
+        if weight is None:
+            return
+
+        weight_view = weight.reshape(self._logical_shape)
+        partitioned_view = _partition_logical_tensor(weight_view,
+                                                     self.partition_dim,
+                                                     self.tp_world_size,
+                                                     self.tp_index,
+                                                     name=self.name,
+                                                     subparam_sizes=self._subparam_sizes)
+        params_list[0].data = self.move(partitioned_view.reshape(-1, partitioned_view.shape[-1])).detach()
+
+        if params_list[1] is not None:
+            if self._bias_partition_dim is None:
+                params_list[1].data = self.move(params_list[1]).detach()
+            else:
+                bias_view = params_list[1].reshape(self._output_shape)
+                bias_partitioned = _partition_logical_tensor(bias_view,
+                                                             self._bias_partition_dim,
+                                                             self.tp_world_size,
+                                                             self.tp_index,
+                                                             name=self.name,
+                                                             subparam_sizes=self._subparam_sizes)
+                params_list[1].data = self.move(bias_partitioned.reshape(-1)).detach()
+
+    def _mark_uc_metadata(self):
+        self._set_param_uc_meta(self.weight,
+                                partition_type='column',
+                                partition_dim=self.partition_dim,
+                                logical_shape=self._logical_shape,
+                                output_shape=self._output_shape,
+                                sub_param_shape=self.shape,
+                                sub_param_sizes=self._subparam_sizes,
+                                target_partition_shape=self.weight.shape,
+                                original_shape=self._orig_weight_shape)
+        if self.bias is not None:
+            self._set_param_uc_meta(
+                self.bias,
+                partition_type='column',
+                partition_dim=self._bias_partition_dim,
+                logical_shape=self._output_shape,
+                output_shape=self._output_shape,
+                sub_param_shape=self.shape if self._bias_partition_dim is not None else None,
+                sub_param_sizes=self._subparam_sizes if self._bias_partition_dim is not None else None,
+                target_partition_shape=self.bias.shape,
+                original_shape=self._orig_bias_shape,
+                is_bias=True,
+                replicated=self._bias_partition_dim is None)
+
+
+class SubParamLinearAllreduce(TensorParallel_Layer):
+    """
+    Row-parallel linear layer with sub-parameter support (AllReduce after forward).
+
+    Handles cases where weights contain multiple logical sub-parameters
+    that need to be partitioned separately.
+    """
+
+    def __init__(self, module, mp_group, shape, partition_dim=1, **kwargs):
+        super(SubParamLinearAllreduce, self).__init__(mp_group, **kwargs)
+        self.weight = module.weight
+        self.bias = module.bias
+        self.shape = shape
+        self.partition_dim = partition_dim
+
+        self._orig_weight_shape = tuple(module.weight.shape)
+        self._orig_bias_shape = tuple(module.bias.shape) if self.bias is not None else None
+        (self._logical_shape, self._output_shape, self._subparam_sizes,
+         self._bias_partition_dim) = _infer_subparam_logical_shapes(self._orig_weight_shape, self.shape,
+                                                                    self.partition_dim, self.name)
+
+        if self._should_materialize_tp_partition():
+            self._tp_partition([self.weight, self.bias])
+        self.support_training = True
+        self.config_tp_params(self.weight)
+        if self.bias is not None:
+            self.config_requires_grad(self.bias)
+        self._mark_uc_metadata()
+
+    def forward(self, input):
+        output = torch.matmul(input, self.weight.transpose(-1, -2))
+        output = RowParallel.apply(self.mp_group, output, not self.is_training_mode())
+        if self.bias is not None:
+            output = add_bias(output, self.bias)
+        return output
+
+    @torch.no_grad()
+    def gather_params(self, params_list):
+        """Gather partitioned parameters back to full size."""
+        for idx, param in enumerate(params_list):
+            if param is None or idx > 0:
+                # don't gather bias for row parallel
+                return
+            params_list[idx].data_partition = param.data
+            full_view = _gather_logical_tensor(param,
+                                               self._logical_shape,
+                                               self.partition_dim,
+                                               self.mp_group,
+                                               self.tp_world_size,
+                                               name=self.name,
+                                               subparam_sizes=self._subparam_sizes)
+            params_list[idx].data = full_view.reshape(self._orig_weight_shape)
+
+    @torch.no_grad()
+    def _tp_partition(self, params_list):
+        weight = params_list[0]
+        if weight is None:
+            return
+
+        weight_view = weight.reshape(self._logical_shape)
+        partitioned_view = _partition_logical_tensor(weight_view,
+                                                     self.partition_dim,
+                                                     self.tp_world_size,
+                                                     self.tp_index,
+                                                     name=self.name,
+                                                     subparam_sizes=self._subparam_sizes)
+        params_list[0].data = self.move(partitioned_view.reshape(-1, partitioned_view.shape[-1])).detach()
+
+        # Bias is not partitioned for row parallel (it's applied after all-reduce)
+        if params_list[1] is not None:
+            params_list[1].data = self.move(params_list[1]).detach()
+
+    def _mark_uc_metadata(self):
+        self._set_param_uc_meta(self.weight,
+                                partition_type='row',
+                                partition_dim=self.partition_dim,
+                                logical_shape=self._logical_shape,
+                                output_shape=self._output_shape,
+                                sub_param_shape=self.shape,
+                                sub_param_sizes=self._subparam_sizes,
+                                target_partition_shape=self.weight.shape,
+                                original_shape=self._orig_weight_shape)
+        if self.bias is not None:
+            self._set_param_uc_meta(self.bias,
+                                    partition_type='row',
+                                    partition_dim=None,
+                                    logical_shape=self._orig_bias_shape,
+                                    output_shape=self._orig_bias_shape,
+                                    original_shape=self._orig_bias_shape,
+                                    target_partition_shape=self.bias.shape,
+                                    is_bias=True,
+                                    replicated=True)
 
 
 class RMSNormalize(nn.Module):

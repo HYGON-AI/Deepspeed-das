@@ -20,6 +20,7 @@ from deepspeed.moe.utils import is_moe_param, is_moe_param_group
 from deepspeed.utils.bwc import bwc_tensor_model_parallel_rank
 from deepspeed.utils.torch import register_grad_hook
 from deepspeed.checkpoint import enable_universal_checkpoint
+from deepspeed.checkpoint.constants import UNIVERSAL_CHECKPOINT_INFO
 from deepspeed.checkpoint.constants import (DS_VERSION, PARTITION_COUNT, BASE_OPTIMIZER_STATE,
                                             SINGLE_PARTITION_OF_FP32_GROUPS, CLIP_GRAD, GROUP_PADDINGS,
                                             PARAM_SLICE_MAPPINGS)
@@ -58,6 +59,11 @@ class BF16_Optimizer(ZeROOptimizer):
         assert grad_acc_dtype in [torch.float32, torch.bfloat16
                                   ], f"BF16Optimizer: Unsupported gradient accumulation data type: {grad_acc_dtype}"
         self.grad_acc_dtype = grad_acc_dtype
+
+        # BF16 doesn't use loss scaling, but these attributes are needed for API compatibility
+        self.custom_loss_scaler = False
+        self.external_loss_scale = None
+        self.torch_autocast_gradscaler = None
 
         self.immediate_grad_update = bfloat16_config.immediate_grad_update
 
@@ -213,8 +219,18 @@ class BF16_Optimizer(ZeROOptimizer):
         self._param_slice_mappings = self._create_param_mapping()
 
     def _enable_universal_checkpoint(self):
+        self._universal_checkpoint_info = None
         for lp_param_group in self.bf16_groups:
+            if self._universal_checkpoint_info is None:
+                for param in lp_param_group:
+                    autotp_uc_info = getattr(param, UNIVERSAL_CHECKPOINT_INFO, None)
+                    if autotp_uc_info is not None:
+                        self._universal_checkpoint_info = autotp_uc_info
+                        break
             enable_universal_checkpoint(param_list=lp_param_group)
+
+    def _get_universal_checkpoint_info(self):
+        return getattr(self, '_universal_checkpoint_info', None)
 
     def _create_param_mapping(self):
         param_mapping = []
@@ -467,6 +483,10 @@ class BF16_Optimizer(ZeROOptimizer):
         state_dict[PARTITION_COUNT] = self.partition_count
         state_dict[DS_VERSION] = version
         state_dict[PARAM_SLICE_MAPPINGS] = self._param_slice_mappings
+
+        autotp_uc_info = self._get_universal_checkpoint_info()
+        if autotp_uc_info is not None:
+            state_dict[UNIVERSAL_CHECKPOINT_INFO] = autotp_uc_info
 
         return state_dict
 
