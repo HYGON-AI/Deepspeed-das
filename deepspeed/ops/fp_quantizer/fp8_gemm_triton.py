@@ -127,18 +127,48 @@ def matmul_fp8_triton(inp, weight, scale, quantization_group_size):
 
     # GEMM tuning parameters!
     # TODO: Add a more configurable tuning for selecting the best GeMM
-    BLOCK_SIZE_M = 16 if M <= 16 else 32 if M <= 32 else 64 if M <= 64 else 128
-    BLOCK_SIZE_N = 64
-    BLOCK_SIZE_K = max(64, quantization_group_size)
-    GROUP_SIZE_M = 8
-    num_stages = 4
-    num_warps = 4
-    if M >= 256:
-        BLOCK_SIZE_M = 256
-        BLOCK_SIZE_N = 128
-        BLOCK_SIZE_K = max(128, quantization_group_size)
-        num_stages = 3
-        num_warps = 8
+    # ROCm/DCU devices typically expose only 64 KiB of shared memory per block
+    # (vs. 100+ KiB on modern NVIDIA parts), so reduce block sizes / pipeline
+    # depth on ROCm to keep the matmul kernel under the LDS budget.
+    is_rocm = (getattr(torch.version, "hip", None) is not None)
+
+    if is_rocm:
+        if M <= 16:
+            BLOCK_SIZE_M, BLOCK_SIZE_N, BLOCK_SIZE_K = 16, 64, max(64, quantization_group_size)
+            num_stages, num_warps = 2, 4
+        elif M <= 32:
+            BLOCK_SIZE_M, BLOCK_SIZE_N, BLOCK_SIZE_K = 32, 64, max(64, quantization_group_size)
+            num_stages, num_warps = 2, 4
+        elif M <= 64:
+            BLOCK_SIZE_M, BLOCK_SIZE_N, BLOCK_SIZE_K = 64, 64, max(64, quantization_group_size)
+            num_stages, num_warps = 2, 4
+        elif M <= 128: 
+            # M=128 case: BLOCK_SIZE_M=128 + num_stages=4 needs ~115 KiB on ROCm
+            # -> drop BLOCK_SIZE_M to 64 with num_stages=2 to stay under 64 KiB
+            BLOCK_SIZE_M, BLOCK_SIZE_N, BLOCK_SIZE_K = 64, 64, max(64, quantization_group_size)
+            num_stages, num_warps = 2, 4
+        elif M < 256:
+            BLOCK_SIZE_M, BLOCK_SIZE_N, BLOCK_SIZE_K = 64, 64, max(64, quantization_group_size)
+            num_stages, num_warps = 2, 4
+        else:
+            # M >= 256: BLOCK_SIZE_M=256 + BLOCK_SIZE_N=128 needs ~96 KiB on ROCm
+            # -> halve BLOCK_SIZE_M and use num_stages=1 to fit under 64 KiB
+            BLOCK_SIZE_M, BLOCK_SIZE_N, BLOCK_SIZE_K = 128, 128, max(128, quantization_group_size)
+            num_stages, num_warps = 1, 8
+        GROUP_SIZE_M = 8
+    else:
+        BLOCK_SIZE_M = 16 if M <= 16 else 32 if M <= 32 else 64 if M <= 64 else 128
+        BLOCK_SIZE_N = 64
+        BLOCK_SIZE_K = max(64, quantization_group_size)
+        GROUP_SIZE_M = 8
+        num_stages = 4
+        num_warps = 4
+        if M >= 256:
+            BLOCK_SIZE_M = 256
+            BLOCK_SIZE_N = 128
+            BLOCK_SIZE_K = max(128, quantization_group_size)
+            num_stages = 3
+            num_warps = 8
 
     grid = lambda META: (triton.cdiv(M, META['BLOCK_SIZE_M']) * triton.cdiv(N, META['BLOCK_SIZE_N']), )
     kernel = matmul_kernel_fp8_bf16 if inp.dtype == torch.bfloat16 else matmul_kernel_fp8_fp16

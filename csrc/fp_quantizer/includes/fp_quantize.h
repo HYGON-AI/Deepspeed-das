@@ -18,7 +18,7 @@
 #else
 struct __hip_bfloat16;
 #endif
-#endif
+
 
 #include <cuda_runtime_api.h>
 #include <stdio.h>

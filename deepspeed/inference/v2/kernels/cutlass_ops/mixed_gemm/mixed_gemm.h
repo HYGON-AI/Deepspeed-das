@@ -4,6 +4,9 @@
 // DeepSpeed Team
 
 #pragma once
+#ifdef BF16_AVAILABLE
+#include <cuda_bf16.h>
+#endif
 
 #include <torch/extension.h>
 

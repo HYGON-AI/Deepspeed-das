@@ -20,7 +20,6 @@ IO_SIZE = 4 * BLOCK_SIZE
 IO_PARALLEL = 2
 
 if not deepspeed.ops.__compatible_ops__[AsyncIOBuilder.NAME]:
-    print("zll skip")
     pytest.skip('Skip tests since async-io is not compatible', allow_module_level=True)
 
 
@@ -94,7 +93,6 @@ class TestRead(DistributedTest):
 
     @pytest.mark.parametrize("use_unpinned_tensor", [True, False])
     def test_parallel_read(self, tmpdir, use_cuda_pinned_tensor, single_submit, overlap_events, use_unpinned_tensor):
-        print(f"zll tmpdir {tmpdir}")
         _skip_for_invalid_environment(use_cuda_pinned_tensor=use_cuda_pinned_tensor)
 
         h = AsyncIOBuilder().load().aio_handle(BLOCK_SIZE, QUEUE_DEPTH, single_submit, overlap_events, IO_PARALLEL)
@@ -114,8 +112,6 @@ class TestRead(DistributedTest):
 
         with open(ref_file, 'rb') as f:
             ref_buffer = list(f.read())
-        print(f"zll ref_buffer: {ref_buffer[:20]}")
-        print(f"zll aio_buffer: {aio_buffer.tolist()[:20]}")
         assert ref_buffer == aio_buffer.tolist()
 
         if not use_cuda_pinned_tensor:
@@ -224,10 +220,10 @@ class TestWrite(DistributedTest):
         assert filecmp.cmp(ref_file, aio_file, shallow=False)
 
 
-@pytest.mark.sequential
+# @pytest.mark.sequential
 @pytest.mark.parametrize("use_cuda_pinned_tensor", [True, False])
 @pytest.mark.parametrize("use_unpinned_tensor", [True, False])
-class _TestAsyncQueue(DistributedTest):
+class TestAsyncQueue(DistributedTest):
     world_size = 1
     requires_cuda_env = False
     if not get_accelerator().is_available():
@@ -332,7 +328,7 @@ class _TestAsyncQueue(DistributedTest):
 
 @pytest.mark.parametrize("use_cuda_pinned_tensor", [True, False])
 @pytest.mark.parametrize('file_partitions', [[1, 1, 1], [1, 1, 2], [1, 2, 1], [2, 1, 1]])
-class _TestAsyncFileOffset(DistributedTest):
+class TestAsyncFileOffset(DistributedTest):
     world_size = 1
 
     @pytest.mark.parametrize('use_fd', [False, True])
