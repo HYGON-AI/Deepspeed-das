@@ -144,7 +144,9 @@ BFLOAT16_OPTIMIZER_STATES = "bf16_optimizer_states"
 BFLOAT16_OPTIMIZER_STATES_DEFAULT = False
 
 # DDP variant of BFLOAT16
-DDP_BFLOAT16 = "bf16"
+# DDP variant: bf16 model with bf16 grad accumulation (uses FP16_Optimizer in bf16 mode)
+# Must be different from BFLOAT16 to allow proper optimizer selection
+DDP_BFLOAT16 = "ddp_bf16"
 
 #########################################
 # FP16 support
@@ -464,12 +466,21 @@ CHECKPOINT_PARALLEL_WRITE_PIPELINE_STAGE_DEFAULT = False
 #########################################
 # "data_types": {
 #   grad_accum_dtype=["bf16"|"fp16"|"fp32"]
+#   param_dtype=["bf16"|"fp16"|"fp32"]
+#   buffer_dtype=["bf16"|"fp16"|"fp32"]
 #   }
 # }
+# param_dtype and buffer_dtype mirror FSDP's MixedPrecisionPolicy.
+#   - param_dtype: if None uses the specified mixed precision dtype, otherwise casts the params into the provided dtype
+#   - buffer_dtype: if None uses the buffers' dtype found when the model was loaded (e.g. fp32 rotary inv_freq), otherwise casts the buffers into the provided dtype (which is likely to lead to unintended consequences)
 
 DATA_TYPES = "data_types"
 GRAD_ACCUM_DTYPE = "grad_accum_dtype"
 GRAD_ACCUM_DTYPE_DEFAULT = None
+PARAM_DTYPE = "param_dtype"
+PARAM_DTYPE_DEFAULT = None
+BUFFER_DTYPE = "buffer_dtype"
+BUFFER_DTYPE_DEFAULT = None
 
 #########################################
 # Drop the last incomplete Batch
