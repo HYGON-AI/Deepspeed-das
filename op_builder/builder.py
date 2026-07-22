@@ -258,14 +258,13 @@ class OpBuilder(ABC):
         rocm_info = Path("/opt/rocm/bin/rocminfo")
         if (not rocm_info.is_file()):
             rocm_info = Path("rocminfo")
+        rocm_gpu_arch_cmd = str(rocm_info) + " | grep -o -m 1 'gfx.*'"
         try:
-            result = subprocess.check_output([str(rocm_info)], stderr=subprocess.DEVNULL)
-            output = result.decode('utf-8')
-            match = re.search(r'gfx\S+', output)
-            rocm_gpu_arch = match.group(0).strip() if match else ""
-        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+            result = subprocess.check_output(rocm_gpu_arch_cmd, shell=True)
+            rocm_gpu_arch = result.decode('utf-8').strip()
+        except subprocess.CalledProcessError:
             rocm_gpu_arch = ""
-        OpBuilder._rocm_gpu_arch = "gfx928,gfx936,gfx938" 
+        OpBuilder._rocm_gpu_arch = "gfx928,gfx936,gfx938"
         return OpBuilder._rocm_gpu_arch
 
     @staticmethod
@@ -276,12 +275,12 @@ class OpBuilder(ABC):
         rocm_info = Path("/opt/rocm/bin/rocminfo")
         if (not rocm_info.is_file()):
             rocm_info = Path("rocminfo")
+        rocm_wavefront_size_cmd = str(
+            rocm_info) + " | grep -Eo -m1 'Wavefront Size:[[:space:]]+[0-9]+' | grep -Eo '[0-9]+'"
         try:
-            result = subprocess.check_output([str(rocm_info)], stderr=subprocess.DEVNULL)
-            output = result.decode('utf-8')
-            match = re.search(r'Wavefront Size:\s+(\d+)', output)
-            rocm_wavefront_size = match.group(1) if match else "32"
-        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+            result = subprocess.check_output(rocm_wavefront_size_cmd, shell=True)
+            rocm_wavefront_size = result.decode('utf-8').strip()
+        except subprocess.CalledProcessError:
             rocm_wavefront_size = "32"
         OpBuilder._rocm_wavefront_size = rocm_wavefront_size
         return OpBuilder._rocm_wavefront_size
@@ -837,8 +836,7 @@ class CUDAOpBuilder(OpBuilder):
                 '-std=c++17', '-U__HIP_NO_HALF_OPERATORS__', '-U__HIP_NO_HALF_CONVERSIONS__',
                 '-U__HIP_NO_HALF2_OPERATORS__',
                 '-DROCM_VERSION_MAJOR=%s' % ROCM_MAJOR,
-                '-DROCM_VERSION_MINOR=%s' % ROCM_MINOR,
-                '--offload-arch=gfx936,gfx928,gfx938'
+                '-DROCM_VERSION_MINOR=%s' % ROCM_MINOR, '--offload-arch=gfx936,gfx928,gfx938'
             ]
             self.enable_bf16 = True
         else:
