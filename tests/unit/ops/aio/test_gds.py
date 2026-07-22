@@ -20,6 +20,9 @@ IO_SIZE = 4 * BLOCK_SIZE
 IO_PARALLEL = 2
 
 if not deepspeed.ops.__compatible_ops__[GDSBuilder.NAME]:
+    import pdb
+    pdb.set_trace()
+    print("...????")
     pytest.skip('Skip tests since gds is not compatible', allow_module_level=True)
 
 
