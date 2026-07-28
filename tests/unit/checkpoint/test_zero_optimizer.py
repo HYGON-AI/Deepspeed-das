@@ -11,7 +11,9 @@ from deepspeed.accelerator import get_accelerator
 from deepspeed.runtime.zero import ZeroParamStatus
 from deepspeed.utils.torch import required_torch_version
 
-from unit.common import DistributedTest, DistributedFixture
+from unit.common import DistributedTest, DistributedFixture, get_master_port, DEEPSPEED_TEST_TIMEOUT, set_accelerator_visible
+import os as _os_for_zeropp_fixture
+import deepspeed.comm as _dist_for_zeropp_fixture
 from unit.simple_model import *
 
 from unit.checkpoint.common import *
@@ -213,6 +215,46 @@ class TestZeROCheckpoint(DistributedTest):
 #        model.save_checkpoint(class_tmpdir)
 #"""
 
+
+def _save_zeropp_distributed(local_rank, world_size, master_port, class_tmpdir):
+    """Worker that saves a ZeRO++ checkpoint distributed. Module-level so it can be pickled by mp.spawn."""
+    _os_for_zeropp_fixture.environ['MASTER_ADDR'] = '127.0.0.1'
+    _os_for_zeropp_fixture.environ['MASTER_PORT'] = str(master_port)
+    _os_for_zeropp_fixture.environ['LOCAL_RANK'] = str(local_rank)
+    _os_for_zeropp_fixture.environ['RANK'] = str(local_rank)
+    _os_for_zeropp_fixture.environ['LOCAL_SIZE'] = str(world_size)
+    _os_for_zeropp_fixture.environ['WORLD_SIZE'] = str(world_size)
+    set_accelerator_visible()
+    get_accelerator().set_device(local_rank)
+
+    deepspeed.init_distributed(dist_backend=get_accelerator().communication_backend_name(),
+                               world_size=world_size,
+                               rank=local_rank)
+
+    config_dict = {
+        "train_batch_size": 4,
+        "optimizer": {
+            "type": 'Adam'
+        },
+        "zero_optimization": {
+            "stage": 3,
+            "zero_hpz_partition_size": 2,
+        }
+    }
+
+    hidden_dim = 10
+    model = SimpleModel(hidden_dim)
+    for param in model.parameters():
+        param.data = torch.ones_like(param.data, device=param.data.device, requires_grad=False)
+
+    torch.save(model.state_dict(), os.path.join(class_tmpdir, "model.pt"))
+    ds_model = create_deepspeed_model(config_dict=config_dict, model=model, base_optimizer=None)
+    ds_model.save_checkpoint(class_tmpdir)
+
+    _dist_for_zeropp_fixture.barrier()
+    _dist_for_zeropp_fixture.destroy_process_group()
+
+
 @pytest.fixture
 def ws4_model_checkpoint(class_tmpdir, elastic_save, load_optim):
     world_size = 4
@@ -243,31 +285,31 @@ def ws4_model_checkpoint(class_tmpdir, elastic_save, load_optim):
         torch.save(model.optimizer.optimizer.state_dict(), os.path.join(class_tmpdir, 'opt-state-dict'))
     model.save_checkpoint(class_tmpdir)
 
-class ws4_model_checkpoint_zeropp(DistributedFixture):
-
+@pytest.fixture
+def ws4_model_checkpoint_zeropp(class_tmpdir):
+    # This fixture must run distributed with world_size=4 so the saved checkpoint's
+    # dp_world_size matches what TestZeROPPLoadCheckpoint expects when loading.
+    # Spawn 4 processes via multiprocessing to save the ZeRO checkpoint in
+    # distributed form. See PR #7707 for the upstream design (used DistributedFixture).
+    import multiprocessing as _mp
     world_size = 4
+    master_port = get_master_port()
 
-    def run(self, class_tmpdir):
-        config_dict = {
-            "train_batch_size": 4,
-            "optimizer": {
-                "type": 'Adam'
-            },
-            "zero_optimization": {
-                "stage": 3,
-                "zero_hpz_partition_size": 2,
-            }
-        }
-
-        hidden_dim = 10
-        model = SimpleModel(hidden_dim)
-        for param in model.parameters():
-            param.data = torch.ones_like(param.data, device=param.data.device, requires_grad=False)
-
-        # save model and zero checkpoint
-        torch.save(model.state_dict(), os.path.join(class_tmpdir, "model.pt"))
-        ds_model = create_deepspeed_model(config_dict=config_dict, model=model, base_optimizer=None)
-        ds_model.save_checkpoint(class_tmpdir)
+    ctx = _mp.get_context('spawn')
+    procs = [
+        ctx.Process(target=_save_zeropp_distributed,
+                    args=(rank, world_size, master_port, str(class_tmpdir)))
+        for rank in range(world_size)
+    ]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join(timeout=DEEPSPEED_TEST_TIMEOUT)
+    for p in procs:
+        if p.exitcode != 0:
+            raise RuntimeError(
+                f"Distributed ZeRO++ checkpoint save failed in worker (exitcode={p.exitcode}). "
+                f"See worker stderr above for details.")
 
 
 @pytest.mark.parametrize("elastic_save", [True, False])
