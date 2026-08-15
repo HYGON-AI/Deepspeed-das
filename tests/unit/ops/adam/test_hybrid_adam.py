@@ -46,8 +46,13 @@ class TestHybridAdam(DistributedTest):
     @pytest.mark.skipif(not deepspeed.ops.__compatible_ops__[FusedAdamBuilder.NAME],
                         reason="FusedAdam is not compatible")
     def test_hybrid_adam_equal(self, dtype, model_size):
-        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            not CPUAdamBuilder.is_hcu_pytorch():
             pytest.skip("cpu-adam with half precision not supported on AMD CPUs")
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            CPUAdamBuilder.is_hcu_pytorch():
+            pytest.skip("cpu-adam with half precision not supported on the current CPUs")
+                
 
         ref_data = torch.randn(model_size).to(dtype)
         total_data = ref_data.clone().detach()

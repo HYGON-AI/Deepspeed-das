@@ -15,7 +15,7 @@ __global__ void fake_quantize_kernel(__half* vals, int group_size, int num_bits)
 
     cg::thread_block b = cg::this_thread_block();  // tb
     cg::thread_block_tile<32> g =
-        cg::tiled_partition<32>(b);  // warp, 32 not optimal for AMD which should be 64.
+        cg::tiled_partition<32>(b);  // warp, 32 not optimal for HCU which should be 64.
 
     int gid = threadIdx.x >> 5;
     int lane = threadIdx.x & 0x1f;

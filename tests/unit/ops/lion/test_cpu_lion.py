@@ -62,9 +62,13 @@ class TestCPULion(DistributedTest):
     @pytest.mark.skipif(not deepspeed.ops.__compatible_ops__[CPULionBuilder.NAME],
                         reason="CPULionBuilder has not been implemented on this system.")
     def test_fused_lion_equal(self, dtype, model_size):
-        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+                not CPULionBuilder.is_hcu_pytorch():
             pytest.skip("cpu-lion with half precision not supported on AMD CPUs")
-
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            CPULionBuilder.is_hcu_pytorch():
+            pytest.skip("cpu-lion with half precision not supported on the current CPUs")
+            
         from deepspeed.ops.lion import DeepSpeedCPULion
 
         cpu_data = torch.randn(model_size, device='cpu').to(dtype)

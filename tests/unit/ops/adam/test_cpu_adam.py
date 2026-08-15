@@ -68,9 +68,12 @@ class TestCPUAdam(DistributedTest):
         if dtype not in get_accelerator().supported_dtypes():
             pytest.skip(f"dtype {dtype} not supported in current accelerator")
 
-        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half)  and \
+            not CPUAdamBuilder.is_hcu_pytorch():
             pytest.skip("cpu-adam with half precision not supported on AMD CPUs")
-
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            CPUAdamBuilder.is_hcu_pytorch():
+            pytest.skip("cpu-adam with half precision not supported on the current CPUs")
         from deepspeed.ops.adam import DeepSpeedCPUAdam
 
         cpu_data = torch.randn(model_size, device='cpu').to(dtype)
@@ -96,8 +99,12 @@ class TestCPUAdam(DistributedTest):
         if get_accelerator().is_available():
             if dtype == torch.half:
                 pytest.skip("torch.optim.AdamW with half precision inf/nan output.")
-            if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+            if ("amd" in pytest.cpu_vendor) and (dtype == torch.half)  and \
+                not CPUAdamBuilder.is_hcu_pytorch():
                 pytest.skip("cpu-adam with half precision not supported on AMD CPUs")
+            if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+                CPUAdamBuilder.is_hcu_pytorch():
+                pytest.skip("cpu-adam with half precision not supported on the current CPUs")
             ref_param_device = get_accelerator().device_name()
         else:
             if dtype == torch.half:
@@ -201,9 +208,12 @@ class TestCPUAdamSubgroup(DistributedTest):
     @pytest.mark.parametrize('model_size', [64, 128, 1024])
     def test_step_subgroup_basic(self, dtype, model_size):
         """Test basic functionality of step_subgroup method."""
-        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half)  and \
+            not CPUAdamBuilder.is_hcu_pytorch():
             pytest.skip("cpu-adam with half precision not supported on AMD CPUs")
-
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            CPUAdamBuilder.is_hcu_pytorch():
+            pytest.skip("cpu-adam with half precision not supported on the current CPUs")
         from deepspeed.ops.adam import DeepSpeedCPUAdam
 
         # Create parameters
@@ -233,9 +243,12 @@ class TestCPUAdamSubgroup(DistributedTest):
     @pytest.mark.parametrize('dtype', [torch.half, torch.bfloat16], ids=["fp16", "bf16"])
     def test_step_subgroup_multiple_calls(self, dtype):
         """Test multiple calls to step_subgroup increment step count correctly."""
-        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half)  and \
+            not CPUAdamBuilder.is_hcu_pytorch():
             pytest.skip("cpu-adam with half precision not supported on AMD CPUs")
-
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            CPUAdamBuilder.is_hcu_pytorch():
+            pytest.skip("cpu-adam with half precision not supported on the current CPUs")
         from deepspeed.ops.adam import DeepSpeedCPUAdam
 
         model_size = 64
@@ -256,9 +269,12 @@ class TestCPUAdamSubgroup(DistributedTest):
     @pytest.mark.parametrize('dtype', [torch.half, torch.bfloat16], ids=["fp16", "bf16"])
     def test_rollback_subgroup_basic(self, dtype):
         """Test basic functionality of rollback_subgroup method."""
-        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half)  and \
+            not CPUAdamBuilder.is_hcu_pytorch():
             pytest.skip("cpu-adam with half precision not supported on AMD CPUs")
-
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            CPUAdamBuilder.is_hcu_pytorch():
+            pytest.skip("cpu-adam with half precision not supported on the current CPUs")
         from deepspeed.ops.adam import DeepSpeedCPUAdam
 
         model_size = 64
@@ -321,9 +337,13 @@ class TestCPUAdamSubgroup(DistributedTest):
     @pytest.mark.parametrize('dtype', [torch.half, torch.bfloat16], ids=["fp16", "bf16"])
     def test_step_rollback_sequence(self, dtype):
         """Test sequence of step_subgroup and rollback_subgroup operations."""
-        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half):
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half)  and \
+            not CPUAdamBuilder.is_hcu_pytorch():
             pytest.skip("cpu-adam with half precision not supported on AMD CPUs")
-
+        if ("amd" in pytest.cpu_vendor) and (dtype == torch.half) and \
+            CPUAdamBuilder.is_hcu_pytorch():
+            pytest.skip("cpu-adam with half precision not supported on the current CPUs")
+                        
         from deepspeed.ops.adam import DeepSpeedCPUAdam
 
         model_size = 64

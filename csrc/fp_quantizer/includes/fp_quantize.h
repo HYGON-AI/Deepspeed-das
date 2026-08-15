@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 #include <cuda_fp16.h>
-// Note: BF16 support on AMD but we have to exclude here cuda_bf16.h (which turn to
+// Note: BF16 support on HCU but we have to exclude here cuda_bf16.h (which turn to
 // <hip/hip_bfloat16.h> after hipifying), because this header is pulled into .cpp translation units
 // that are compiled by a host-only compiler, which triggers build errors. Added forward declaration
 // instead, see code block below

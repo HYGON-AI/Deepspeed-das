@@ -80,7 +80,7 @@ class InferenceBuilder(CUDAOpBuilder):
 
     def nvcc_args(self):
         args = super().nvcc_args()
-        """BF16 is supported on AMD, but including `cuda_bf16.h` (`<hip/hip_bfloat16.h>` after hipification)
+        """BF16 is supported on HCU, but including `cuda_bf16.h` (`<hip/hip_bfloat16.h>` after hipification)
            in host-only translation units (*.cpp files) fails because GPU-specific builtins are pulled in with the BF16 type.
            This cannot be avoided via forward declarations for this transformer_inference extension,
            since `pt_binding.cpp` code explicitly requires the BF16 header, so disable it for now.

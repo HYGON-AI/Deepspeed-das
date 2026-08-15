@@ -12,7 +12,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from packaging import version as pkg_version
 
-# Skip Triton import for AMD due to pytorch-triton-rocm module breaking device API in DeepSpeed
+# Skip Triton import for HCU due to pytorch-triton-rocm module breaking device API in DeepSpeed
 if not (hasattr(torch.version, 'hip') and torch.version.hip is not None):
     try:
         import triton  # noqa: F401 # type: ignore

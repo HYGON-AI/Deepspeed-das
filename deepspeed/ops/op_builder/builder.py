@@ -118,6 +118,7 @@ class OpBuilder(ABC):
     _rocm_gpu_arch = None
     _rocm_wavefront_size = None
     _is_rocm_pytorch = None
+    _is_hcu_pytorch = None
     _is_sycl_enabled = None
     _loaded_ops = {}
 
@@ -199,6 +200,29 @@ class OpBuilder(ABC):
                     _is_rocm_pytorch = ROCM_HOME is not None
         OpBuilder._is_rocm_pytorch = _is_rocm_pytorch
         return OpBuilder._is_rocm_pytorch
+
+    @staticmethod
+    def is_hcu_pytorch():
+        if OpBuilder._is_hcu_pytorch is not None:
+            return OpBuilder._is_hcu_pytorch
+        _is_hcu_pytorch = False
+        try:
+            import torch
+        except ImportError:
+            pass
+        else:
+                if OpBuilder.is_rocm_pytorch():
+                    from torch.utils.cpp_extension import ROCM_HOME
+                    dtk_version_paths = []
+                    if ROCM_HOME is not None:
+                        dtk_version_paths.append(Path(ROCM_HOME).joinpath(".dtk_version"))
+                    rocm_path = os.getenv("ROCM_PATH")
+                    if rocm_path:
+                        dtk_version_paths.append(Path(rocm_path).joinpath(".dtk_version"))
+                    dtk_version_paths.append(Path("/opt/dtk/.dtk_version"))
+                    _is_hcu_pytorch = any(dtk_version_path.is_file() for dtk_version_path in dtk_version_paths)
+        OpBuilder._is_hcu_pytorch = _is_hcu_pytorch
+        return OpBuilder._is_hcu_pytorch
 
     @staticmethod
     def is_sycl_enabled():

@@ -7,7 +7,7 @@
 When the user opts in, ``deepspeed.comm`` routes ``all_gather_into_tensor``
 on the WORLD process group through ``mori_cpp.AllGatherIntoTensor``
 (intra-node SDMA copy on AMD MI300).  Any failure (mori missing,
-non-AMD/ROCm runtime, shmem init error, oversized call, non-WORLD group)
+non-HCU/ROCm runtime, shmem init error, oversized call, non-WORLD group)
 yields ``None`` and the caller falls back to the underlying RCCL/NCCL
 allgather.
 

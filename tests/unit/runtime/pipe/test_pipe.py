@@ -104,7 +104,7 @@ class TestPipeCifar10(DistributedTest):
         base_avg = sum(base) / len(base)
         test = test_losses[-lastX:]
         test_avg = sum(test) / len(test)
-        assert rel_diff(base_avg, test_avg) < 0.05  # Originally 0.03, but seeing instability with AMD results
+        assert rel_diff(base_avg, test_avg) < 0.05  # Originally 0.03, but seeing instability with HCU results
 
     # def _check_model_params_equal(self, model1, model2):
     #     for p1, p2 in zip(model1.parameters(), model2.parameters()):

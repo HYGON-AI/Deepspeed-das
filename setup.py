@@ -219,9 +219,11 @@ if command_exists('git') and not is_env_set('DS_BUILD_STRING'):
     except subprocess.CalledProcessError:
         git_hash = "unknown"
         git_branch = "unknown"
+        git_tag = ""
 else:
     git_hash = "unknown"
     git_branch = "unknown"
+    git_tag = ""
 
 
 def create_dir_symlink(src, dest):
