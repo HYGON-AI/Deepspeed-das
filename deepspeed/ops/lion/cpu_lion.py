@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
-
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 # DeepSpeed Team
 
 import torch
@@ -44,8 +44,11 @@ class DeepSpeedCPULion(torch.optim.Optimizer):
         if "amd" in self.cpu_vendor:
             for group_id, group in enumerate(self.param_groups):
                 for param_id, p in enumerate(group['params']):
-                    if p.dtype == torch.half:
+                    if p.dtype == torch.half and not CPULionBuilder.is_hcu_pytorch():
                         logger.warning("FP16 params for CPULion may not work on AMD CPUs")
+                        break
+                    if p.dtype == torch.half and CPULionBuilder.is_hcu_pytorch():
+                        logger.warning("FP16 params for CPULion may not work on the current CPUs")
                         break
                 else:
                     continue

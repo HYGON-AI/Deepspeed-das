@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
-
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 # DeepSpeed Team
 
 import argparse
@@ -56,7 +56,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--local_rank', type=int, default=-1, help='local rank passed from distributed launcher')
 parser.add_argument('--deepspeed_config',
                     type=str,
-                    default='ds_config_z3.json',
+                    default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ds_config_z3.json'),
                     help='path to DeepSpeed configuration file')
 cmd_args = parser.parse_args()
 

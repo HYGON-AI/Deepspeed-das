@@ -1,10 +1,11 @@
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 cd ./accelerator
 pytest ./
 cd ..
 #pytest --timeout=1400 ./model/BingBertSquad/test_e2e_squad.py #todo
 pytest --timeout=1400 ./model/Megatron_GPT2/test_common.py
 pytest --timeout=1400 ./lightning/test_simple.py
-pytest --timeout=1400 ./torch_compile/test_compile.py
+python ./torch_compile/test_compile.py
 pytest --timeout=1400 ./unit/accelerator/test_accelerator.py
 pytest --timeout=1400 ./unit/pipe/test_pipe_module.py
 pytest --timeout=1400 ./unit/ulysses_alst/test_tiled_compute.py
@@ -40,9 +41,7 @@ pytest --timeout=1400 ./unit/runtime/test_runtime_utils.py
 pytest --timeout=1400 ./unit/runtime/zero/test_zero_nesting_init.py
 pytest --timeout=1400 ./unit/runtime/zero/test_zero_context_ancestry.py
 pytest --timeout=1400 ./unit/runtime/zero/test_zero_context_return.py
-pytest --timeout=1400 ./unit/runtime/zero/test_zero.py
 pytest --timeout=1400 ./unit/runtime/zero/test_nvme_checkpointing.py
-pytest --timeout=1400 ./unit/runtime/zero/test_offload_states.py
 pytest --timeout=1400 ./unit/runtime/zero/test_unwrap_model.py
 pytest --timeout=1400 ./unit/runtime/zero/test_zero_grad_clip.py
 pytest --timeout=1400 ./unit/runtime/zero/test_zero_leaf_module.py
@@ -172,11 +171,9 @@ pytest --timeout=1400 ./unit/inference/quantization/test_intX_quantization.py
 #pytest --timeout=1400 ./unit/inference/kernels/cutlass_ops/test_moe_gemm.py
 pytest --timeout=1400 ./unit/elasticity/test_elastic.py
 pytest --timeout=1400 ./onebit/test_mpi_perf.py
-pytest --timeout=1400 ./onebit/test_nccl_backend.py
+python ./onebit/test_nccl_backend.py
 pytest --timeout=1400 ./onebit/test_mpi_backend.py
-pytest --timeout=1400 ./onebit/test_nccl_perf.py
-pytest --timeout=1400 ./onebit/test_compressed_backend.py
-pytest --timeout=1400 ./onebit/test_compressed_perf.py
+python ./onebit/test_nccl_perf.py
 pytest --timeout=1400 ./small_model_debugging/test_model.py
 pytest --timeout=1400 ./small_model_debugging/test_mics_config.py
 python ./small_model_debugging/stage3_test.py

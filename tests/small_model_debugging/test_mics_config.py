@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 
 # DeepSpeed Team
 
@@ -51,14 +52,14 @@ def get_data_loader(model, total_samples, hidden_dim, device):
     return train_loader
 
 
-def get_args(tmpdir, config_dict):
+def get_args(tmpdir, config_dict, argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--zero', type=int, default=3)
     parser.add_argument('--local_rank', type=int)
 
     parser.add_argument('--mics_shard_size', default=2, type=int)
     parser.add_argument('--mics_hierarchical_params_gather', default=False, action='store_true')
-    args = parser.parse_args()  #args=''
+    args = parser.parse_args(args=argv)  #args=''
 
     config_dict["zero_optimization"]["stage"] = args.zero
     config_dict["zero_optimization"]["mics_shard_size"] = args.mics_shard_size
@@ -76,58 +77,79 @@ def print0(msg):
         print(msg, flush=True)
 
 
-rank = int(os.environ['RANK'])
-print('seed:', 2222 + rank)
-torch.random.manual_seed(2222 + rank)
+def configure_single_process_env():
+    single_process = 'RANK' not in os.environ
+    os.environ.setdefault('RANK', '0')
+    os.environ.setdefault('WORLD_SIZE', '1')
+    os.environ.setdefault('LOCAL_RANK', '0')
+    os.environ.setdefault('MASTER_ADDR', '127.0.0.1')
+    os.environ.setdefault('MASTER_PORT', '29500')
+    return single_process
 
-config_dict = {
-    "train_batch_size": 8,
-    "steps_per_print": 1,
-    "optimizer": {
-        "type": "Adam",
-        "params": {
-            "lr": 0.00015,
+
+def run_model(argv=None):
+    single_process = configure_single_process_env()
+    if argv is None and single_process:
+        argv = ['--mics_shard_size=1']
+
+    rank = int(os.environ['RANK'])
+    print('seed:', 2222 + rank)
+    torch.random.manual_seed(2222 + rank)
+
+    config_dict = {
+        "train_batch_size": 8,
+        "steps_per_print": 1,
+        "optimizer": {
+            "type": "Adam",
+            "params": {
+                "lr": 0.00015,
+            }
+        },
+        "fp16": {
+            "enabled": False,
+            "initial_scale_power": 15
+        },
+        "zero_optimization": {
+            "stage": 3,
+            "reduce_bucket_size": 20,
+            "mics_shard_size": 4,
+            "mics_hierarchical_params_gather": True,
+            "stage3_model_persistence_threshold": 10
         }
-    },
-    "fp16": {
-        "enabled": False,
-        "initial_scale_power": 15
-    },
-    "zero_optimization": {
-        "stage": 3,
-        "reduce_bucket_size": 20,
-        "mics_shard_size": 4,
-        "mics_hierarchical_params_gather": True,
-        "stage3_model_persistence_threshold": 10
     }
-}
-#        "initial_scale_power": 15
-args = get_args('/tmp/', config_dict)
-hidden_dim = 32
+    #        "initial_scale_power": 15
+    args = get_args('/tmp/', config_dict, argv=argv)
+    hidden_dim = 32
 
-with deepspeed.zero.MiCS_Init(config_dict_or_path=config_dict):
-    model = SimpleModel(hidden_dim, empty_grad=False)
-# print('------> init model with deepspeed.zero.Init()')
+    with deepspeed.zero.MiCS_Init(config_dict_or_path=config_dict):
+        model = SimpleModel(hidden_dim, empty_grad=False)
+    # print('------> init model with deepspeed.zero.Init()')
 
-model, _, _, _ = deepspeed.initialize(args=args,
-                                      model=model,
-                                      model_parameters=model.parameters(),
-                                      dist_init_required=True)
+    model, _, _, _ = deepspeed.initialize(args=args,
+                                          model=model,
+                                          model_parameters=model.parameters(),
+                                          dist_init_required=True)
+
+    def print_params(tag, model):
+        if dist.get_rank() == 0:
+            for n, p in model.named_parameters():
+                print0("{} {}:{}".format(tag, n, p))
+
+    data_loader = get_data_loader(model=model, total_samples=1000, hidden_dim=hidden_dim, device=model.device)
+    #print_params('pre-train', model)
+    for n, batch in enumerate(data_loader):
+        loss = model(batch[0], batch[1])
+        if dist.get_rank() == 0:
+            print("LOSS:", loss.item())
+        model.backward(loss)
+        model.step()
+        #print_params('step={}'.format(n), model)
+        if n == 5: break
 
 
-def print_params(tag, model):
-    if dist.get_rank() == 0:
-        for n, p in model.named_parameters():
-            print0("{} {}:{}".format(tag, n, p))
+def test_mics_config():
+    run_model(argv=['--mics_shard_size=1'])
 
 
-data_loader = get_data_loader(model=model, total_samples=1000, hidden_dim=hidden_dim, device=model.device)
-#print_params('pre-train', model)
-for n, batch in enumerate(data_loader):
-    loss = model(batch[0], batch[1])
-    if dist.get_rank() == 0:
-        print("LOSS:", loss.item())
-    model.backward(loss)
-    model.step()
-    #print_params('step={}'.format(n), model)
-    if n == 5: break
+if __name__ == "__main__":
+    run_model()
