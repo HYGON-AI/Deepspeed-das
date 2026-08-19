@@ -3,6 +3,10 @@
 
 // DeepSpeed Team
 
+// Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+// Modified by Hygon Information Technology Co., Ltd., 2026.
+
+
 #include <stdexcept>
 #include "fp_context.h"
 #include "fp_quantize.h"
@@ -530,4 +534,3 @@ void launch_selective_dequantization(uint8_t* val,
 INSTANTIATE_LAUNCH_SELECTIVE_DEQUANTIZATION(__nv_bfloat16, 7);
 #endif
 INSTANTIATE_LAUNCH_SELECTIVE_DEQUANTIZATION(__half, 10);
-

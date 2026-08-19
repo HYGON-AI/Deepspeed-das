@@ -3,6 +3,9 @@
 
 # DeepSpeed Team
 
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# Modified by Hygon Information Technology Co., Ltd., 2026.
+
 import os
 from .builder import CUDAOpBuilder, installed_cuda_version
 

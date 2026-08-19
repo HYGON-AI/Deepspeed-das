@@ -1,7 +1,10 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+
 # DeepSpeed Team
+
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# Modified by Hygon Information Technology Co., Ltd., 2026.
 
 # tests directory-specific settings - this file is run automatically by pytest before any tests are run
 

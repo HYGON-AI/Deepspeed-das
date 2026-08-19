@@ -3,6 +3,8 @@
 
 # DeepSpeed Team
 
+# Modified by Hygon Information Technology Co., Ltd., 2026.
+
 import copy
 import torch.nn as nn
 import pytest

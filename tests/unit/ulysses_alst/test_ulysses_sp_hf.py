@@ -1,7 +1,11 @@
 # Copyright (c) The DeepSpeed Contributors
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+
 # DeepSpeed Team
+
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# Modified by Hygon Information Technology Co., Ltd., 2026.
+
 """
 UlyssesPlus: UlyssesSPHF tests
 """

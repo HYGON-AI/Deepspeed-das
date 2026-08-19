@@ -1,68 +1,43 @@
-# <div align="center"><strong>DeepSpeed</strong></div>
-## 简介
-DeepSpeed是一个深度学习优化库，使分布式训练和推理变的简单、高效和有效。DeepSpeed官方github地址:[https://github.com/microsoft/DeepSpeed](https://github.com/microsoft/DeepSpeed)
+# DeepSpeed for Hygon
 
-## 安装
+## Open Source Attribution
 
-### 使用pip方式安装
-DeepSpeed whl包下载目录：[https://cancon.hpccube.com:65024/4/main/deepspeed/dtk23.10](https://cancon.hpccube.com:65024/4/main/deepspeed/dtk23.10)
-根据对应的pytorch版本和python版本，下载对应deepspeed的whl包
-```shell
-pip install deepspeed* (下载的deepspeed的whl包)
-```
-### 使用源码编译方式安装
+This repository is based on the official DeepSpeed project and contains
+Hygon-maintained modifications based on the official DeepSpeed v0.19.2 release.
 
-#### 编译环境准备
-提供2种环境准备方式：
+- Upstream project: DeepSpeed
+- Upstream source: https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2
+- Upstream commit: b919284ab1ad6dbc1cb0e06b10386ff74160b586
+- Upstream documentation: https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2/docs
+- Upstream README preserved in this repository: [README_ORIGIN.md](README_ORIGIN.md)
+- License: Apache-2.0
 
-1. 基于光源pytorch基础镜像环境,根据pytorch、python、dtk及系统下载对应的镜像版本。
+`README_ORIGIN.md` is preserved as an upstream reference copy for comparison and
+review. It keeps upstream wording as-is and does not define the public release
+messaging for this Hygon repository.
 
-2. 基于现有python环境：安装pytorch，pytorch whl包下载目录：[https://cancon.hpccube.com:65024/4/main/pytorch/dtk23.10](https://cancon.hpccube.com:65024/4/main/pytorch/dtk23.10)，根据python、dtk版本,下载对应pytorch的whl包。安装命令如下：
-```shell
-pip install torch* (下载的torch的whl包)
-pip install setuptools==59.5.0 wheel
-yum install -y libaio-devel
-yum install -y libaio
-```
+The original DeepSpeed copyright, license terms, and disclaimers are preserved in [LICENSE](LICENSE).Third-party notices are preserved in [NOTICE](THIRD_PARTY_NOTICES.md) where applicable.
 
-#### 源码编译安装
-- 代码下载
-```shell
-git clone -b ds-v0.19.2-rocm http://developer.hpccube.com/codes/aicomponent/deepspeed.git # 根据编译需要切换分支
-```
-- 编译deepspeed：
-```
-1. 设置环境变量
-cd deepspeed
-source /opt/dtk/env.sh
-export BUILD_ROOT=`pwd`
-echo $BUILD_ROOT
-export LD_LIBRARY_PATH=/usr/local/lib/python3.10/site-packages/torch/lib:$BUILD_ROOT/libaio_build/lib:$LD_LIBRARY_PATH
-export C_INCLUDE_PATH=$BUILD_ROOT/libaio_build/include:$C_INCLUDE_PATH
-export C_PLUS_INCLUDE_PATH=$C_INCLUDE_PATH
-export CFLAGS="-I$BUILD_ROOT/third_party/libaio_build/include/"
-export LDFLAGS="-L$BUILD_ROOT/third_party/libaio_build/lib/"
+Modified by Hygon Information Technology Co., Ltd.
 
-2. 编译whl包
-export CXX=hipcc
-export CC=hipcc
-DS_BUILD_SPARSE_ATTN=0 DS_BUILD_EVOFORMER_ATTN=0 DS_BUILD_CUTLASS_OPS=1 DS_BUILD_FP_QUANTIZER=1  DS_BUILD_OPS=1  DS_ACCELERATOR='cuda' python3 setup.py install bdist_wheel
+## Modification Scope
 
-3. 安装
-pip3 install ./dist/deepspeed*.whl
-```
+Hygon modifications in this repository are intended to adapt DeepSpeed for Hygon
+software and hardware environments. The scope includes Hygon backend integration,
+build and packaging adjustments, operator and kernel adaptations, and related
+documentation or metadata updates.
 
-## 版本号查询
-- python -c "import deepspeed; print(deepspeed.\_\_version__)"，查询软件版本，版本号与官方版本同步；
-- python -c "import deepspeed; print(deepspeed.\_\_hcu_version__)"，查询基于hcu的内部版本号；
+Unless explicitly stated in a specific source file or third-party notice, files
+that originate from upstream DeepSpeed remain governed by the upstream DeepSpeed
+license terms.
 
-## Known Issue
-- 无
+## Build and Installation
 
-## Note
-+ 若使用pip install下载安装过慢，可添加pypi清华源：-i https://pypi.tuna.tsinghua.edu.cn/simple/
-+ ROCM_PATH为dtk的路径，默认为/opt/dtk
+Build and installation should follow the release notes or packaging instructions for the corresponding Hygon DeepSpeed distribution. For general DeepSpeed build concepts, refer to the upstream DeepSpeed documentation and the preserved upstream README. For HCU platform, refer to the [build.md](docs/build.md) also.
 
-## 其他参考
-- [README_ORIGIN](README_ORIGIN.md)
-- [https://github.com/microsoft/DeepSpeed](https://github.com/microsoft/DeepSpeed)
+After installation, verify the package with:
+`python -c "import deepspeed; print(deepspeed.\_\_version__)"`
+
+## References
+- [Preserved upstream README](README_ORIGIN.md)
+- [Offical DeepSpeed repository](https://github.com/microsoft/DeepSpeed)

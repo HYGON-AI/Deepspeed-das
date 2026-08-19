@@ -1,7 +1,10 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+
 # DeepSpeed Team
+
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# Modified by Hygon Information Technology Co., Ltd., 2026.
 
 ######## Fused MoE kernel #########
 # These kernels are implemented for
@@ -127,7 +130,7 @@ def matmul_fp8_triton(inp, weight, scale, quantization_group_size):
 
     # GEMM tuning parameters!
     # TODO: Add a more configurable tuning for selecting the best GeMM
-    # ROCm/DCU devices typically expose only 64 KiB of shared memory per block
+    # ROCm/HCU devices typically expose only 64 KiB of shared memory per block
     # (vs. 100+ KiB on modern NVIDIA parts), so reduce block sizes / pipeline
     # depth on ROCm to keep the matmul kernel under the LDS budget.
     is_rocm = (getattr(torch.version, "hip", None) is not None)

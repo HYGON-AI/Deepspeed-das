@@ -1,7 +1,9 @@
 # Copyright (c) 2025 Peng Du and Zhipeng Wang
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+
 # DeepSpeed Team
+
+# Modified by Hygon Information Technology Co., Ltd., 2026.
 
 import deepspeed
 import torch

@@ -3,6 +3,10 @@
 
 // DeepSpeed Team
 
+// Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+// Modified by Hygon Information Technology Co., Ltd., 2026.
+
+
 #pragma once
 
 #include <cuda.h>

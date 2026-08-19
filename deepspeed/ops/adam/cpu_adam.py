@@ -3,6 +3,9 @@
 
 # DeepSpeed Team
 
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# Modified by Hygon Information Technology Co., Ltd., 2026.
+
 import torch
 from cpuinfo import get_cpu_info
 from deepspeed.utils import logger
@@ -77,8 +80,11 @@ class DeepSpeedCPUAdam(torch.optim.Optimizer):
         if "amd" in self.cpu_vendor:
             for group_id, group in enumerate(self.param_groups):
                 for param_id, p in enumerate(group['params']):
-                    if p.dtype == torch.half:
+                    if p.dtype == torch.half and not CPUAdamBuilder.is_hcu_pytorch():
                         logger.warning("FP16 params for CPUAdam may not work on AMD CPUs")
+                        break
+                    if p.dtype == torch.half and CPUAdamBuilder.is_hcu_pytorch():
+                        logger.warning("FP16 params for CPUAdam may not work on the current CPUs")
                         break
                 else:
                     continue

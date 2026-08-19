@@ -3,6 +3,9 @@
 
 // DeepSpeed Team
 
+// Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+// Modified by Hygon Information Technology Co., Ltd., 2026.
+
 // This is a copy of FP6-LLM kernel code: https://arxiv.org/abs/2401.14112
 
 // clang-format off
