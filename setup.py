@@ -31,7 +31,7 @@ from setuptools import setup, find_packages
 from setuptools.command import egg_info
 import time
 import typing
-import shlex
+import re
 
 torch_available = True
 try:
@@ -162,14 +162,7 @@ if BUILD_OP_DEFAULT:
 
 
 def command_exists(cmd):
-    if sys.platform == "win32":
-        safe_cmd = shlex.split(f'{cmd}')
-        result = subprocess.Popen(safe_cmd, stdout=subprocess.PIPE)
-        return result.wait() == 1
-    else:
-        safe_cmd = shlex.split(f"bash -c type {cmd}")
-        result = subprocess.Popen(safe_cmd, stdout=subprocess.PIPE)
-        return result.wait() == 0
+    return shutil.which(cmd) is not None
 
 
 def op_envvar(op_name):
@@ -209,16 +202,16 @@ for op_name, builder in ALL_OPS.items():
 print(f'Install Ops={install_ops}')
 
 # Write out version/git info.
-git_hash_cmd = "git rev-parse --short HEAD"
-git_branch_cmd = "git rev-parse --abbrev-ref HEAD"
-git_tag_cmd = "git describe --tags"
+git_hash_cmd = ["git", "rev-parse", "--short", "HEAD"]
+git_branch_cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+git_tag_cmd = ["git", "describe", "--tags"]
 if command_exists('git') and not is_env_set('DS_BUILD_STRING'):
     try:
-        result = subprocess.check_output(git_hash_cmd, shell=True)
+        result = subprocess.check_output(git_hash_cmd)
         git_hash = result.decode('utf-8').strip()
-        result = subprocess.check_output(git_branch_cmd, shell=True)
+        result = subprocess.check_output(git_branch_cmd)
         git_branch = result.decode('utf-8').strip()
-        result = subprocess.check_output(git_tag_cmd, shell=True)
+        result = subprocess.check_output(git_tag_cmd)
         git_tag = result.decode('utf-8').strip()
     except subprocess.CalledProcessError:
         git_hash = "unknown"
@@ -269,18 +262,23 @@ hcu_version_str = version_str
 # else:
 #     # None of the above, probably installing from source.
 #     version_str += f'+{git_hash}'
-abi_version = subprocess.getoutput("echo '#include <string>' | gcc -x c++ -E -dM - | fgrep _GLIBCXX_USE_CXX11_ABI >tmp.txt")
-abi_version = 'abi' + subprocess.getoutput("awk '{print $3}' tmp.txt")
+abi_result = subprocess.run(["gcc", "-x", "c++", "-E", "-dM", "-"],
+                            input="#include <string>\n",
+                            text=True,
+                            capture_output=True,
+                            check=False)
+abi_match = re.search(r"#define _GLIBCXX_USE_CXX11_ABI\s+(\d+)", abi_result.stdout)
+abi_version = 'abi' + (abi_match.group(1) if abi_match else '')
 # print(abi_version)
 
-dtk_version_path = subprocess.getoutput("echo $DTKROOT")
+dtk_version_path = os.environ.get("DTKROOT", "")
 
 with open("{0}/.info/rocm_version".format(dtk_version_path), 'r') as fd:
     dtk_version_str = fd.read().split('.')[:2]
     dtk_version_str = 'dtk' +  "".join(dtk_version_str)
     dtk_version_str = dtk_version_str.replace('\n', '')
 
-torch_version = "torch"+ subprocess.getoutput("python3 -c \"import torch;print(torch.__version__)\"")
+torch_version = "torch" + (torch.__version__ if torch_available else "")
 #print(torch_version)
 
 hcu_version_str  = git_tag #+= f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
