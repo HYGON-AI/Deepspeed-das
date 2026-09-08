@@ -4,8 +4,8 @@
 cd ./accelerator
 pytest ./
 cd ..
-#pytest --timeout=1400 ./model/BingBertSquad/test_e2e_squad.py #todo
-pytest --timeout=1400 ./model/Megatron_GPT2/test_common.py
+# pytest --timeout=1400 ./model/BingBertSquad/test_e2e_squad.py #todo
+# pytest --timeout=1400 ./model/Megatron_GPT2/test_common.py
 pytest --timeout=1400 ./lightning/test_simple.py
 python ./torch_compile/test_compile.py
 pytest --timeout=1400 ./unit/accelerator/test_accelerator.py
@@ -130,7 +130,7 @@ pytest --timeout=1400 ./unit/hybrid_engine/test_he_all.py
 pytest --timeout=1400 ./unit/hybrid_engine/test_he_lora.py
 pytest --timeout=1400 ./unit/hybrid_engine/test_he_llama.py
 pytest --timeout=1400 ./unit/inference/test_checkpoint_sharding.py
-pytest --timeout=1400 ./unit/inference/test_model_profiling.py
+pytest -m inference --timeout=1400 ./unit/inference/test_model_profiling.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/core_ops/test_pre_ln.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/core_ops/test_post_ln.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/core_ops/test_blas_linear.py
@@ -141,6 +141,65 @@ pytest --timeout=1400 ./unit/inference/v2/kernels/ragged_ops/test_atom_builder.p
 pytest --timeout=1400 ./unit/inference/v2/kernels/ragged_ops/test_moe_scatter.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/ragged_ops/test_logits_gather.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/ragged_ops/test_ragged_embed.py
+python ./hybrid_engine/hybrid_engine_test.py
+# no file
+#pytest --timeout=1400 ./model/BingBertSquad/BingBertSquad_run_func_test.py
+#pytest --timeout=1400 ./model/BingBertSquad/test_e2e_squad.py #todo: requires BingBertSquad assets
+# no file
+# pytest --timeout=1400 ./model/Megatron_GPT2/run_checkpoint_test.py
+# pytest --timeout=1400 ./model/Megatron_GPT2/run_func_test.py
+# pytest --timeout=1400 ./model/Megatron_GPT2/run_perf_test.py
+# only support xpu
+#python ./onebit/test_compressed_backend.py
+#python ./onebit/test_compressed_perf.py
+python ./perf/adagrad_test.py
+python ./perf/adam_test.py
+python ./small_model_debugging/partial_offload_test.py
+pytest --timeout=1400 ./torch_compile/test_deepcompile_z3_release.py
+pytest --timeout=1400 ./unit/checkpoint/test_autotp_uc_checkpoint.py
+pytest --timeout=1400 ./unit/compile/test_inductor_aot_kwargs.py
+pytest --timeout=1400 ./unit/compile/test_list_schedule.py
+pytest --timeout=1400 ./unit/compile/test_zero3_grad_dtype.py
+pytest --timeout=1400 ./unit/linear/test_linear.py
+pytest --timeout=1400 ./unit/linear/test_quant_param.py
+pytest --timeout=1400 ./unit/model_parallelism/test_autotp_custom_patterns.py
+pytest --timeout=1400 ./unit/model_parallelism/test_tp_plan_e2e.py
+pytest --timeout=1400 ./unit/model_parallelism/test_tp_plan_real_models.py
+pytest --timeout=1400 ./unit/module_inject/test_tp_plan_converter.py
+pytest --timeout=1400 ./unit/ops/aio/test_fast_file_writer_fd_close.py
+pytest --timeout=1400 ./unit/ops/deepspeed4science/test_evoformer_attn_builder.py
+pytest --timeout=1400 ./unit/ops/muon/test_muon_partial_training.py
+pytest --timeout=1400 ./unit/ops/test_op_builder.py
+pytest --timeout=1400 ./unit/runtime/half_precision/test_fp8.py
+pytest --timeout=1400 ./unit/runtime/tensor_parallel/test_autotp_universal_checkpoint.py
+pytest --timeout=1400 ./unit/runtime/test_precision_config_loss_scale.py
+pytest --timeout=1400 ./unit/runtime/test_tp_plan_extraction.py
+pytest --timeout=1400 ./unit/runtime/zero/test_zero_late_module_attach.py
+NCCL_P2P_DISABLE=1 pytest --timeout=1400 ./unit/sequence_parallelism/test_autosp_equivalence.py
+NCCL_P2P_DISABLE=1 pytest --timeout=1400 ./unit/sequence_parallelism/test_autosp_integration.py
+# no nvaccelerator
+#pytest --timeout=1400 ./unit/utils/test_nvtx.py
+pytest --timeout=1400 ./unit/v1/compile/test_compile_autosp.py
+pytest --timeout=1400 ./unit/v1/compile/test_compile_fx.py
+pytest --timeout=1400 ./unit/v1/compile/test_selective_gather.py
+pytest --timeout=1400 ./unit/v1/half_precision/test_mixed_precision_dtype.py
+pytest --timeout=1400 ./unit/v1/half_precision/test_with_autocast.py
+pytest --timeout=1400 ./unit/v1/moe/test_autoep_checkpoint.py
+pytest --timeout=1400 ./unit/v1/moe/test_autoep_grad_parity.py
+pytest --timeout=1400 ./unit/v1/moe/test_autoep_integration.py
+pytest --timeout=1400 ./unit/v1/moe/test_autoep_unit.py
+pytest --timeout=1400 ./unit/v1/moe/test_fused_expert_layout.py
+pytest --timeout=1400 ./unit/v1/multimodal/test_gemma4_config.py
+pytest --timeout=1400 ./unit/v1/zero/test_offload_states.py
+pytest --timeout=1400 ./unit/v1/zero/test_overlap_comm_record_stream.py
+pytest --timeout=1400 ./unit/v1/zero/test_stage2_flatten_on_gpu.py
+pytest --timeout=1400 ./unit/v1/zero/test_zero2_offload_multi_backward.py
+pytest --timeout=1400 ./unit/v1/zero/test_zero_coalesce_grad_reduction.py
+pytest --timeout=1400 ./unit/v1/zero/test_zero_cpu_offload_grad_accum.py
+pytest --timeout=1400 ./unit/v1/zero/test_zero_functorch_linear.py
+pytest --timeout=1400 ./unit/v1/zero/test_zero_hook_count_regression.py
+pytest --timeout=1400 ./unit/v1/zero/test_zero_torch_func.py
+pytest --timeout=1400 ./unit/v1/zero/test_zero_user_backward.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/ragged_ops/test_blocked_kv_copy.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/ragged_ops/test_blocked_rotary_emb.py
 pytest --timeout=1400 ./unit/inference/v2/kernels/ragged_ops/test_blocked_flash.py
@@ -172,9 +231,9 @@ pytest --timeout=1400 ./unit/inference/test_stable_diffusion.py
 pytest --timeout=1400 ./unit/inference/quantization/test_intX_quantization.py
 #pytest --timeout=1400 ./unit/inference/kernels/cutlass_ops/test_moe_gemm.py
 pytest --timeout=1400 ./unit/elasticity/test_elastic.py
-pytest --timeout=1400 ./onebit/test_mpi_perf.py
 python ./onebit/test_nccl_backend.py
-pytest --timeout=1400 ./onebit/test_mpi_backend.py
+python ./onebit/test_mpi_perf.py
+python ./onebit/test_mpi_backend.py
 python ./onebit/test_nccl_perf.py
 pytest --timeout=1400 ./small_model_debugging/test_model.py
 pytest --timeout=1400 ./small_model_debugging/test_mics_config.py

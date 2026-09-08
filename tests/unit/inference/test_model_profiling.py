@@ -35,12 +35,17 @@ class TestModelProfiling(DistributedTest):
         local_rank = int(os.getenv("LOCAL_RANK", "0"))
         world_size = int(os.getenv("WORLD_SIZE", "1"))
 
-        pipe = pipeline(task, model, framework="pt", device=get_accelerator().device_name(local_rank))
+        pipe = pipeline(task,
+                        model,
+                        framework="pt",
+                        device=get_accelerator().device_name(local_rank),
+                        model_kwargs={"attn_implementation": "eager"})
         pipe.model = deepspeed.init_inference(pipe.model,
                                               dtype=dtype,
                                               mp_size=world_size,
                                               replace_with_kernel_inject=True,
                                               enable_cuda_graph=enable_cuda_graph)
+        pipe.device = next(pipe.model.parameters()).device
         pipe.model.profile_model_time(use_cuda_events=use_cuda_events)
 
         e2e_times = []

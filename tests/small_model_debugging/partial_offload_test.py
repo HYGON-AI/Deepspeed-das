@@ -12,6 +12,19 @@ from torch.utils.data.distributed import DistributedSampler
 import deepspeed.comm as dist
 
 
+def setup_single_process_environment():
+    """Allow this smoke test to run with plain ``python`` as well as a launcher."""
+    defaults = {
+        "RANK": "0",
+        "LOCAL_RANK": "0",
+        "WORLD_SIZE": "1",
+        "MASTER_ADDR": "127.0.0.1",
+        "MASTER_PORT": "29500",
+    }
+    for name, value in defaults.items():
+        os.environ.setdefault(name, value)
+
+
 class SimpleModel(torch.nn.Module):
 
     def __init__(self, hidden_dim, empty_grad=False):
@@ -53,7 +66,8 @@ def get_data_loader(model, total_samples, hidden_dim, device):
 def get_args(tmpdir, config_dict):
     parser = argparse.ArgumentParser()
     parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument('--zero', type=int, default=0)
+    # Partial optimizer offload (ratio < 1) is supported only by ZeRO-3.
+    parser.add_argument('--zero', type=int, default=3)
     args = parser.parse_args()  #args=''
 
     config_dict["zero_optimization"]["stage"] = args.zero
@@ -69,6 +83,7 @@ def print0(msg):
         print(msg, flush=True)
 
 
+setup_single_process_environment()
 rank = int(os.environ['RANK'])
 print('seed:', 2222 + rank)
 torch.random.manual_seed(2222 + rank)

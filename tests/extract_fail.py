@@ -1,14 +1,18 @@
 # Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+# DeepSpeed Team
+
 import re
 import pandas as pd
 import sys
+
 
 def clean_ansi(text):
     """移除 ANSI 转义序列（如 \x1b[31m）"""
     ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', text)
+
 
 def extract_test_error_or_failure(line):
     """
@@ -18,32 +22,23 @@ def extract_test_error_or_failure(line):
       - FAILED ... 同理
     """
     clean_line = clean_ansi(line).strip()
-    
-    # 匹配完整格式：有 "- 原因"
-    match_full = re.match(r'^(ERROR|FAILED)\s+(.+?)\s*-\s*(.+)$', clean_line)
-    if match_full:
-        return {
-            "type": match_full.group(1),
-            "test": match_full.group(2).strip(),
-            "reason": match_full.group(3).strip()
-        }
-    
+
+    # Split on the final separator. Parameter IDs can themselves contain
+    # hyphens, e.g. ``test[qbit8-bws2] - AttributeError``.
+    match_status = re.match(r'^(ERROR|FAILED)\s+(.+)$', clean_line)
+    if match_status and " - " in match_status.group(2):
+        test, reason = match_status.group(2).rsplit(" - ", 1)
+        return {"type": match_status.group(1), "test": test.strip(), "reason": reason.strip()}
+
     # 匹配简略格式：只有 "ERROR/FAILED 文件路径"
-    match_simple = re.match(r'^(ERROR|FAILED)\s+(.+)$', clean_line)
+    match_simple = match_status
     if match_simple:
         return {
             "type": match_simple.group(1),
             "test": match_simple.group(2).strip(),
             "reason": "No detailed error message (likely collect/import failure)"
         }
-    else:
-        try:
-            raise ValueError(f"Invalid line format: {clean_line}")
-        except ValueError as e:
-            print(e)
-            import pdb
-            pdb.set_trace()
-        return None
+    return None
 
 
 def main():
@@ -59,14 +54,18 @@ def main():
                 # print("start analyize......")
                 flag = True
                 continue
-            if (FAIL in line or ERROR in line) and flag:
+            # Only parse pytest summary entries.  Log bodies can contain words
+            # such as "ERROR" or "FAILED" (compiler/NCCL output) that are not
+            # summary records and must not enter the parser or debugger.
+            summary_line = clean_ansi(line).strip()
+            if re.match(r'^(FAILED|ERROR)\s+', summary_line) and flag:
                 r = extract_test_error_or_failure(line)
                 if r is not None:
                     res.append(r)
                 continue
             if "test session starts" in line:
                 flag = False
-            
+
         # 转换为 DataFrame
         df = pd.DataFrame(res)
 
@@ -79,8 +78,7 @@ def main():
         df.to_excel(output_file, index=False, sheet_name="Test Failures")
 
         print(f"✅ 已导出 {len(df)} 条记录到 {output_file}")
-                
-            
+
 
 if __name__ == '__main__':
     main()

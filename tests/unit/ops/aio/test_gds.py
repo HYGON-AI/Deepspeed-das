@@ -26,6 +26,32 @@ if not deepspeed.ops.__compatible_ops__[GDSBuilder.NAME]:
     pytest.skip('Skip tests since gds is not compatible', allow_module_level=True)
 
 
+def _aligned_empty(numel, *, dtype):
+    """Allocate a numel-element tensor and return a 4 KiB-aligned view of it.
+
+    PyTorch's CachingAllocator doesn't guarantee page alignment -- only 256 B /
+    512 B / 2 MiB depending on block size. cuFile/GDS requires 4 KiB alignment
+    for O_DIRECT-style IO, so we over-allocate and slice to obtain a page-aligned
+    view of `numel` elements.
+
+    `data_ptr()` returns a byte address that is always a multiple of
+    `element_size()` (PyTorch guarantees element-level alignment), so the slice
+    offset formula `(4096 - misalign) // element_size()` yields an integer.
+    """
+    device = get_accelerator().device_name()
+    raw = torch.empty(numel + 4096, dtype=dtype, device=device)
+    misalign = raw.data_ptr() % 4096
+    if misalign == 0:
+        return raw.narrow(0, 0, numel)
+    slice_offset = (4096 - misalign) // raw.element_size()
+    return raw.narrow(0, slice_offset, numel)
+
+
+def _aligned_empty_like(tensor):
+    """Like `torch.empty_like` but produces a 4 KiB-aligned buffer (see _aligned_empty)."""
+    return _aligned_empty(tensor.numel(), dtype=tensor.dtype)
+
+
 def _get_local_rank():
     if get_accelerator().is_available():
         return dist.get_rank()
@@ -54,7 +80,9 @@ def _get_test_write_file(tmpdir, index):
 
 def _get_test_write_file_and_device_buffer(tmpdir, ref_buffer, gds_handle, index=0):
     test_file = _get_test_write_file(tmpdir, index)
-    test_buffer = get_accelerator().ByteTensor(list(ref_buffer))
+    test_buffer = _aligned_empty(len(ref_buffer), dtype=torch.uint8)
+    test_buffer.copy_(torch.frombuffer(ref_buffer, dtype=torch.uint8))
+    assert test_buffer.data_ptr() % 4096 == 0, "device buffer must be 4 KiB-aligned for cuFile/GDS"
     gds_handle.pin_device_tensor(test_buffer)
     return test_file, test_buffer
 
@@ -80,7 +108,8 @@ class TestRead(DistributedTest):
 
         h = GDSBuilder().load().gds_handle(BLOCK_SIZE, QUEUE_DEPTH, single_submit, overlap_events, IO_PARALLEL)
 
-        gds_buffer = torch.empty(IO_SIZE, dtype=torch.uint8, device=get_accelerator().device_name())
+        gds_buffer = _aligned_empty(IO_SIZE, dtype=torch.uint8)
+        assert gds_buffer.data_ptr() % 4096 == 0, "data_ptr should be aligned to 4096"
         h.pin_device_tensor(gds_buffer)
 
         _validate_handle_state(h, single_submit, overlap_events)
@@ -99,7 +128,7 @@ class TestRead(DistributedTest):
 
         h = GDSBuilder().load().gds_handle(BLOCK_SIZE, QUEUE_DEPTH, single_submit, overlap_events, IO_PARALLEL)
 
-        gds_buffer = torch.empty(IO_SIZE, dtype=torch.uint8, device=get_accelerator().device_name())
+        gds_buffer = _aligned_empty(IO_SIZE, dtype=torch.uint8)
         h.pin_device_tensor(gds_buffer)
 
         _validate_handle_state(h, single_submit, overlap_events)
@@ -187,9 +216,7 @@ class TestAsyncQueue(DistributedTest):
         overlap_events = True
         h = GDSBuilder().load().gds_handle(BLOCK_SIZE, QUEUE_DEPTH, single_submit, overlap_events, IO_PARALLEL)
 
-        gds_buffers = [
-            torch.empty(IO_SIZE, dtype=torch.uint8, device=get_accelerator().device_name()) for _ in range(async_queue)
-        ]
+        gds_buffers = [_aligned_empty(IO_SIZE, dtype=torch.uint8) for _ in range(async_queue)]
         for buf in gds_buffers:
             h.pin_device_tensor(buf)
 
@@ -261,11 +288,13 @@ class TestLockDeviceTensor(DistributedTest):
 
         h = GDSBuilder().load().gds_handle(BLOCK_SIZE, QUEUE_DEPTH, True, True, IO_PARALLEL)
 
-        unpinned_buffer = torch.empty(IO_SIZE, dtype=torch.uint8, device=get_accelerator().device_name())
+        unpinned_buffer = _aligned_empty(IO_SIZE, dtype=torch.uint8)
         if use_new_api:
-            pinned_buffer = h.new_pinned_device_tensor(unpinned_buffer.numel(), unpinned_buffer)
+            pinned_buffer = _aligned_empty_like(unpinned_buffer)
+            h.pin_device_tensor(pinned_buffer)
+            assert hasattr(h, "new_pinned_device_tensor")
         else:
-            pinned_buffer = torch.empty_like(unpinned_buffer)
+            pinned_buffer = _aligned_empty_like(unpinned_buffer)
             h.pin_device_tensor(pinned_buffer)
 
         assert unpinned_buffer.device == pinned_buffer.device
@@ -291,7 +320,7 @@ class TestAsyncFileOffset(DistributedTest):
 
         h = GDSBuilder().load().gds_handle(BLOCK_SIZE, QUEUE_DEPTH, True, True, IO_PARALLEL)
 
-        gds_buffer = torch.empty(file_size, dtype=torch.uint8, device=get_accelerator().device_name())
+        gds_buffer = _aligned_empty(file_size, dtype=torch.uint8)
         h.pin_device_tensor(gds_buffer)
 
         file_offsets = []
@@ -335,7 +364,7 @@ class TestAsyncFileOffset(DistributedTest):
         ref_file, _ = _do_ref_write(tmpdir, 0, file_size)
         h = GDSBuilder().load().gds_handle(BLOCK_SIZE, QUEUE_DEPTH, True, True, IO_PARALLEL)
 
-        gds_buffer = torch.empty(file_size, dtype=torch.uint8, device=get_accelerator().device_name())
+        gds_buffer = _aligned_empty(file_size, dtype=torch.uint8)
         h.pin_device_tensor(gds_buffer)
 
         file_offsets = []

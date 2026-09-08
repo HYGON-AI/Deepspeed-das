@@ -99,9 +99,9 @@ class FP_Quantize(Quantizer):
 
     def to(self, *args, **kwargs):
         # Intermediate tensors may need to be moved to different devices
-        if hasattr(self, 'input_q'):
+        if hasattr(self, 'input_q') and self.input_q is not None:
             self.input_q = self.input_q.to(*args, **kwargs)
-        if hasattr(self, 'scale'):
+        if hasattr(self, 'scale') and self.scale is not None:
             self.scale = self.scale.to(*args, **kwargs)
 
     def get_scales(self):

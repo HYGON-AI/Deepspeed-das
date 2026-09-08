@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation.
 # SPDX-License-Identifier: Apache-2.0
-
 # DeepSpeed Team
 
 # Copyright (c) 2026 Hygon Information Technology Co., Ltd.

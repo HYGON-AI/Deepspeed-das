@@ -5,7 +5,6 @@
 
 # Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 # Modified by Hygon Information Technology Co., Ltd., 2026.
-
 """
 DeepSpeed library
 
@@ -175,6 +174,7 @@ def op_enabled(op_name):
     env_var = op_envvar(op_name)
     return int(get_env_if_set(env_var, BUILD_OP_DEFAULT))
 
+
 compatible_ops = dict.fromkeys(ALL_OPS.keys(), False)
 install_ops = dict.fromkeys(ALL_OPS.keys(), False)
 for op_name, builder in ALL_OPS.items():
@@ -275,14 +275,13 @@ dtk_version_path = os.environ.get("DTKROOT", "")
 
 with open("{0}/.info/rocm_version".format(dtk_version_path), 'r') as fd:
     dtk_version_str = fd.read().split('.')[:2]
-    dtk_version_str = 'dtk' +  "".join(dtk_version_str)
+    dtk_version_str = 'dtk' + "".join(dtk_version_str)
     dtk_version_str = dtk_version_str.replace('\n', '')
 
 torch_version = "torch" + (torch.__version__ if torch_available else "")
 #print(torch_version)
 
-hcu_version_str  = git_tag #+= f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
-
+hcu_version_str = git_tag or git_branch  #+= f'+git{git_hash}' + '.' + abi_version + '.'+ dtk_version_str + '.' + torch_version
 
 torch_version = ".".join([TORCH_MAJOR, TORCH_MINOR])
 bf16_support = False

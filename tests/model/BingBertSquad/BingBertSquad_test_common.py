@@ -50,9 +50,11 @@ class BaseTestCase(unittest.TestCase):
         ds_flag = " -d --deepspeed_config " + test_config["json"] if test_config["deepspeed"] else " "
         other_args = " " + test_config["other_args"] if "other_args" in test_config else " "
 
-        cmd = "./run_BingBertSquad_sanity.sh -e 1 -g {0} {1} {2}".format(test_config["gpus"], other_args, ds_flag)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        script = os.path.join(script_dir, "run_BingBertSquad_sanity.sh")
+        cmd = "{0} -e 1 -g {1} {2} {3}".format(script, test_config["gpus"], other_args, ds_flag)
         cmd = shlex.split(cmd)
         self.ensure_directory_exists(output)
         with open(output, "w") as f:
             print(cmd)
-            subprocess.run(cmd, check=False, executable='/bin/bash', stdout=f, stderr=f)
+            subprocess.run(cmd, check=False, cwd=script_dir, stdout=f, stderr=f)

@@ -19,9 +19,9 @@ ATTN_HEADS = 8
 
 
 def remove_file(test_id, filename):
-    cmd = shlex.split(f"if [ -f {filename} ] ; then rm -v {filename}; fi")
-    print(f"{test_id} cmd: {cmd}")
-    subprocess.run(cmd, check=False, executable='/bin/bash')
+    print(f"{test_id} removing file: {filename}")
+    if os.path.isfile(filename):
+        os.remove(filename)
 
 
 def grep_loss_from_file(file_name):
@@ -454,7 +454,7 @@ class GPT2CheckpointTestCase(BaseTestCase):
         try:
             cmd = shlex.split(f"rm -rf {checkpoint_name}")
             print(f"{self.id()} cmd: {cmd}")
-            subprocess.run(cmd, check=False, executable='/bin/bash')
+            subprocess.run(cmd, check=False)
         except Exception:
             print("No old checkpoint")
 
@@ -476,7 +476,7 @@ class GPT2CheckpointTestCase(BaseTestCase):
         # remove previous test log
         try:
             cmd = shlex.split(f"rm {base_file}")
-            subprocess.run(cmd, check=False, executable='/bin/bash')
+            subprocess.run(cmd, check=False)
         except Exception:
             print(f"{self.id()} No old logs")
 
@@ -490,9 +490,10 @@ class GPT2CheckpointTestCase(BaseTestCase):
 
         # set checkpoint load iteration
         try:
-            cmd = shlex.split(f"echo {checkpoint_interval} > {checkpoint_name}/latest_checkpointed_iteration.txt")
-            print(f"{self.id()} running cmd: {cmd}")
-            subprocess.run(cmd, check=False, executable='/bin/bash')
+            iteration_file = os.path.join(checkpoint_name, "latest_checkpointed_iteration.txt")
+            print(f"{self.id()} writing checkpoint iteration: {iteration_file}")
+            with open(iteration_file, "w") as f:
+                f.write(f"{checkpoint_interval}\n")
         except Exception:
             print(f"{self.id()} Failed to update the checkpoint iteration file")
             return False
@@ -508,7 +509,7 @@ class GPT2CheckpointTestCase(BaseTestCase):
         # remove previous test log
         try:
             cmd = shlex.split(f"rm {test_file}")
-            subprocess.run(cmd, check=False, executable='/bin/bash')
+            subprocess.run(cmd, check=False)
         except Exception:
             print(f"{self.id()} no previous logs for")
         self.run_gpt2_test(test_config, test_file)
