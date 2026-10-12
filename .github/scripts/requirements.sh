@@ -1,6 +1,5 @@
 wget http://42.228.13.241:18000/customized/amdsmi/amdsmi-24.5.3%2B02cbffb.dirty-py3-none-any.whl -O amdsmi-24.5.3%2B02cbffb.dirty-py3-none-any.whl
 pip install amdsmi-24.5.3%2B02cbffb.dirty-py3-none-any.whl
-pip install http://42.228.13.241:18000/pkg/hcusmi-1.0.0%2B5d7586ac.dirty-py3-none-any.whl
 PYTHON_VERSION=$(python --version 2>&1 | awk -F '[ .]' '{print $2 "." $3}')
 
 if [[ $PYTHON_VERSION == "3.12" ]];then

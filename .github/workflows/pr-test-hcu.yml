@@ -136,7 +136,6 @@ jobs:
               run: |
                 set -e
                 source /opt/dtk/env.sh
-                source .github/scripts/fix-libhcu_smi.sh
                 export BUILD_ROOT=${GITHUB_WORKSPACE}
                 export PYTHON_VERSION=$(python --version 2>&1 | awk -F '[ .]' '{print $2 "." $3}')
                 export LD_LIBRARY_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/torch/lib:$BUILD_ROOT/third_party/libaio_build/lib:$LD_LIBRARY_PATH
@@ -149,8 +148,6 @@ jobs:
                 export HSA_FORCE_FINE_GRAIN_PCIE=1
                 export HIP_VISIBLE_DEVICES=0,1,2,3
                 export LD_LIBRARY_PATH=/usr/local/lib/python3.10/site-packages/hcusmi:$LD_LIBRARY_PATH
-                ln -sf /usr/local/lib/python3.10/site-packages/hcusmi/libhcu_smi.so /usr/local/lib/libhcu_smi.so
-                ldconfig
                 python3 --version
                 echo ${PYTHON_VERSION}
                 python -c "import torch, os; print(os.path.dirname(torch.__file__))"
