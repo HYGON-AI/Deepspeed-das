@@ -126,7 +126,7 @@ jobs:
                 pip3 install -r  requirements/requirements-autotuning.txt  -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
                 pip3 install -r  requirements/requirements-inf.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
                 pip3 install -r  requirements/requirements-sd.txt  -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
-                sed -i 's/^numpy$/numpy==1.26.3/' requirements/requirements.txt
+                sed -i 's/^numpy$/numpy==1.24.3/' requirements/requirements.txt
                 pip install -r requirements/requirements.txt   -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
                 pip install -r requirements/requirements-dev.txt  --no-deps -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
                 bash .github/scripts/requirements.sh
@@ -148,6 +148,7 @@ jobs:
                 export HSA_FORCE_FINE_GRAIN_PCIE=1
                 export HIP_VISIBLE_DEVICES=0,1,2,3
                 export LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/hcusmi:$LD_LIBRARY_PATH
+                
                 python3 --version
                 echo ${PYTHON_VERSION}
                 python -c "import torch, os; print(os.path.dirname(torch.__file__))"
