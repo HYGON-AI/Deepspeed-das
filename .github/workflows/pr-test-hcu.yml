@@ -42,7 +42,6 @@ jobs:
             group: ci-general
             labels: [self-hosted, ci, bw1100]
         # pull_request_target runs fork code on the self-hosted runner, so require a maintainer approval first.
-        environment: hcu-ci
         timeout-minutes: 720
         container:
             image: ${{ vars.IMAGE }}
@@ -133,7 +132,8 @@ jobs:
               run: |
                 set -eu
                 source /opt/dtk/env.sh
-                export BUILD_BOOT=${GITHUB_WORKSPACE}
+                export BUILD_ROOT=${GITHUB_WORKSPACE}
+                export PYTHON_VERSION=$(python --version 2>&1 | awk -F '[ .]' '{print $2 "." $3}')
                 export LD_LIBRARY_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/torch/lib:$BUILD_ROOT/third_party/libaio_build/lib:$LD_LIBRARY_PATH
                 export LD_LIBRARY_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/torch/lib:$LD_LIBRARY_PATH
                 export C_INCLUDE_PATH=$BUILD_ROOT/third_party/libaio_build/include:$C_INCLUDE_PATH
