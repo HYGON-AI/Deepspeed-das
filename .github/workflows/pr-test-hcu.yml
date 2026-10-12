@@ -150,6 +150,7 @@ jobs:
                 export LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/hcusmi:$LD_LIBRARY_PATH
                 python3 --version
                 echo ${PYTHON_VERSION}
+                python -c "import torch, os; print(os.path.dirname(torch.__file__))"
                 echo "obtain the path of the torch"
                 TORCH_PATH=$(python -c "import torch, os; print(os.path.dirname(torch.__file__))" 2>/dev/null)
                 echo "${TORCH_PATH}"
