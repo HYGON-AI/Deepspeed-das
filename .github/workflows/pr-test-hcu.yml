@@ -148,7 +148,8 @@ jobs:
                 export HSA_FORCE_FINE_GRAIN_PCIE=1
                 export HIP_VISIBLE_DEVICES=0,1,2,3
                 export LD_LIBRARY_PATH=/usr/local/lib/python3.10/site-packages/hcusmi:$LD_LIBRARY_PATH
-                
+                ln -sf /usr/local/lib/python3.10/site-packages/hcusmi/libhcu_smi.so /usr/local/lib/libhcu_smi.so
+                ldconfig
                 python3 --version
                 echo ${PYTHON_VERSION}
                 python -c "import torch, os; print(os.path.dirname(torch.__file__))"
