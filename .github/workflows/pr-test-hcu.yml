@@ -136,6 +136,7 @@ jobs:
               run: |
                 set -e
                 source /opt/dtk/env.sh
+                source .github/scripts/fix-libhcu_smi.sh
                 export BUILD_ROOT=${GITHUB_WORKSPACE}
                 export PYTHON_VERSION=$(python --version 2>&1 | awk -F '[ .]' '{print $2 "." $3}')
                 export LD_LIBRARY_PATH=/usr/local/lib/python${PYTHON_VERSION}/site-packages/torch/lib:$BUILD_ROOT/third_party/libaio_build/lib:$LD_LIBRARY_PATH
