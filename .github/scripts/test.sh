@@ -12,7 +12,7 @@ mkdir -p ${LOG_DIR}
 TIMEOUT="${TIMEOUT:-3000}"
 mkdir -p "$(dirname "${TEST_LOG}")"
 : > "${TEST_LOG}"
-pip install transformers==4.48.0
+pip install transformers==4.51.0
 export LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/hcusmi:$LD_LIBRARY_PATH
 source /opt/dtk/env.sh
 status=0
