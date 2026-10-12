@@ -134,7 +134,7 @@ jobs:
             - name: build whl
               shell: bash
               run: |
-                set -eu
+                set -e
                 source /opt/dtk/env.sh
                 export BUILD_ROOT=${GITHUB_WORKSPACE}
                 export PYTHON_VERSION=$(python --version 2>&1 | awk -F '[ .]' '{print $2 "." $3}')
