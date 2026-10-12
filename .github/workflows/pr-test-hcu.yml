@@ -76,10 +76,14 @@ jobs:
               env:
                 # Pass via env instead of inline ${{ }} so a manual input cannot inject shell commands.
                 PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr-number }}
+                # The repo is private, so the fetch needs a token; pass it only to this one command so it never lands in .git/config.
+                GH_TOKEN: ${{ github.token }}
               run: |
                 git config user.name "github-actions[bot]"
                 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                git fetch "https://github.com/${GITHUB_REPOSITORY}.git" "pull/${PR_NUMBER}/head:pr"
+                auth=$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)
+                git -c http.extraheader="AUTHORIZATION: basic ${auth}" \
+                    fetch "https://github.com/${GITHUB_REPOSITORY}.git" "pull/${PR_NUMBER}/head:pr"
                 git merge --no-ff --no-edit pr
 
             - name: install dtk and aicc
