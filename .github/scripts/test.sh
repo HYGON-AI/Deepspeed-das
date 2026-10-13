@@ -12,7 +12,7 @@ mkdir -p ${LOG_DIR}
 TIMEOUT="${TIMEOUT:-3000}"
 mkdir -p "$(dirname "${TEST_LOG}")"
 : > "${TEST_LOG}"
-pip install transformers==4.51.0
+pip install transformers==4.57.6
 export LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/hcusmi:$LD_LIBRARY_PATH
 source /opt/dtk/env.sh
 status=0
@@ -118,8 +118,13 @@ worker() {
             echo "[GPU $gpu_id][$((idx+1))/$TOTAL] PASS: $cmd"
         else
             local rc=$?
-            echo "[GPU $gpu_id][$((idx+1))/$TOTAL] FAIL (rc=$rc): $cmd"
-            record_failure "$cmd"
+            # pytest 返回 5 表示没有收集到测试（被 pytest.ini 的 -m 排除或模块级 skip），不算失败
+            if [ "$rc" -eq 5 ]; then
+                echo "[GPU $gpu_id][$((idx+1))/$TOTAL] SKIP (no tests collected): $cmd"
+            else
+                echo "[GPU $gpu_id][$((idx+1))/$TOTAL] FAIL (rc=$rc): $cmd"
+                record_failure "$cmd"
+            fi
         fi
 
         idx=$((idx + GPU_COUNT))

@@ -95,7 +95,7 @@ jobs:
                 yum install -y libaio-devel
                 yum install -y libaio
                 src_dir="/ArchivedFile/ai_cc/Nightly"
-                latest_run=$(cd "${src_dir}" && find . -maxdepth 1 -type f -name 'dtk_llvm_aicc-1.0.0_*.run' -printf '%f\n' | sed 's/\.run$//' | sort -t '_' -k4 -nr | head -n1)
+                latest_run=$(cd "${src_dir}" && find . -maxdepth 1 -type f -name 'dtk_llvm_aicc-1.0.0*.run' -printf '%f\n' | sed 's/\.run$//' | sort -t '_' -k4 -nr | head -n1)
                 if [[ -n "${latest_run}" ]]; then
                     cp "${src_dir}/${latest_run}.run" "${GITHUB_WORKSPACE}/"
                     cd "${GITHUB_WORKSPACE}"
