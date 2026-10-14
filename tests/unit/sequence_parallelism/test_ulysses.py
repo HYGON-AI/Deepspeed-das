@@ -244,7 +244,7 @@ class TestFPDTAttention(DistributedTest):
                                                             head_dim).permute(1, 2, 0,
                                                                               3).contiguous()  # b, nhead, l, d
 
-        scores = torch.matmul(q, k.transpose(-2, -1)) / torch.sqrt(torch.tensor(dim, dtype=torch.half))
+        scores = torch.matmul(q, k.transpose(-2, -1)) / torch.sqrt(torch.tensor(head_dim, dtype=torch.half))
 
         causal_mask = torch.triu(torch.ones(d1, d1, device=ds_engine.device), diagonal=1).bool()
         causal_mask = causal_mask.unsqueeze(0).unsqueeze(0)
