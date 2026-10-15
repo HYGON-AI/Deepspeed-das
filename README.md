@@ -1,43 +1,46 @@
 # DeepSpeed for Hygon
 
-## Open Source Attribution
+DeepSpeed for Hygon 基于 DeepSpeed 官方版本开发，并包含海光针对海光软硬件环境维护的适配修改。
 
-This repository is based on the official DeepSpeed project and contains
-Hygon-maintained modifications based on the official DeepSpeed v0.19.2 release.
+## 上游来源
 
-- Upstream project: DeepSpeed
-- Upstream source: https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2
-- Upstream commit: b919284ab1ad6dbc1cb0e06b10386ff74160b586
-- Upstream documentation: https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2/docs
-- Upstream README preserved in this repository: [README_ORIGIN.md](README_ORIGIN.md)
-- License: Apache-2.0
+- **上游项目：** [DeepSpeed](https://github.com/deepspeedai/DeepSpeed)
+- **上游版本：** [v0.19.2](https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2)
+- **上游提交：** [`b919284ab1ad6dbc1cb0e06b10386ff74160b586`](https://github.com/deepspeedai/DeepSpeed/commit/b919284ab1ad6dbc1cb0e06b10386ff74160b586)
+- **上游文档：** [DeepSpeed v0.19.2 文档](https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2/docs)
+- **上游 README 备份：** [README_ORIGIN.md](README_ORIGIN.md)
+- **开源许可证：** Apache License 2.0
 
-`README_ORIGIN.md` is preserved as an upstream reference copy for comparison and
-review. It keeps upstream wording as-is and does not define the public release
-messaging for this Hygon repository.
+本仓库保留 `README_ORIGIN.md`，用于查阅和对比上游内容。该文件沿用上游原文，不作为本项目的版本发布说明。
 
-The original DeepSpeed copyright, license terms, and disclaimers are preserved in [LICENSE](LICENSE).Third-party notices are preserved in [NOTICE](THIRD_PARTY_NOTICES.md) where applicable.
+本仓库在 [LICENSE](LICENSE) 中保留 DeepSpeed 原有的版权声明、许可条款和免责声明。适用的第三方声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-Modified by Hygon Information Technology Co., Ltd.
+## 海光适配范围
 
-## Modification Scope
+海光信息技术股份有限公司维护本仓库中面向海光软硬件环境的适配修改，主要包括：
 
-Hygon modifications in this repository are intended to adapt DeepSpeed for Hygon
-software and hardware environments. The scope includes Hygon backend integration,
-build and packaging adjustments, operator and kernel adaptations, and related
-documentation or metadata updates.
+- 海光后端集成；
+- 构建与打包调整；
+- 算子和内核适配；
+- 相关文档与元数据更新。
 
-Unless explicitly stated in a specific source file or third-party notice, files
-that originate from upstream DeepSpeed remain governed by the upstream DeepSpeed
-license terms.
+除非源文件或第三方声明另有说明，源自上游 DeepSpeed 的文件继续遵循相应的上游许可条款。
 
-## Build and Installation
+## 构建与安装
+### 预依赖
+使用前请确认已准备好基于海光环境包括驱动，dtk等组件
+### 构建说明
+请按照对应海光 DeepSpeed 发行版本提供的发布说明或打包文档完成构建和安装。平台构建说明见 [docs/build.md](docs/build.md)。如需了解 DeepSpeed 的通用构建方法，请参阅[上游文档](https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2/docs)或 [README_ORIGIN.md](README_ORIGIN.md)。
+### 验证
+安装完成后，可运行以下命令检查软件包是否能够正常导入，并查看版本号：
 
-Build and installation should follow the release notes or packaging instructions for the corresponding Hygon DeepSpeed distribution. For general DeepSpeed build concepts, refer to the upstream DeepSpeed documentation and the preserved upstream README. For HCU platform, refer to the [build.md](docs/build.md) also.
+```bash
+python -c "import deepspeed; print(deepspeed.__version__)"
+```
 
-After installation, verify the package with:
-`python -c "import deepspeed; print(deepspeed.\_\_version__)"`
+## 参考资料
 
-## References
-- [Preserved upstream README](README_ORIGIN.md)
-- [Offical DeepSpeed repository](https://github.com/microsoft/DeepSpeed)
+- [DeepSpeed 官方仓库](https://github.com/deepspeedai/DeepSpeed)
+- [DeepSpeed v0.19.2 源代码](https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2)
+- [上游 README 备份](README_ORIGIN.md)
+
