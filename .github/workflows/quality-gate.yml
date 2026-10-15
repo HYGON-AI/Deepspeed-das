@@ -7,7 +7,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
-      - ds-v0.19.2-opensource
+      - v0.19.2-dev
 
 permissions:
   contents: read
