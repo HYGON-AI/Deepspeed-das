@@ -72,7 +72,7 @@ run_tests() {
     run_one pytest -vs --timeout=1400 ./model/Megatron_GPT2/test_common.py > ${LOG_DIR}/Megatron_GPT2_test_common.log 2>&1
     run_one pytest -vs --timeout=1400 ./lightning/test_simple.py > ${LOG_DIR}/lightning_test_simple.log 2>&1
     cd torch_compile
-    run_one python  ./test_compile.py > ${LOG_DIR}/torch_compile_test_compile.log 2>&1
+    python  ./test_compile.py > ${LOG_DIR}/torch_compile_test_compile.log 2>&1
     cd ..
     # The bulk of the suite lives under ./unit and is already xdist-aware:
     # tests/unit/common.py offsets master ports and rotates the visible
