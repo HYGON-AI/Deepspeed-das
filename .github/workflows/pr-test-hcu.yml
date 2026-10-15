@@ -19,6 +19,9 @@ on:
                 description: 'Path to DTK package'
                 required: false
                 default: '/ArchivedFile/dtk-pkg/dtk26.04/DTK-26.04-rc4-centos8-x86_64.tar.gz'
+    # cron is UTC: 16:00 UTC is midnight Beijing time.
+    schedule:
+        - cron: '0 16 * * *'
 
 permissions:
     contents: read
@@ -161,10 +164,20 @@ jobs:
                 DS_BUILD_SPARSE_ATTN=0 DS_BUILD_EVOFORMER_ATTN=0 DS_BUILD_CUTLASS_OPS=0 DS_BUILD_FP_QUANTIZER=0  DS_BUILD_OPS=1  DS_ACCELERATOR='cuda' python3 setup.py install bdist_wheel
                 pip install dist/*.whl
             
-            - name: run tests
+            # The full suite takes about 6 hours, so it runs nightly or on demand rather than on every PR.
+            - name: run full tests
+              if: github.event_name != 'pull_request_target'
               shell: bash
               # test.sh sets up the DTK env itself and must keep going after a failing test, so no `set -e` here.
               run: bash .github/scripts/test.sh
+
+            - name: run pr tests
+              if: github.event_name == 'pull_request_target'
+              shell: bash
+              run:  |
+                  source /opt/dtk/env.sh
+                  export HIP_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+                  bash tests/run_test_smoke.sh
 
             - name: Upload test reports
               if: always()

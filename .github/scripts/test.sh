@@ -42,7 +42,10 @@ record_failure() {
         printf '%s\n' "$line" >> "$FAILED_FILE"
     ) 9>"${FAILED_FILE}.lock"
 }
-
+if [ ! -e /tmp/cifar10-data/cifar-10-python.tar.gz ];then
+       mkdir -p /tmp/cifar10-data/
+       wget http://ai-atest.bj.bcebos.com/cifar-10-python.tar.gz -P /tmp/cifar10-data/
+fi
 run_tests() {
     local test_status=0
     local rc=0
@@ -78,14 +81,14 @@ run_tests() {
     sed -i 's/reuse_dist_env = True/reuse_dist_env = False/' \
         "${WORK_SPACE}/tests/unit/runtime/zero/test_zero_tensor_fragment.py"
     run_one pytest -vs --timeout=1400 ./onebit/test_mpi_perf.py > ${LOG_DIR}/onebit_test_mpi_perf.log 2>&1
-    run_one python ./onebit/test_nccl_backend.py > ${LOG_DIR}/onebit_test_nccl_backend.log 2>&1
+    python ./onebit/test_nccl_backend.py > ${LOG_DIR}/onebit_test_nccl_backend.log 2>&1
     run_one pytest -vs --timeout=1400 ./onebit/test_mpi_backend.py > ${LOG_DIR}/onebit_test_mpi_backend.log 2>&1
-    run_one python ./onebit/test_nccl_perf.py > ${LOG_DIR}/onebit_test_nccl_perf.log 2>&1
-    run_one python ./onebit/test_compressed_backend.py > ${LOG_DIR}/onebit_test_compressed_backend.log 2>&1
-    run_one python ./onebit/test_compressed_perf.py > ${LOG_DIR}/onebit_test_compressed_perf.log 2>&1
+    python ./onebit/test_nccl_perf.py > ${LOG_DIR}/onebit_test_nccl_perf.log 2>&1
+    python ./onebit/test_compressed_backend.py > ${LOG_DIR}/onebit_test_compressed_backend.log 2>&1
+    python ./onebit/test_compressed_perf.py > ${LOG_DIR}/onebit_test_compressed_perf.log 2>&1
     run_one pytest -vs --timeout=1400 ./small_model_debugging/test_model.py > ${LOG_DIR}/small_model_debugging_test_model.log 2>&1
     run_one pytest -vs --timeout=1400 ./small_model_debugging/test_mics_config.py > ${LOG_DIR}/small_model_debugging_test_mics_config.log 2>&1
-    run_one python ./small_model_debugging/stage3_test.py > ${LOG_DIR}/small_model_debugging_stage3_test.log 2>&1
+    python ./small_model_debugging/stage3_test.py > ${LOG_DIR}/small_model_debugging_stage3_test.log 2>&1
     return ${test_status}
 }
 
