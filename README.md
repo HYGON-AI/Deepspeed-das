@@ -44,3 +44,7 @@ python -c "import deepspeed; print(deepspeed.__version__)"
 - [DeepSpeed v0.19.2 源代码](https://github.com/deepspeedai/DeepSpeed/tree/v0.19.2)
 - [上游 README 备份](README_ORIGIN.md)
 
+## License
+本仓库许可证以为 [Apache License 2.0](LICENSE)，保留 DeepSpeed 原有的版权声明、许可条款和免责声明。适用的第三方声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+Hygon 的版权声明仅适用于其新增或修改内容，不替代 ROCm、NVIDIA 或其他上游作者的版权声明。

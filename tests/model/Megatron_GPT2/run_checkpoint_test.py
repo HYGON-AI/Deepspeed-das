@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # DeepSpeed Team
+
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# Modified by Hygon Information Technology Co., Ltd., 2026.
+
 """
 Note: please copy webtext data to "Megatron-LM" folder, before running this script.
 """
