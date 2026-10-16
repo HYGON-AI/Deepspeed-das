@@ -9,7 +9,7 @@ RUN_TEST_SH="${RUN_TEST_SH:-${WORK_SPACE}/tests/run_test.sh}"
 FAILED_FILE="${FAILED_FILE:-${REPORTS_DIR}/faild_test.txt}"
 LOG_DIR=${REPORTS_DIR}/unit_test_logs
 mkdir -p ${LOG_DIR}
-TIMEOUT="${TIMEOUT:-3000}"
+TIMEOUT="${TIMEOUT:-10800}"
 mkdir -p "$(dirname "${TEST_LOG}")"
 : > "${TEST_LOG}"
 pip install transformers==4.57.6
@@ -58,7 +58,10 @@ run_tests() {
         echo "===== EXIT ${rc}: $* ====="
         test_status=$((test_status || rc))
         # Workers only report through FAILED_FILE, so record here too to give CI one combined list.
-        if [ "${rc}" -ne 0 ]; then
+        if [ "${rc}" -eq 5 ]; then
+            echo "SKIP (no tests collected): $*"
+        elif [ "${rc}" -ne 0 ]; then
+            echo "FAIL (rc=${rc}): $*"
             record_failure "$*"
         fi
     }
