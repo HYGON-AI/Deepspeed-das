@@ -6,6 +6,9 @@
 Functionality of swapping tensors to/from (NVMe) storage devices.
 """
 
+import os
+import mmap
+import functools
 import torch
 from deepspeed.utils.logging import logger
 from deepspeed.accelerator import get_accelerator
@@ -15,6 +18,44 @@ from deepspeed import comm as dist
 MIN_AIO_BYTES = 1024**2
 AIO_ALIGNED_BYTES = 1024
 MIN_SWAPPABLE_BYTES = MIN_AIO_BYTES
+# Largest O_DIRECT alignment probed; covers 4K-native (4Kn) devices.
+MAX_PROBED_ALIGNED_BYTES = 4096
+
+
+@functools.lru_cache(maxsize=None)
+def get_aio_aligned_bytes(folder):
+    """
+    Return the smallest O_DIRECT alignment (>= AIO_ALIGNED_BYTES) accepted by the filesystem of `folder`.
+
+    O_DIRECT requires length and offset to be multiples of the device logical sector size. A fixed 1KB
+    alignment fails on 4Kn devices, and the kernel EINVAL is not surfaced by the aio library, so files end
+    up silently truncated. statvfs/sysfs cannot be used instead: NFS reports wsize (e.g. 1MB) and overlay
+    has no backing block device, so we probe with real writes.
+    """
+    probe_path = os.path.join(folder, f'.aio_align_probe_{os.getpid()}')
+    # mmap memory is page aligned, which satisfies O_DIRECT buffer alignment.
+    probe_buffer = mmap.mmap(-1, 2 * MAX_PROBED_ALIGNED_BYTES)
+    try:
+        fd = os.open(probe_path, os.O_CREAT | os.O_WRONLY | os.O_DIRECT, 0o600)
+    except OSError as e:
+        logger.warning(f"O_DIRECT is not supported in {folder} ({e}), using {AIO_ALIGNED_BYTES} bytes alignment")
+        return AIO_ALIGNED_BYTES
+
+    try:
+        aligned_bytes = AIO_ALIGNED_BYTES
+        while aligned_bytes <= MAX_PROBED_ALIGNED_BYTES:
+            # Use a non-zero offset so that both offset and length alignment are verified.
+            try:
+                os.pwritev(fd, [memoryview(probe_buffer)[:aligned_bytes]], aligned_bytes)
+                return aligned_bytes
+            except OSError:
+                aligned_bytes *= 2
+        logger.warning(f"O_DIRECT write probe failed in {folder}, using {MAX_PROBED_ALIGNED_BYTES} bytes alignment")
+        return MAX_PROBED_ALIGNED_BYTES
+    finally:
+        os.close(fd)
+        os.remove(probe_path)
+        probe_buffer.close()
 
 
 def swap_in_tensors(swap_handle, tensor_buffers, swap_paths):

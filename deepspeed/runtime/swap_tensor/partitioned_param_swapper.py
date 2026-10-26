@@ -15,7 +15,8 @@ from deepspeed.accelerator import get_accelerator
 from deepspeed.ops.op_builder import AsyncIOBuilder
 from deepspeed.ops.op_builder import GDSBuilder
 from .constants import *
-from .utils import swap_in_tensors, swap_out_tensors, MIN_AIO_BYTES, AIO_ALIGNED_BYTES, print_object, SwapBufferPool
+from .utils import swap_in_tensors, swap_out_tensors, MIN_AIO_BYTES, get_aio_aligned_bytes, print_object, \
+    SwapBufferPool
 
 
 def print_rank_0(message, debug=False, force=False):
@@ -98,7 +99,7 @@ class AsyncPartitionedParameterSwapper(object):
 
         # Read/Write alignment for each thread during Intra-request parallelism
         self.min_aio_bytes = max(MIN_AIO_BYTES, self.aio_config[AIO_BLOCK_SIZE])
-        self.aligned_bytes = AIO_ALIGNED_BYTES * self.aio_config[AIO_INTRA_OP_PARALLELISM]
+        self.aligned_bytes = get_aio_aligned_bytes(self.swap_folder) * self.aio_config[AIO_INTRA_OP_PARALLELISM]
         self.numel_alignment = self.aligned_bytes // self.swap_element_size
 
         self.elements_per_buffer = self.swap_config.buffer_size
