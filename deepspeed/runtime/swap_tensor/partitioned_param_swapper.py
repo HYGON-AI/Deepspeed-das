@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # DeepSpeed Team
+
+# Modified by Hygon Information Technology Co., Ltd., 2026.
+
 """
 Functionality of swapping tensors to/from (NVMe) storage devices.
 """
