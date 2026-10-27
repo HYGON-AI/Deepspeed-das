@@ -39,8 +39,40 @@ env:
   DTK_PKG: ${{ inputs.dtk-pkg || '/ArchivedFile/dtk-pkg/dtk26.04/DTK-26.04-rc4-centos8-x86_64.tar.gz' }}
   TORCH_VERSION: ${{ inputs.torch-version || '2.10.0' }}
 jobs:
+    # The nightly full suite takes about 6 hours, so skip it when nothing was merged that day,
+    # but still run it once every 7 idle days to catch environment drift (DTK, pip packages, runner).
+    decide:
+        name: Decide whether to run
+        runs-on:
+            group: ci-general
+            labels: [self-hosted, ci, bw1100]
+        outputs:
+            run: ${{ steps.check.outputs.run }}
+        steps:
+            - name: Check for recent merges
+              id: check
+              uses: actions/github-script@v7
+              with:
+                script: |
+                  if (context.eventName !== 'schedule') {
+                    core.setOutput('run', 'true');
+                    return;
+                  }
+                  // Scheduled runs always use the default branch.
+                  const branch = context.ref.replace('refs/heads/', '');
+                  const { data } = await github.rest.repos.getBranch({ ...context.repo, branch });
+                  const lastCommit = new Date(data.commit.commit.committer.date);
+                  const idleDays = Math.floor((Date.now() - lastCommit.getTime()) / 86400000);
+                  // idleDays == 0: something was merged in the last 24 hours.
+                  // idleDays % 7 == 0: the branch has been idle for a whole number of weeks.
+                  const shouldRun = idleDays === 0 || idleDays % 7 === 0;
+                  core.info(`Last commit on ${branch}: ${lastCommit.toISOString()}, idle ${idleDays} day(s), run=${shouldRun}`);
+                  core.setOutput('run', String(shouldRun));
+
     build-and-test:
         name: Build and Test
+        needs: decide
+        if: needs.decide.outputs.run == 'true'
         runs-on:
             group: ci-general
             labels: [self-hosted, ci, bw1100]
