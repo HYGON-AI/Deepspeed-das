@@ -3,6 +3,9 @@
 
 # DeepSpeed Team
 
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# Modified by Hygon Information Technology Co., Ltd., 2026.
+
 import functools
 import os
 import pkgutil
@@ -76,6 +79,10 @@ class CUDA_Accelerator(DeepSpeedAccelerator):
         return torch.cuda.device_count()
 
     def synchronize(self, device_index=None):
+        # Resolve the device explicitly: under torch.compile, dynamo fails to trace
+        # torch.cuda.synchronize(None) and traces a bare torch.cuda.synchronize() as device 0.
+        if device_index is None:
+            device_index = torch.cuda.current_device()
         return torch.cuda.synchronize(device_index)
 
     # RNG APIs
