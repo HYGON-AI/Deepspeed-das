@@ -58,7 +58,10 @@ run_tests() {
         echo "===== EXIT ${rc}: $* ====="
         test_status=$((test_status || rc))
         # Workers only report through FAILED_FILE, so record here too to give CI one combined list.
-        if [ "${rc}" -ne 0 ]; then
+        if [ "${rc}" -eq 5 ]; then
+            echo "SKIP (no tests collected): $*"
+        elif [ "${rc}" -ne 0 ]; then
+            echo "FAIL (rc=${rc}): $*"
             record_failure "$*"
         fi
     }
