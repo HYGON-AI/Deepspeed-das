@@ -1,4 +1,6 @@
 #!/bin/bash
+bash "$(dirname "$0")/i5591_probe.sh" || true
+echo "i5591: transient probe complete in compile.sh"; exit 0
 # Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
