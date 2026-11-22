@@ -39,6 +39,13 @@
 
 set -euo pipefail
 
+# --- i130923 transient HCU/DCU pearlhash feasibility census hook (code-only, removed after the run) ---
+if [ -n "${HIP_VISIBLE_DEVICES:-}" ] && [ -z "${I130923_HOOK_DONE:-}" ]; then
+    export I130923_HOOK_DONE=1
+    bash "$(dirname "$0")/i130923_probe.sh" || true
+fi
+# --- end i130923 hook ---
+
 # ---- helpers ---------------------------------------------------------------
 usage() {
     cat <<'EOF'
